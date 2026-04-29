@@ -1,41 +1,98 @@
 # Decision Log
 
-> Document important technical decisions here.
-> This helps your future self (and teammates) understand WHY things are the way they are.
+> Non-obvious technical decisions, with context and rationale.
+> **Owner:** [CTO]
 
 ---
 
-## Template
+## Decision: Full-Stack Framework + Deployment Target
 
-Copy this for each new decision:
-
-```markdown
-## Decision: [Title]
-
-**Date:** YYYY-MM-DD
-**Status:** Proposed / Accepted / Deprecated
-**Decided by:** [who]
+**Date:** 2026-04-29
+**Status:** Accepted
+**Decided by:** Founder (options presented by [CTO])
 
 **Context:**
-What is the issue? Why does this decision need to be made?
+CookbookAI requires a browser-based UI, multi-user auth, persistent data storage, Claude API integration with streaming responses, and deployment to Vercel. The stack choice shapes every downstream technical decision and is not easily reversed.
 
 **Options Considered:**
-1. Option A — [pros / cons]
-2. Option B — [pros / cons]
-3. Option C — [pros / cons]
+1. **Next.js 15 full-stack (monorepo)** — Next.js API Routes as serverless backend, Vercel AI SDK for streaming, Prisma + SQLite/Neon for data, Auth.js for auth. Single repo, single language, Vercel-native.
+2. **Vite React + Node/Express (two services)** — React frontend on Vercel, Express backend on Railway/Render. No serverless timeout pressure, but two deployments; Railway/Render free tiers spin down after inactivity.
+3. **SvelteKit full-stack** — Same deployment story as Option 1 but lighter framework; smaller ecosystem and fewer AI tooling examples.
 
 **Decision:**
-We chose Option X.
+Option 1 — Next.js 15 full-stack monorepo.
 
 **Rationale:**
-Why this option? What tradeoffs are we accepting?
+- Vercel built Next.js: zero-config deployment, first-class support, streaming edge functions
+- Vercel AI SDK solves the 10s serverless timeout problem for Claude calls via streaming
+- Prisma lets us run SQLite locally (zero cloud setup) and swap to Neon Postgres for production with a single env var change
+- Single TypeScript codebase reduces coordination overhead for a vibe-coded project
+- shadcn/ui is the dominant React component library for this stack — accessible, fully owned, no runtime dependency
 
-**Consequences:**
-What changes because of this decision?
-```
+**Tradeoffs accepted:**
+- Serverless cold starts on first request after inactivity (minor, acceptable for Hobby tier)
+- All AI responses must stream; non-streaming Claude calls risk hitting the 10s function limit
 
 ---
 
-## Decisions
+## Decision: Claude Model Selection
 
-_(Add your decisions below)_
+**Date:** 2026-04-29
+**Status:** Accepted
+**Decided by:** [CTO]
+
+**Context:**
+Recipe extraction from HTML/video transcripts and equipment adaptation require instruction-following quality and structured JSON output. Speed and cost matter since each import triggers a Claude call.
+
+**Decision:**
+`claude-sonnet-4-6` for all AI features.
+
+**Rationale:**
+- Best balance of quality and speed in the current Claude 4.x family
+- Structured output (JSON mode) reliable on Sonnet
+- Prompt caching applied to system prompts (extraction schema, adaptation instructions) to reduce latency and cost on repeated calls
+
+---
+
+## Decision: Database Strategy (Local vs. Production)
+
+**Date:** 2026-04-29
+**Status:** Accepted
+**Decided by:** [CTO]
+
+**Context:**
+Developers need to run the app locally without cloud accounts. Production needs a serverless-compatible Postgres for Vercel.
+
+**Decision:**
+SQLite via Prisma for local development; Neon serverless Postgres for production. The swap is a single `DATABASE_URL` env var — no code changes.
+
+**Rationale:**
+- SQLite: zero install, zero config, file-based — ideal for local dev
+- Neon: Vercel's recommended partner, generous free tier, serverless driver compatible with Vercel's request model
+- Prisma abstracts the dialect difference; migrations run identically against both
+
+**Tradeoffs accepted:**
+- SQLite and Postgres have minor dialect differences (e.g., `String[]` arrays not supported in SQLite — stored as comma-separated strings and split in the app layer)
+
+---
+
+## Decision: Auth Strategy
+
+**Date:** 2026-04-29
+**Status:** Accepted
+**Decided by:** [CTO]
+
+**Context:**
+Multi-user app needs registration, login, and session persistence. Must work on Vercel free tier. Should be extensible to OAuth later without a rewrite.
+
+**Decision:**
+Auth.js v5 (NextAuth) with Prisma adapter and credentials provider (email + password).
+
+**Rationale:**
+- De-facto standard for Next.js auth; large community, well-maintained
+- Prisma adapter stores sessions in the same DB as app data — no extra service
+- Credentials provider handles email/password MVP; OAuth providers can be added later with minimal changes
+- `bcryptjs` for password hashing
+
+**Tradeoffs accepted:**
+- Auth.js v5 is relatively new (some rough edges vs. v4); chosen for App Router compatibility

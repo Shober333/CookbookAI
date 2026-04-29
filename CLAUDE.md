@@ -1,10 +1,11 @@
-# {{PROJECT_NAME}} — Claude Code Project Context
+# CookbookAI — Claude Code Project Context
 
-> **Stack:** {{TECH_STACK}}
-> **Purpose:** {{PROJECT_DESCRIPTION}}
+> **Stack:** TBD — CTO decides in Sprint 0 (see `docs/ARCHITECTURE.md`)
+> **Purpose:** Digital cookbook: import recipes from the internet, adjust
+> them with AI assistance.
 >
-> This file is auto-loaded by Claude Code CLI when you open this project directory.
-> It is the single source of truth for Claude's project awareness.
+> This file is auto-loaded by Claude Code on every session. Keep it
+> under ~200 lines. Role definitions live in `AGENTS.md`, not here.
 
 ---
 
@@ -12,149 +13,151 @@
 
 | Field | Value |
 |---|---|
-| **Name** | {{PROJECT_NAME}} |
-| **Purpose** | {{PROJECT_DESCRIPTION}} |
-| **Current sprint** | Sprint 01 |
-| **Dev port** | {{DEV_PORT}} |
+| **Name** | CookbookAI |
+| **Repo name** | `CookbookAI` |
+| **Purpose** | Import recipes from the web; adjust them with Claude AI |
+| **Stage** | Sprint 0 — architecture and team definition |
+| **Dev port** | TBD |
 
 ---
 
 ## 2. Key Commands
 
+> Stack not yet decided. CTO fills these in after Sprint 0 architecture decision.
+
 ```bash
-# Development — replace with your actual commands
-{{DEV_COMMAND}}                    # Start dev server
-{{BUILD_COMMAND}}                  # Production build
-{{TEST_COMMAND}}                   # Run unit tests
-{{LINT_COMMAND}}                   # Lint / type check
+# Replace with actual commands after stack is chosen:
+[TBD] dev        # Start dev server
+[TBD] build      # Production build
+[TBD] test       # Run unit tests
+[TBD] lint       # Lint / type check
 
-# E2E Testing (Playwright)
-npx playwright test                # Run all E2E tests
-npx playwright test --ui           # Interactive UI mode
-npx playwright test --debug        # Debug mode
+# E2E Testing (Playwright — stack-independent)
+npx playwright test              # Run all E2E tests
+npx playwright test --ui         # Interactive mode
+npx playwright test --debug      # Step-through debug
 ```
-
-> E2E tests auto-start the dev server if `webServer` is configured in `playwright.config.ts`.
 
 ---
 
 ## 3. Definition of Done
 
-```
-A FEATURE IS "DONE" ONLY WHEN:
-  1. Code works — dev server runs without errors
-  2. Tests pass — unit tests cover the new logic
-  3. E2E pass — browser tests on affected flows (if UI changed)
-  4. No regressions — existing features still work
-  5. Reviewed — teammate or CTO has seen the code
-  6. Screenshots — captured for GUI changes (tests/screenshots/)
-```
+A feature is "done" only when:
 
-**NEVER mark done based on "it compiles" alone.**
+1. **Code works** — dev server runs without errors
+2. **Unit tests pass** — test suite green; new logic has tests
+3. **E2E passes** — Playwright green when UI changed
+4. **No regressions** — existing features still work
+5. **Reviewed** — CTO Good/Bad/Ugly review completed (see `AGENTS.md`)
+6. **Screenshots** — captured for any GUI change (`tests/screenshots/`)
+
+**"It compiles" is not done.** Behavior must be verified.
 
 ---
 
-## 4. Project Structure
+## 4. Agents in This Project
+
+Role definitions live in `AGENTS.md`. Short index:
+
+| Tag | Role | Activate |
+|---|---|---|
+| `[CTO]` | Architecture, planning, reviews; owns PRD/ARCHITECTURE/DECISIONS | `/project:cto` or Claude Code subagent `cto` |
+| `[DEV-LEAD]` | Coordinates dev body; writes dev reports | ad-hoc (multi-dev sprints) |
+| `[DEV:frontend]` | Frontend implementation | `/project:dev` |
+| `[DEV:backend]` | Backend: recipe import, storage, Claude API integration | `/project:dev` |
+| `[DEV-QA]` | Tests, regressions, screenshots | `/project:qa` |
+| `[ARIA]` | UI/UX — created by Alice (Meta-UI/UX) when needed | not yet instantiated |
+| `[FOUNDER]` | Human — final decision maker | always |
+
+**Governance:** `[CTO]` reviewable by Meta-CTO at
+`~/Projects/agents/claude/CLAUDE.md`. `[ARIA]` reviewable by Alice at
+`~/Projects/agents/alice/ALICE.md`.
+
+**Reading order in a turn:** domain `AGENTS.md` (e.g.
+`frontend/AGENTS.md`) → root `AGENTS.md` → this file → `docs/PRD.md`.
+
+---
+
+## 5. Project Structure
 
 ```
-{{PROJECT_NAME}}/
-├── CLAUDE.md                # This file — project context for Claude
-├── AGENTS.md                # Role definitions (CTO, DEV, QA)
+CookbookAI/
+├── CLAUDE.md                # This file
+├── AGENTS.md                # Role definitions and team
 ├── README.md                # Project README
-├── .env.example             # Environment variables template
-├── playwright.config.ts     # Playwright E2E configuration
+├── .env.example             # Env vars template (ANTHROPIC_API_KEY)
+├── playwright.config.ts     # E2E configuration
 │
 ├── .claude/
-│   ├── settings.local.json  # Tool permissions for Claude
-│   └── commands/            # Slash commands
-│
-├── backend/
-│   ├── AGENTS.md            # Backend domain rules
-│   └── modules/
-│       └── _example/        # Reference module (copy to start new)
-│           ├── README.md
-│           ├── src/          # Models, services, API routes
-│           └── tests/        # unit/ and integration/
+│   ├── agents/cto.md        # Claude Code CTO subagent
+│   ├── commands/            # Slash commands
+│   └── settings.local.json  # Tool permissions
 │
 ├── frontend/
 │   ├── AGENTS.md            # Frontend domain rules
 │   └── modules/
-│       └── _example/        # Reference module (copy to start new)
-│           ├── README.md
-│           ├── src/          # Components, hooks, utils
-│           └── tests/        # unit/ and integration/
+│       └── _example/        # Reference module
+│
+├── backend/
+│   ├── AGENTS.md            # Backend domain rules
+│   └── modules/
+│       └── _example/        # Reference module
 │
 ├── tests/
-│   ├── e2e/                 # Playwright E2E test files
-│   └── screenshots/         # GUI screenshots (captured by tests)
+│   ├── e2e/                 # Playwright E2E tests
+│   └── screenshots/         # Captured by E2E
 │
 └── docs/
-    ├── PRD.md               # Product requirements
-    ├── ARCHITECTURE.md      # Technical architecture
-    ├── DECISIONS.md         # Decision log
-    ├── knowledge/           # Research, references, domain knowledge
-    ├── ui/
-    │   └── UI_KIT.md        # Design system tokens
-    └── sprints/
-        └── sprint_01/       # Sprint artifacts (index, todo, reports)
+    ├── PRD.md               # Product requirements (CTO-owned)
+    ├── ARCHITECTURE.md      # Technical design (CTO-owned)
+    ├── DECISIONS.md         # Decision log (CTO-owned)
+    ├── knowledge/           # Domain research and references
+    ├── ui/UI_KIT.md         # Design tokens (Aria / Alice-owned)
+    └── sprints/sprint_01/   # Sprint artifacts
 ```
 
 ---
 
-## 5. Environment Variables
+## 6. Environment Variables
 
-Copy `.env.example` → `.env`. Required:
+Copy `.env.example` → `.env`:
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...      # Claude API key
+ANTHROPIC_API_KEY=sk-ant-...    # Claude API — required for recipe adjustment
 ```
 
 ---
 
-## 6. Available Commands
+## 7. Available Slash Commands
 
 | Command | Purpose |
 |---|---|
-| `/project:cto` | Activate CTO role — architecture & planning |
-| `/project:dev` | Activate DEV role — implementation |
-| `/project:qa` | Activate QA role — testing & quality |
-| `/project:plan` | Force plan mode before complex work |
-| `/project:test` | Run full test suite |
-| `/project:e2e` | Run Playwright E2E browser tests |
-
----
-
-## 7. Role Tags
-
-| Tag | Who |
-|---|---|
-| `[CTO]` | Architecture, tech decisions, code review |
-| `[DEV]` | Implementation, features, bug fixes |
-| `[DEV:backend]` | Backend module implementation |
-| `[DEV:frontend]` | Frontend module implementation |
-| `[QA]` | Testing, quality gates, bug discovery |
-| `[FOUNDER]` | Human operator — final decision maker |
-
-> Reading order: domain `AGENTS.md` (e.g., `backend/AGENTS.md`) → root `AGENTS.md` → `docs/PRD.md`
+| `/project:cto` | Architecture, planning, code review |
+| `/project:dev` | Implementation, features, bug fixes |
+| `/project:qa` | Testing, quality gates |
+| `/project:plan` | Force planning before complex work |
+| `/project:test` | Run test suite |
+| `/project:e2e` | Run Playwright E2E tests |
 
 ---
 
 ## 8. Testing Strategy
 
 | Level | Location | Tool | When |
-|-------|----------|------|------|
-| **Unit** | `*/modules/*/tests/unit/` | Jest / pytest / vitest | Every feature |
-| **Integration** | `*/modules/*/tests/integration/` | Framework test runner | Cross-module features |
-| **E2E** | `tests/e2e/` | Playwright | Every UI change |
-| **Screenshots** | `tests/screenshots/` | Playwright | Every UI change |
+|---|---|---|---|
+| Unit | `*/modules/*/tests/unit/` | TBD (stack-dependent) | Every feature |
+| Integration | `*/modules/*/tests/integration/` | TBD | Cross-module features |
+| E2E | `tests/e2e/` | Playwright | Every UI-affecting change |
+| Screenshots | `tests/screenshots/` | Playwright | Every UI-affecting change |
 
 ---
 
 ## 9. What NOT to Do
 
-- Do NOT silently expand scope beyond the current task
-- Do NOT add dependencies without discussing with the team
-- Do NOT mark features done without actually testing them
-- Do NOT skip writing tests for new logic
-- Do NOT hardcode secrets or credentials
-- Do NOT import directly across modules — use shared interfaces
+- Don't silently expand scope
+- Don't add dependencies without flagging to the CTO
+- Don't mark features done without running tests
+- Don't skip tests for new logic
+- Don't hardcode secrets or credentials
+- Don't import across modules — use the module's public `index.*` exports
+- Don't change external API integrations without an irreversibility-flag escalation
