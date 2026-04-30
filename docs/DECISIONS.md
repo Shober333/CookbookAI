@@ -141,6 +141,35 @@ SQLite via Prisma for local development; Neon serverless Postgres for production
 
 **Tradeoffs accepted:**
 - SQLite and Postgres have minor dialect differences (e.g., `String[]` arrays not supported in SQLite — stored as comma-separated strings and split in the app layer)
+- Recipe `ingredients` and `steps` are stored as JSON-serialized strings
+  in SQLite-compatible columns for the MVP. App code owns parsing and
+  serialization at service boundaries.
+
+---
+
+## Decision: Prisma Version Pin
+
+**Date:** 2026-04-30
+**Status:** Accepted
+**Decided by:** [DEV:backend]
+
+**Context:**
+Backend Sprint 1 needs Prisma schema/client generation and local SQLite
+development. Prisma 6.19.3 validated the schema and generated SQL, but
+its schema engine failed silently during SQLite migration commands in
+the local environment.
+
+**Decision:**
+Pin `prisma` and `@prisma/client` to `^5.22.0` for the MVP scaffold.
+
+**Rationale:**
+- Prisma 5.22.0 is stable for Next.js + SQLite scaffolds.
+- It keeps the same Prisma Client programming model needed by the app.
+- It reduces moving parts while auth, recipes, and import flows are
+  still being built.
+
+**Tradeoffs accepted:**
+- We may revisit Prisma 6 after the MVP database/API surface is stable.
 
 ---
 

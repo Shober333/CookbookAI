@@ -1,6 +1,6 @@
 # CookbookAI — Claude Code Project Context
 
-> **Stack:** TBD — CTO decides in Sprint 0 (see `docs/ARCHITECTURE.md`)
+> **Stack:** Next.js 15 + React 19 + TypeScript + Tailwind CSS
 > **Purpose:** Digital cookbook: import recipes from the internet, adjust
 > them with AI assistance.
 >
@@ -16,8 +16,8 @@
 | **Name** | CookbookAI |
 | **Repo name** | `CookbookAI` |
 | **Purpose** | Import recipes from the web; adjust them with Claude AI |
-| **Stage** | Sprint 0 — architecture, team, and design language defined |
-| **Dev port** | TBD |
+| **Stage** | Sprint 1 — scaffold and MVP implementation |
+| **Dev port** | 3000 |
 
 ---
 
@@ -26,11 +26,9 @@
 > Stack not yet decided. CTO fills these in after Sprint 0 architecture decision.
 
 ```bash
-# Replace with actual commands after stack is chosen:
-[TBD] dev        # Start dev server
-[TBD] build      # Production build
-[TBD] test       # Run unit tests
-[TBD] lint       # Lint / type check
+npm run dev        # Start dev server at localhost:3000
+npm run build      # Production build
+npm run typecheck  # TypeScript check
 
 # E2E Testing (Playwright — stack-independent)
 npx playwright test              # Run all E2E tests
