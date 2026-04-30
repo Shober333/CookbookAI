@@ -151,7 +151,8 @@ SQLite via Prisma for local development; Neon serverless Postgres for production
 
 **Date:** 2026-04-30
 **Status:** Accepted
-**Decided by:** [DEV:backend]
+**Proposed by:** [DEV:backend]
+**Accepted by:** [CTO]
 
 **Context:**
 Backend Sprint 1 needs Prisma schema/client generation and local SQLite
@@ -170,6 +171,36 @@ Pin `prisma` and `@prisma/client` to `^5.22.0` for the MVP scaffold.
 
 **Tradeoffs accepted:**
 - We may revisit Prisma 6 after the MVP database/API surface is stable.
+
+---
+
+## Decision: SQLite Migration Preflight
+
+**Date:** 2026-04-30
+**Status:** Accepted
+**Proposed by:** [DEV:backend]
+**Accepted by:** [CTO]
+
+**Context:**
+`prisma migrate dev` failed with a blank schema-engine error when the
+SQLite database file did not yet exist. Running the schema engine
+directly revealed the underlying `P1003` missing-database condition.
+
+**Decision:**
+Add `scripts/ensure-sqlite-db.mjs` and run it before Prisma migrations
+through `npm run db:migrate`.
+
+**Rationale:**
+- The preflight only touches `file:` SQLite URLs; Postgres/Neon URLs are
+  ignored.
+- It keeps local setup reproducible without committing `dev.db`.
+- Once the file exists, `npx prisma migrate dev` applies migrations and
+  generates Prisma Client normally.
+
+**Tradeoffs accepted:**
+- The raw `npx prisma migrate dev` command still expects the SQLite file
+  to exist first. Project docs and scripts should use `npm run db:migrate`
+  for local setup.
 
 ---
 

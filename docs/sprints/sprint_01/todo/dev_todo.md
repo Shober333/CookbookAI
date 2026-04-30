@@ -29,7 +29,7 @@
 | 1.3 | Configure `tailwind.config.ts` with all custom tokens from `docs/ui/UI_KIT.md` (colors, font families, font sizes, spacing, radius) | frontend | `[ ]` | `bg-paper`, `text-ink`, `font-display`, `text-display-lg`, `text-eyebrow` etc. all resolve via Tailwind classes |
 | 1.4 | Add CSS variables and reduced-motion rule to `src/app/globals.css` per `docs/ui/UI_KIT.md` §12 | frontend | `[ ]` | `:root` has all `--color-*`, `--measure-*` vars; `@media (prefers-reduced-motion: reduce)` block present; `*:focus-visible` uses terracotta ring |
 | 1.5 | Configure Fraunces, Inter, Caveat fonts in `src/app/layout.tsx` per `docs/ui/UI_KIT.md` §2; apply font variables to `<html>` tag | frontend | `[ ]` | Page renders in Fraunces body text on `localhost:3000`; all three font variables present on `<html>` |
-| 1.6 | Set up Prisma with SQLite; define schema (User, Recipe, EquipmentProfile, Auth.js tables) | backend | `[!]` | `npx prisma migrate dev` runs without errors; `dev.db` created — **BLOCKED: schema-engine error on local migrate** |
+| 1.6 | Set up Prisma with SQLite; define schema (User, Recipe, EquipmentProfile, Auth.js tables) | backend | `[x]` | `npm run db:migrate` creates `dev.db` and applies migrations; `npx prisma migrate dev` runs cleanly once the SQLite file exists |
 | 1.7 | Install and configure Auth.js v5 with Prisma adapter and credentials provider | backend | `[x]` | Auth.js handler at `/api/auth/[...nextauth]` returns 200 |
 | 1.8 | Install Anthropic SDK and Vercel AI SDK; create `src/lib/anthropic.ts` with client singleton | backend | `[x]` | File exports `anthropic` client; `ANTHROPIC_API_KEY` documented in `.env.example` |
 | 1.9 | Create `src/lib/db.ts` Prisma client singleton | backend | `[x]` | No "PrismaClient instantiated multiple times" warnings in dev |
@@ -48,7 +48,7 @@
 | 2.2 | Login page (`/login`) per PAGE_LAYOUTS.md §1 — eyebrow "Welcome back", headline "Pick up where you left off.", fields: Email, Password; button "Sign in" | frontend | `[ ]` | Valid credentials create a session and redirect to `/library`; invalid credentials show error in `--color-accent-strong`; no raw error stack |
 | 2.3 | `Topbar` component per COMPONENT_SPECS.md §8 — brand mark, nav, Import button; **mobile: brand left + Import button right only** (no nav links, no hamburger) | frontend | `[ ]` | Topbar renders on all authenticated routes; active nav item has `aria-current="page"`; sticky; mobile shows brand + Import only |
 | 2.4 | Logout — destroy session, redirect to `/login` | frontend | `[ ]` | Session destroyed; `/library` inaccessible without re-login |
-| 2.5 | Auth backend — register endpoint hashes password with bcryptjs; duplicate email returns error; session persists across refresh | backend | `[ ]` | Password stored as bcrypt hash; session cookie survives page refresh |
+| 2.5 | Auth backend — register endpoint hashes password with bcryptjs; duplicate email returns error; session persists across refresh | backend | `[x]` | Password stored as bcrypt hash; duplicate email returns `409`; session cookie survives page refresh through Auth.js credentials login |
 
 ---
 
