@@ -15,7 +15,7 @@ export function roundScaled(amount: number, unit: string): number {
   const u = unit.toLowerCase().trim();
   if (u === "g") return amount >= 50 ? Math.round(amount) : roundTo(amount, 1);
   if (u === "tsp" || u === "tbsp") return roundTo(amount, 1);
-  if (u === "cup" || u === "cups") return Math.round(amount);
+  if (u === "cup" || u === "cups") return roundTo(amount, 2);
   return roundTo(amount, 1);
 }
 
@@ -70,6 +70,66 @@ export function extractDomain(url?: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+// parseJsonObjectFromText: accepts raw JSON or a JSON object wrapped by model prose/fences.
+export function parseJsonObjectFromText(text: string): Record<string, unknown> {
+  const trimmed = text.trim();
+
+  try {
+    return parseRecord(JSON.parse(trimmed));
+  } catch {
+    const objectText = extractFirstJsonObject(trimmed);
+    if (!objectText) throw new Error("No JSON object found.");
+    return parseRecord(JSON.parse(objectText));
+  }
+}
+
+function parseRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Expected a JSON object.");
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function extractFirstJsonObject(text: string): string | null {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < text.length; i++) {
+    const char = text[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+
+    if (char === "{") depth += 1;
+    if (char === "}") depth -= 1;
+
+    if (depth === 0) {
+      return text.slice(start, i + 1);
+    }
+  }
+
+  return null;
 }
 
 function roundTo(n: number, decimals: number): number {

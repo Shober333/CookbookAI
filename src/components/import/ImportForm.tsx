@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { parseJsonObjectFromText } from "@/lib/recipe-utils";
 
 type Status = "idle" | "streaming" | "done" | "error";
 
@@ -97,7 +98,7 @@ export function ImportForm() {
     // Parse extracted recipe JSON
     let recipe: Record<string, unknown>;
     try {
-      recipe = JSON.parse(accumulated);
+      recipe = parseJsonObjectFromText(accumulated);
     } catch {
       setErrorMsg(
         "We had trouble structuring this recipe. It happens occasionally — try again, or paste the recipe text directly."
@@ -127,7 +128,9 @@ export function ImportForm() {
         throw new Error();
       }
 
-      saved = await saveRes.json();
+      const body = (await saveRes.json()) as { recipe?: { id?: string } };
+      if (!body.recipe?.id) throw new Error();
+      saved = { id: body.recipe.id };
     } catch {
       setErrorMsg(
         "The recipe was found but couldn't be saved. Try again in a moment."

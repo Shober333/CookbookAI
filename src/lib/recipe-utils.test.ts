@@ -6,6 +6,7 @@ import {
   formatAmount,
   toRoman,
   extractDomain,
+  parseJsonObjectFromText,
 } from "./recipe-utils";
 
 // ─── scaleAmount ─────────────────────────────────────────────────────────────
@@ -57,9 +58,10 @@ describe("roundScaled", () => {
     expect(roundScaled(2.66, "tbsp")).toBe(2.7);
   });
 
-  it("rounds cups to whole number", () => {
-    expect(roundScaled(1.7, "cup")).toBe(2);
-    expect(roundScaled(0.4, "cups")).toBe(0);
+  it("preserves fractional cups", () => {
+    expect(roundScaled(1.25, "cup")).toBe(1.25);
+    expect(roundScaled(0.25, "cups")).toBe(0.25);
+    expect(roundScaled(1.756, "cups")).toBe(1.76);
   });
 
   it("defaults to 1 decimal place for unknown units", () => {
@@ -198,5 +200,38 @@ describe("extractDomain", () => {
 
   it("returns null for an invalid URL", () => {
     expect(extractDomain("not-a-url")).toBeNull();
+  });
+});
+
+// ─── parseJsonObjectFromText ────────────────────────────────────────────────
+
+describe("parseJsonObjectFromText", () => {
+  it("parses raw JSON objects", () => {
+    expect(parseJsonObjectFromText('{"title":"Soup","servings":4}')).toEqual({
+      title: "Soup",
+      servings: 4,
+    });
+  });
+
+  it("parses JSON objects wrapped in markdown fences", () => {
+    const output = '```json\n{"title":"Soup","steps":["Simmer."]}\n```';
+
+    expect(parseJsonObjectFromText(output)).toEqual({
+      title: "Soup",
+      steps: ["Simmer."],
+    });
+  });
+
+  it("parses JSON objects wrapped in model prose", () => {
+    const output = 'Here is the recipe:\n{"title":"Soup","notes":"Use } in text safely."}\nEnjoy.';
+
+    expect(parseJsonObjectFromText(output)).toEqual({
+      title: "Soup",
+      notes: "Use } in text safely.",
+    });
+  });
+
+  it("rejects text without a JSON object", () => {
+    expect(() => parseJsonObjectFromText("I could not find a recipe.")).toThrow();
   });
 });

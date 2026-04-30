@@ -1,15 +1,17 @@
-import { streamText } from "ai";
+import { aiProvider } from "@/lib/anthropic";
 import {
-  claudeModel,
-  recipeExtractionProviderOptions,
-  recipeExtractionSystemPrompt,
-} from "@/lib/anthropic";
+  extractRecipeWithAi,
+  prepareRecipeSourceForAi,
+} from "@/lib/recipe-ai-extractor";
+import { extractRecipeFromJsonLd } from "@/lib/recipe-jsonld";
 import { importRecipeSchema } from "@/lib/recipe-schema";
 import { getAuthenticatedUserId, jsonError } from "@/lib/route-helpers";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
-const MAX_SOURCE_CHARS = 60_000;
+const MAX_SOURCE_CHARS = aiProvider === "ollama" ? 3_500 : 60_000;
+const ENABLE_STRUCTURED_DATA_IMPORT =
+  process.env.ENABLE_RECIPE_STRUCTURED_DATA_IMPORT === "true";
 
 function stripHtml(html: string): string {
   return html
@@ -67,26 +69,46 @@ export async function POST(request: Request) {
 
     const contentType = response.headers.get("content-type") ?? "";
     const rawText = await response.text();
+    const jsonLdRecipe =
+      ENABLE_STRUCTURED_DATA_IMPORT && contentType.includes("html")
+        ? extractRecipeFromJsonLd(rawText, sourceUrl.toString())
+        : null;
+
+    if (jsonLdRecipe) {
+      return new Response(JSON.stringify(jsonLdRecipe), {
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "x-cookbookai-stream": "recipe-import",
+        },
+      });
+    }
+
     sourceText = contentType.includes("html") ? stripHtml(rawText) : rawText;
   } catch {
     return jsonError("Could not fetch the recipe URL.", 502);
   }
 
-  const clippedSource = sourceText.slice(0, MAX_SOURCE_CHARS);
+  const clippedSource =
+    aiProvider === "ollama"
+      ? prepareRecipeSourceForAi(sourceText, MAX_SOURCE_CHARS)
+      : sourceText.slice(0, MAX_SOURCE_CHARS);
+  let recipe: Record<string, unknown>;
 
-  const result = streamText({
-    model: claudeModel,
-    system: recipeExtractionSystemPrompt,
-    prompt: `Source URL: ${sourceUrl.toString()}
+  try {
+    recipe = await extractRecipeWithAi(clippedSource, sourceUrl.toString());
+  } catch (error) {
+    console.error("[recipe-import] AI extraction failed", {
+      provider: aiProvider,
+      host: sourceUrl.hostname,
+      sourceChars: clippedSource.length,
+      error: error instanceof Error ? error.name : "UnknownError",
+    });
+    return jsonError("Could not extract the recipe from that URL.", 502);
+  }
 
-Extract the recipe from this source text and return only JSON.
-
-${clippedSource}`,
-    providerOptions: recipeExtractionProviderOptions,
-  });
-
-  return result.toTextStreamResponse({
+  return new Response(JSON.stringify(recipe), {
     headers: {
+      "content-type": "text/plain; charset=utf-8",
       "x-cookbookai-stream": "recipe-import",
     },
   });
