@@ -1,0 +1,78 @@
+// scaleAmount: proportionally scales an ingredient amount.
+// Returns null for "to taste" ingredients (null input → passthrough).
+export function scaleAmount(
+  original: number | null,
+  baseline: number,
+  target: number
+): number | null {
+  if (original === null) return null;
+  if (baseline === 0) return original;
+  return original * (target / baseline);
+}
+
+// roundScaled: applies display rounding rules per COMPONENT_SPECS §3.
+export function roundScaled(amount: number, unit: string): number {
+  const u = unit.toLowerCase().trim();
+  if (u === "g") return amount >= 50 ? Math.round(amount) : roundTo(amount, 1);
+  if (u === "tsp" || u === "tbsp") return roundTo(amount, 1);
+  if (u === "cup" || u === "cups") return Math.round(amount);
+  return roundTo(amount, 1);
+}
+
+// convertUnit: converts a metric amount+unit to imperial.
+// Unchanged units (tsp, tbsp, cup, count) pass through as-is.
+export function convertUnit(
+  amount: number | null,
+  unit: string,
+  system: "metric" | "imperial"
+): { amount: number | null; unit: string } {
+  if (amount === null || system === "metric") return { amount, unit };
+  const u = unit.toLowerCase().trim();
+  switch (u) {
+    case "g":
+      return { amount: roundTo(amount / 28.35, 1), unit: "oz" };
+    case "kg":
+      return { amount: roundTo(amount / 0.4536, 1), unit: "lb" };
+    case "ml":
+      return { amount: roundTo(amount / 29.57, 1), unit: "fl oz" };
+    case "l":
+      return { amount: roundTo(amount / 0.946, 2), unit: "qt" };
+    default:
+      return { amount, unit };
+  }
+}
+
+// formatAmount: formats a number for display, dropping trailing .0
+export function formatAmount(amount: number | null): string {
+  if (amount === null) return "";
+  return String(amount).replace(/\.0$/, "");
+}
+
+// toRoman: converts a positive integer to a lowercase Roman numeral string.
+export function toRoman(n: number): string {
+  const vals = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+  const syms = ["m", "cm", "d", "cd", "c", "xc", "l", "xl", "x", "ix", "v", "iv", "i"];
+  let result = "";
+  for (let i = 0; i < vals.length; i++) {
+    while (n >= vals[i]) {
+      result += syms[i];
+      n -= vals[i];
+    }
+  }
+  return result;
+}
+
+// extractDomain: strips protocol, www, and path from a URL string.
+export function extractDomain(url?: string | null): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function roundTo(n: number, decimals: number): number {
+  const f = Math.pow(10, decimals);
+  return Math.round(n * f) / f;
+}

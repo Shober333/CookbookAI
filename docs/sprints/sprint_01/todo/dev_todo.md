@@ -79,11 +79,11 @@
 | 4.1 | `/api/recipes` GET endpoint — return all recipes for authenticated user | backend | `[x]` | Returns array; no cross-user leakage; empty array (not 404) when no recipes |
 | 4.2 | `/api/recipes/[id]` GET endpoint — return single recipe with owner check | backend | `[x]` | Returns recipe for owner; `403` for non-owner; `404` for missing ID |
 | 4.3 | `/api/recipes/[id]` DELETE endpoint | backend | `[x]` | Deletes recipe; returns `200`; `403` for non-owner |
-| 4.4 | `RecipeListItem` component per COMPONENT_SPECS.md §1 — title, sub-title, meta, tags columns; hover shifts content right 6px; bottom border becomes terracotta | frontend | `[ ]` | Renders at mobile (single-column, stacked) and desktop (3-column); hover and focus states match spec; no warm moments |
-| 4.5 | Library page (`/library`) per PAGE_LAYOUTS.md §2 — eyebrow "Your library", dynamic headline ("{count} recipes, kept carefully."), list of `RecipeListItem` | frontend | `[ ]` | Renders at 375px and 1280px; dynamic count in headline; empty state per STATES.md §1; loading skeleton per STATES.md §2 |
-| 4.6 | `RecipeDetail` component per COMPONENT_SPECS.md §2 — eyebrow, display title, deck, byline, controls bar, ingredient list, method with Roman numeral steps | frontend | `[ ]` | Steps render as i. ii. iii. in italic terracotta; ingredient amounts use tabular numerals; margin note slot present; 2-column ingredients at desktop |
-| 4.7 | Recipe detail page (`/recipes/[id]`) per PAGE_LAYOUTS.md §3 | frontend | `[ ]` | RecipeDetail renders; loading skeleton while fetching; error state per STATES.md |
-| 4.8 | Delete recipe — confirmation then DELETE call, redirect to `/library` | frontend | `[ ]` | Recipe removed from library; no accidental deletion without confirmation |
+| 4.4 | `RecipeListItem` component per COMPONENT_SPECS.md §1 — title, sub-title, meta, tags columns; hover shifts content right 6px; bottom border becomes terracotta | frontend | `[x]` | Renders at mobile (single-column, stacked) and desktop (3-column); hover and focus states match spec; no warm moments |
+| 4.5 | Library page (`/library`) per PAGE_LAYOUTS.md §2 — eyebrow "Your library", dynamic headline ("{count} recipes, kept carefully."), list of `RecipeListItem` | frontend | `[x]` | Renders at 375px and 1280px; dynamic count in headline; empty state per STATES.md §1; loading skeleton per STATES.md §2 |
+| 4.6 | `RecipeDetail` component per COMPONENT_SPECS.md §2 — eyebrow, display title, deck, byline, controls bar, ingredient list, method with Roman numeral steps | frontend | `[x]` | Steps render as i. ii. iii. in italic terracotta; ingredient amounts use tabular numerals; margin note slot present; 2-column ingredients at desktop |
+| 4.7 | Recipe detail page (`/recipes/[id]`) per PAGE_LAYOUTS.md §3 | frontend | `[x]` | RecipeDetail renders; loading skeleton while fetching; error state per STATES.md |
+| 4.8 | Delete recipe — confirmation then DELETE call, redirect to `/library` | frontend | `[x]` | Recipe removed from library; no accidental deletion without confirmation |
 
 ---
 
@@ -94,10 +94,10 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|-------|--------|---------------------|
-| 5.1 | `src/lib/utils.ts` — `scaleAmount(original, baseline, target)` and `convertUnit(amount, unit, system)` pure functions with rounding rules per COMPONENT_SPECS.md §§3–4 | backend | `[ ]` | Unit tests cover: scale up, scale down, "to taste" passthrough, g→oz, ml→fl oz, tsp unchanged, rounding rules |
-| 5.2 | `ServingScaler` component per COMPONENT_SPECS.md §3 — stepper with −/+, ↑/↓ keyboard, disabled at min/max, `aria-live` on center value | frontend | `[ ]` | Live rescales all ingredient amounts; original values not mutated; tabular numerals; all keyboard interactions work; aria-live announces changes |
-| 5.3 | `UnitToggle` component per COMPONENT_SPECS.md §4 — metric|imperial inline buttons, active underlined in terracotta, `aria-pressed` | frontend | `[ ]` | Toggling converts all amounts using `convertUnit`; back-toggle returns to original; `aria-pressed` correct |
-| 5.4 | Wire `ServingScaler` and `UnitToggle` into recipe detail controls bar per PAGE_LAYOUTS.md §3 — mobile wraps to two rows | frontend | `[ ]` | Both controls visible and functional; controls bar wraps correctly on mobile; state resets on page refresh |
+| 5.1 | `src/lib/utils.ts` — `scaleAmount(original, baseline, target)` and `convertUnit(amount, unit, system)` pure functions with rounding rules per COMPONENT_SPECS.md §§3–4 | backend | `[x]` | Unit tests cover: scale up, scale down, "to taste" passthrough, g→oz, ml→fl oz, tsp unchanged, rounding rules |
+| 5.2 | `ServingScaler` component per COMPONENT_SPECS.md §3 — stepper with −/+, ↑/↓ keyboard, disabled at min/max, `aria-live` on center value | frontend | `[x]` | Live rescales all ingredient amounts; original values not mutated; tabular numerals; all keyboard interactions work; aria-live announces changes |
+| 5.3 | `UnitToggle` component per COMPONENT_SPECS.md §4 — metric|imperial inline buttons, active underlined in terracotta, `aria-pressed` | frontend | `[x]` | Toggling converts all amounts using `convertUnit`; back-toggle returns to original; `aria-pressed` correct |
+| 5.4 | Wire `ServingScaler` and `UnitToggle` into recipe detail controls bar per PAGE_LAYOUTS.md §3 — mobile wraps to two rows | frontend | `[x]` | Both controls visible and functional; controls bar wraps correctly on mobile; state resets on page refresh |
 
 ---
 
