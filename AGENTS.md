@@ -1,10 +1,12 @@
 # CookbookAI — Agent Constitution
 
 > Role definitions for this project. The Founder is the human; the agents
-> are operating modes that Claude (Code or Desktop) can adopt.
+> are operating modes that Claude (Code or Desktop) or Codex can adopt.
 >
 > **Reading order when entering a turn:** domain `AGENTS.md` (e.g.
 > `frontend/AGENTS.md`) → this file → `CLAUDE.md` → `docs/PRD.md`.
+> Codex-specific role and prompt adapters live under `.codex/`, mirroring
+> the Claude files under `.claude/`; this file remains the authority.
 >
 > **Governance interface:** the project CTO is reviewable by the
 > Meta-CTO at `~/Projects/agents/claude/CLAUDE.md`. Project UI/UX work
@@ -44,7 +46,9 @@ the activation; the Founder approves; the work moves to the dev body.
 
 ### [CTO] — Chief Technology Officer
 
-**Activate:** `/project:cto` or Claude Code subagent `> use the cto subagent to ...`
+**Activate:** `/project:cto`, Claude Code subagent
+`> use the cto subagent to ...`, or Codex role prompt
+`.codex/roles/cto.md`.
 
 **Tag responses with `[CTO]`.**
 
@@ -218,7 +222,8 @@ to the Founder before acting. Roles do not appear or disappear silently.
 
 ### [DEV-LEAD] — Development Lead
 
-**Activate:** ad-hoc when a sprint has multiple dev agents.
+**Activate:** ad-hoc when a sprint has multiple dev agents; Codex role
+prompt `.codex/roles/dev-lead.md`.
 
 **Owns:** Coordinating the dev body across a sprint; producing dev
 reports for the CTO's Good/Bad/Ugly review; surfacing blockers early.
@@ -229,7 +234,8 @@ reports for the CTO's Good/Bad/Ugly review; surfacing blockers early.
 
 ### [DEV] — Developer
 
-**Activate:** `/project:dev`
+**Activate:** `/project:dev` or the relevant Codex role prompt under
+`.codex/roles/`.
 
 **Owns:** Implementation, features, bug fixes, tests for new logic.
 
@@ -261,7 +267,7 @@ reports for the CTO's Good/Bad/Ugly review; surfacing blockers early.
 
 ### [DEV-QA] — Development QA
 
-**Activate:** `/project:qa`
+**Activate:** `/project:qa` or Codex role prompt `.codex/roles/qa.md`.
 
 **Owns:** Test planning, test execution, bug discovery, regression
 verification, screenshots.
