@@ -44,11 +44,11 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|-------|--------|---------------------|
-| 2.1 | Register page (`/register`) per PAGE_LAYOUTS.md §1 — eyebrow "Get started", headline "Bring recipes home.", fields: Name (optional), Email, Password; button "Create account" | frontend | `[ ]` | Submitting valid email + password creates a User row in DB with hashed password; redirects to `/library`; layout matches spec at 375px and 1280px |
-| 2.2 | Login page (`/login`) per PAGE_LAYOUTS.md §1 — eyebrow "Welcome back", headline "Pick up where you left off.", fields: Email, Password; button "Sign in" | frontend | `[ ]` | Valid credentials create a session and redirect to `/library`; invalid credentials show error in `--color-accent-strong`; no raw error stack |
-| 2.3 | `Topbar` component per COMPONENT_SPECS.md §8 — brand mark, nav, Import button; **mobile: brand left + Import button right only** (no nav links, no hamburger) | frontend | `[ ]` | Topbar renders on all authenticated routes; active nav item has `aria-current="page"`; sticky; mobile shows brand + Import only |
-| 2.4 | Logout — destroy session, redirect to `/login` | frontend | `[ ]` | Session destroyed; `/library` inaccessible without re-login |
-| 2.5 | Auth backend — register endpoint hashes password with bcryptjs; duplicate email returns error; session persists across refresh | backend | `[ ]` | Password stored as bcrypt hash; session cookie survives page refresh |
+| 2.1 | Register page (`/register`) per PAGE_LAYOUTS.md §1 — eyebrow "Get started", headline "Bring recipes home.", fields: Name (optional), Email, Password; button "Create account" | frontend | `[x]` | Submitting valid email + password creates a User row in DB with hashed password; redirects to `/library`; layout matches spec at 375px and 1280px |
+| 2.2 | Login page (`/login`) per PAGE_LAYOUTS.md §1 — eyebrow "Welcome back", headline "Pick up where you left off.", fields: Email, Password; button "Sign in" | frontend | `[x]` | Valid credentials create a session and redirect to `/library`; invalid credentials show error in `--color-accent-strong`; no raw error stack |
+| 2.3 | `Topbar` component per COMPONENT_SPECS.md §8 — brand mark, nav, Import button; **mobile: brand left + Import button right only** (no nav links, no hamburger) | frontend | `[x]` | Topbar renders on all authenticated routes; active nav item has `aria-current="page"`; sticky; mobile shows brand + Import only |
+| 2.4 | Logout — destroy session, redirect to `/login` | frontend | `[x]` | Session destroyed; `/library` inaccessible without re-login |
+| 2.5 | Auth backend — register endpoint hashes password with bcryptjs; duplicate email returns error; session persists across refresh | backend | `[x]` | Password stored as bcrypt hash; session cookie survives page refresh |
 
 ---
 
