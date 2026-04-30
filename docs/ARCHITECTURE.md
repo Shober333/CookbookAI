@@ -106,8 +106,8 @@ model Recipe {
   description String?
   sourceUrl   String?
   servings    Int
-  ingredients Json     // [{ amount: number, unit: string, name: string, notes?: string }]
-  steps       Json     // string[]
+  ingredients String   // JSON string: [{ amount, unit, name, notes? }]
+  steps       String   // JSON string: string[]
   tags        String   // comma-separated; split to array in app layer
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -126,6 +126,11 @@ model Account { ... }
 model Session { ... }
 model VerificationToken { ... }
 ```
+
+SQLite stores recipe `ingredients` and `steps` as JSON-serialized
+strings. App/service code parses them into typed arrays at module
+boundaries and serializes them before persistence. This keeps local
+SQLite and production Postgres migration-compatible for the MVP.
 
 ---
 

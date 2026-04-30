@@ -36,15 +36,19 @@ out/
 .svelte-kit/
 *.js.map
 *.d.ts
+prisma/*.db
+prisma/*.db-journal
+prisma/*.db-shm
+prisma/*.db-wal
 
 # ============================================
 # Package managers
 # ============================================
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 bun.lockb
 .pnp.*
+*.tsbuildinfo
 
 # ============================================
 # Testing

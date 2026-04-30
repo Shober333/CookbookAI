@@ -1,0 +1,37 @@
+import { z } from "zod";
+
+export const recipeIngredientSchema = z.object({
+  amount: z.number().finite().nullable(),
+  unit: z.string().trim().default(""),
+  name: z.string().trim().min(1),
+  notes: z.string().trim().optional(),
+});
+
+export const recipePayloadSchema = z.object({
+  title: z.string().trim().min(1).max(160),
+  description: z.string().trim().max(2000).nullable().optional(),
+  sourceUrl: z.string().url().nullable().optional(),
+  servings: z.number().int().positive().max(1000),
+  ingredients: z.array(recipeIngredientSchema).min(1),
+  steps: z.array(z.string().trim().min(1)).min(1),
+  tags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
+});
+
+export const recipePatchSchema = recipePayloadSchema
+  .pick({
+    title: true,
+    description: true,
+    sourceUrl: true,
+    servings: true,
+    ingredients: true,
+    steps: true,
+    tags: true,
+  })
+  .partial()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "At least one field is required.",
+  });
+
+export const importRecipeSchema = z.object({
+  url: z.string().url(),
+});
