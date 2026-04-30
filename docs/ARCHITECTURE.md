@@ -1,7 +1,7 @@
 # Technical Architecture
 
-> **Status:** Accepted — Sprint 0
-> **Owner:** [CTO] — updated 2026-04-29
+> **Status:** Accepted — Sprint 1
+> **Owner:** [CTO] — updated 2026-05-01
 
 ---
 
@@ -12,7 +12,7 @@
 | **Frontend** | Next.js 15 (App Router) + React 19 + TypeScript | Full-stack monorepo, Vercel-native, RSC for fast initial loads |
 | **Styling** | Tailwind CSS + shadcn/ui | Utility-first CSS; shadcn gives accessible, unstyled components we fully own |
 | **Backend** | Next.js API Routes (Vercel Serverless Functions) | No separate server; co-located with frontend; zero deploy config |
-| **AI** | Anthropic SDK (`claude-sonnet-4-6`) + Vercel AI SDK | Claude for extraction + adaptation; Vercel AI SDK for streaming within serverless limits |
+| **AI** | Ollama local models by default (`gemma4:e4b`) + configurable Anthropic fallback | Sprint 1 validates AI behavior without cloud dependency; Anthropic remains an option for later production/cloud validation |
 | **Auth** | Auth.js v5 (NextAuth) + Prisma adapter | De-facto standard for Next.js; credentials provider for email/password; extensible to OAuth later |
 | **ORM** | Prisma | Type-safe queries; handles SQLite ↔ Postgres swap via single env var |
 | **Database** | SQLite (local dev) → Neon serverless Postgres (production) | Zero-setup locally; Neon is Vercel's recommended Postgres partner with a free tier |
@@ -28,25 +28,25 @@
 │   Next.js React — App Router + Server Components  │
 │   Tailwind CSS + shadcn/ui                        │
 └────────────────────┬─────────────────────────────┘
-                     │ HTTP / streaming (SSE)
+                     │ HTTP / JSON response
 ┌────────────────────▼─────────────────────────────┐
 │            Next.js API Routes                     │
 │          (Vercel Serverless Functions)             │
 │                                                   │
 │  ┌──────────────┐   ┌───────────────────────┐    │
-│  │  Auth.js v5  │   │    Vercel AI SDK       │    │
-│  │  (sessions)  │   │  (streaming proxy)     │    │
+│  │  Auth.js v5  │   │  AI extraction layer    │    │
+│  │  (sessions)  │   │ Ollama / Anthropic      │    │
 │  └──────┬───────┘   └──────────┬────────────┘    │
 │         │                      │                  │
 │  ┌──────▼───────┐   ┌──────────▼────────────┐    │
-│  │    Prisma    │   │    Anthropic SDK        │    │
-│  │    (ORM)     │   │   claude-sonnet-4-6     │    │
+│  │    Prisma    │   │  JSON schema output     │    │
+│  │    (ORM)     │   │  + normalization        │    │
 │  └──────┬───────┘   └───────────────────────┘    │
 └─────────┼─────────────────────────────────────────┘
           │                          │ HTTPS
 ┌─────────▼──────────────┐  ┌────────▼─────────────┐
-│  SQLite (local dev)     │  │    Claude API         │
-│  Neon Postgres (prod)   │  │    (Anthropic)        │
+│  SQLite (local dev)     │  │ Ollama local server    │
+│  Neon Postgres (prod)   │  │ Anthropic optional     │
 └────────────────────────┘  └──────────────────────┘
 ```
 
@@ -55,15 +55,15 @@
 ## 3. Key Components
 
 ### Recipe Importer
-- **Purpose:** Fetch a URL's HTML content (or YouTube transcript), send to Claude, receive structured recipe JSON
+- **Purpose:** Fetch a URL's HTML content, send a focused source excerpt to the configured AI provider, receive structured recipe JSON
 - **Location:** `src/app/api/ai/import/route.ts`
-- **Depends on:** Anthropic SDK, Vercel AI SDK (streaming), Prisma (save)
-- **Notes:** Uses `streamText` to stream the Claude response back to the browser. System prompt is cached with Anthropic prompt caching to reduce latency + cost on repeated calls.
+- **Depends on:** Ollama local server by default, optional Anthropic/Vercel AI SDK provider path, Prisma (save)
+- **Notes:** Sprint 1 defaults to `AI_PROVIDER=ollama` and uses Ollama native JSON-schema output through `src/lib/recipe-ai-extractor.ts`. The route trims webpage text to a focused recipe excerpt for local-model latency. JSON-LD structured-data extraction exists in `src/lib/recipe-jsonld.ts` but is disabled unless `ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=true`, so current Sprint 1 validation exercises AI extraction.
 
 ### Equipment Adapter
-- **Purpose:** Take a saved recipe + user's appliance list, send to Claude, stream back rewritten steps
+- **Purpose:** Take a saved recipe + user's appliance list, send to the configured AI provider, return rewritten steps
 - **Location:** `src/app/api/ai/adapt/route.ts`
-- **Depends on:** Anthropic SDK, Vercel AI SDK (streaming), Prisma (read recipe + equipment profile)
+- **Depends on:** Configured AI provider, Prisma (read recipe + equipment profile)
 
 ### Recipe Library
 - **Purpose:** CRUD for user-owned recipes
@@ -144,8 +144,8 @@ SQLite and production Postgres migration-compatible for the MVP.
 | `GET` | `/api/recipes/[id]` | Get single recipe | Required + owner |
 | `PATCH` | `/api/recipes/[id]` | Update recipe title / notes | Required + owner |
 | `DELETE` | `/api/recipes/[id]` | Delete recipe | Required + owner |
-| `POST` | `/api/ai/import` | Extract recipe from URL → streaming JSON | Required |
-| `POST` | `/api/ai/adapt` | Adapt recipe for equipment → streaming steps | Required |
+| `POST` | `/api/ai/import` | Extract recipe from URL → structured recipe JSON | Required |
+| `POST` | `/api/ai/adapt` | Adapt recipe for equipment → rewritten steps | Required |
 | `GET` | `/api/equipment` | Get user's equipment profile | Required |
 | `PUT` | `/api/equipment` | Update user's equipment profile | Required |
 
@@ -189,8 +189,10 @@ CookbookAI/
 │   ├── lib/
 │   │   ├── auth.ts                  # Auth.js config
 │   │   ├── db.ts                    # Prisma client singleton
-│   │   ├── anthropic.ts             # Anthropic client + system prompts
-│   │   └── utils.ts                 # cn(), fraction formatting, unit math
+│   │   ├── anthropic.ts             # AI provider config + system prompts
+│   │   ├── recipe-ai-extractor.ts   # Ollama/Anthropic recipe extraction
+│   │   ├── recipe-jsonld.ts         # Optional structured-data extraction
+│   │   └── recipe-utils.ts          # scaling, conversion, parsing helpers
 │   └── types/
 │       └── recipe.ts                # Ingredient, Recipe, EquipmentProfile types
 ├── prisma/
@@ -213,8 +215,19 @@ CookbookAI/
 ## 7. Environment Variables
 
 ```bash
-# Required
-ANTHROPIC_API_KEY=sk-ant-...
+# AI provider (Sprint 1 local default)
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=gemma4:e4b
+OLLAMA_EXTRACTION_TIMEOUT_MS=120000
+
+# Optional cloud provider
+# ANTHROPIC_API_KEY=sk-ant-...
+
+# Optional non-AI structured-data shortcut; disabled during AI validation
+ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=false
+
+# Required app secret
 AUTH_SECRET=...                      # openssl rand -base64 32
 
 # Database

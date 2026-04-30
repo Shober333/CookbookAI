@@ -33,9 +33,9 @@
 
 | # | Scenario | Steps | Expected | Status |
 |---|----------|-------|----------|--------|
-| I1 | Happy path: import from a recipe webpage | 1. Go to `/import` 2. Paste a known recipe URL 3. Click Import | Streaming preview shows title, ingredients, steps; no errors | `[ ]` |
-| I2 | Save imported recipe | After I1, click "Save to library" | Redirected to recipe detail page; recipe visible in library | `[ ]` |
-| I3 | Import: invalid URL (not a URL) | Submit `not-a-url` | Inline error message; no Claude call made | `[ ]` |
+| I1 | Happy path: import from a recipe webpage | 1. Go to `/import` 2. Paste a known recipe URL 3. Click Import | Progress state completes; detail page shows AI-extracted title, ingredients, and steps; no errors | `[ ]` |
+| I2 | Save imported recipe | Complete I1 | Auto-redirected to recipe detail page; recipe visible in library | `[ ]` |
+| I3 | Import: invalid URL (not a URL) | Submit `not-a-url` | Inline error message; no AI provider call made | `[ ]` |
 | I4 | Import: URL that is not a recipe page | Submit a URL to a news article or homepage | Graceful error or best-effort extraction; no unhandled exception | `[ ]` |
 | I5 | Import: URL fetch fails (unreachable host) | Submit a URL to a non-existent domain | User-facing error "Could not fetch page"; no raw error stack | `[ ]` |
 
@@ -76,7 +76,7 @@ Capture and save to `tests/screenshots/` for each:
 - [ ] `library-empty.png` — empty library state
 - [ ] `library-populated.png` — library with recipe cards
 - [ ] `import-form.png` — import page before submission
-- [ ] `import-preview.png` — recipe preview after Claude extraction
+- [ ] `import-preview.png` — recipe detail or progress state after AI extraction
 - [ ] `recipe-detail.png` — recipe detail page
 - [ ] `recipe-scaled.png` — recipe detail with servings changed
 - [ ] `recipe-unit-toggled.png` — recipe detail with imperial units

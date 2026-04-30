@@ -15,7 +15,7 @@
 |---|---|
 | **Name** | CookbookAI |
 | **Repo name** | `CookbookAI` |
-| **Purpose** | Import recipes from the web; adjust them with Claude AI |
+| **Purpose** | Import recipes from the web; adjust them with AI assistance |
 | **Stage** | Sprint 1 — scaffold and MVP implementation |
 | **Dev port** | 3000 |
 
@@ -66,7 +66,7 @@ Role definitions live in `AGENTS.md`. Short index:
 | `[UI/UX]` | Alice — design language, kit, component specs, page layouts, states. Portfolio-wide role. | Founder addresses Alice directly via Claude Desktop |
 | `[DEV-LEAD]` | Coordinates dev body; writes dev reports | ad-hoc (multi-dev sprints) |
 | `[DEV:frontend]` | Frontend implementation; implements Alice's specs | `/project:dev` |
-| `[DEV:backend]` | Backend: recipe import, storage, Claude API integration | `/project:dev` |
+| `[DEV:backend]` | Backend: recipe import, storage, AI provider integration | `/project:dev` |
 | `[DEV-QA]` | Tests, regressions, screenshots | `/project:qa` |
 | `[FOUNDER]` | Human — final decision maker | always |
 
@@ -89,7 +89,7 @@ CookbookAI/
 ├── CLAUDE.md                # This file
 ├── AGENTS.md                # Role definitions and team
 ├── README.md                # Project README
-├── .env.example             # Env vars template (ANTHROPIC_API_KEY)
+├── .env.example             # Env vars template (Ollama default, Anthropic optional)
 ├── playwright.config.ts     # E2E configuration
 │
 ├── .claude/
@@ -135,10 +135,20 @@ CookbookAI/
 
 ## 6. Environment Variables
 
-Copy `.env.example` → `.env`:
+Copy `.env.example` → `.env`. Sprint 1 uses local Ollama models by
+default; Anthropic remains a configurable provider for later cloud /
+production validation.
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...    # Claude API — required for recipe adjustment
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=gemma4:e4b
+OLLAMA_EXTRACTION_TIMEOUT_MS=120000
+
+# Required only if AI_PROVIDER=anthropic
+# ANTHROPIC_API_KEY=sk-ant-...
+
+ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=false
 ```
 
 ---

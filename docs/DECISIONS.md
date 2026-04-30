@@ -60,16 +60,16 @@ Two routes (Library and Equipment) is too few to justify a hamburger. Minimal to
 **Decided by:** Founder (Alice proposed)
 
 **Context:**
-After Claude finishes extracting a recipe, two flows were considered: require the user to click "Save to library", or save automatically and navigate.
+After AI extraction finishes, two flows were considered: require the user to click "Save to library", or save automatically and navigate.
 
 **Options Considered:**
-1. **Auto-navigate** — save server-side on streaming complete; redirect to `/recipes/[id]` after ~1.5s
-2. Manual save — streaming box shows "Save to library" CTA; user clicks
+1. **Auto-navigate** — save server-side on extraction complete; redirect to `/recipes/[id]` after ~1.5s
+2. Manual save — import progress panel shows "Save to library" CTA; user clicks
 
 **Decision:** Option 1 — Auto-navigate.
 
 **Rationale:**
-The user's intent when pasting a URL is to bring the recipe in. Requiring an extra click after streaming completes adds friction with no benefit — they can always delete from the library if the extraction was wrong. Auto-save + navigate makes the success state feel instant.
+The user's intent when pasting a URL is to bring the recipe in. Requiring an extra click after extraction completes adds friction with no benefit — they can always delete from the library if the extraction was wrong. Auto-save + navigate makes the success state feel instant.
 
 ---
 
@@ -80,10 +80,10 @@ The user's intent when pasting a URL is to bring the recipe in. Requiring an ext
 **Decided by:** Founder (options presented by [CTO])
 
 **Context:**
-CookbookAI requires a browser-based UI, multi-user auth, persistent data storage, Claude API integration with streaming responses, and deployment to Vercel. The stack choice shapes every downstream technical decision and is not easily reversed.
+CookbookAI requires a browser-based UI, multi-user auth, persistent data storage, AI provider integration, and eventual deployment to Vercel. The stack choice shapes every downstream technical decision and is not easily reversed.
 
 **Options Considered:**
-1. **Next.js 15 full-stack (monorepo)** — Next.js API Routes as serverless backend, Vercel AI SDK for streaming, Prisma + SQLite/Neon for data, Auth.js for auth. Single repo, single language, Vercel-native.
+1. **Next.js 15 full-stack (monorepo)** — Next.js API Routes as backend, Vercel AI SDK/provider adapters where useful, Prisma + SQLite/Neon for data, Auth.js for auth. Single repo, single language, Vercel-native.
 2. **Vite React + Node/Express (two services)** — React frontend on Vercel, Express backend on Railway/Render. No serverless timeout pressure, but two deployments; Railway/Render free tiers spin down after inactivity.
 3. **SvelteKit full-stack** — Same deployment story as Option 1 but lighter framework; smaller ecosystem and fewer AI tooling examples.
 
@@ -91,29 +91,76 @@ CookbookAI requires a browser-based UI, multi-user auth, persistent data storage
 Option 1 — Next.js 15 full-stack monorepo.
 
 **Rationale:**
-- Vercel built Next.js: zero-config deployment, first-class support, streaming edge functions
-- Vercel AI SDK solves the 10s serverless timeout problem for Claude calls via streaming
+- Vercel built Next.js: zero-config deployment, first-class support, long-running API and edge deployment paths
+- Vercel AI SDK/provider adapters keep cloud AI integration available while Sprint 1 validates locally with Ollama
 - Prisma lets us run SQLite locally (zero cloud setup) and swap to Neon Postgres for production with a single env var change
 - Single TypeScript codebase reduces coordination overhead for a vibe-coded project
 - shadcn/ui is the dominant React component library for this stack — accessible, fully owned, no runtime dependency
 
 **Tradeoffs accepted:**
 - Serverless cold starts on first request after inactivity (minor, acceptable for Hobby tier)
-- All AI responses must stream; non-streaming Claude calls risk hitting the 10s function limit
+- Cloud AI responses may need streaming or background handling; Sprint 1 local Ollama validation accepts longer blocking calls because it is not a production deployment path
+
+---
+
+## Decision: Ollama-First AI Provider for Sprint 1 Local Validation
+
+**Date:** 2026-05-01
+**Status:** Accepted
+**Decided by:** Founder
+
+**Context:**
+Sprint 1 needs real recipe extraction behavior without requiring paid cloud
+AI calls during local iteration. The first implementation targeted Claude
+streaming, but the Founder chose local Ollama models for the current
+validation loop.
+
+**Options Considered:**
+1. Claude-only extraction — strongest structured-output behavior, but
+   requires paid cloud calls for every local test.
+2. Ollama-only extraction — local and free, but slower and less reliable
+   at structured extraction.
+3. **Configurable provider, Ollama default** — validate locally with
+   Ollama while preserving the Anthropic path for later production tests.
+
+**Decision:**
+Option 3. Sprint 1 defaults to `AI_PROVIDER=ollama` with
+`OLLAMA_MODEL=gemma4:e4b`. Anthropic remains supported behind
+`AI_PROVIDER=anthropic`, but it is not the current validation path.
+
+**Rationale:**
+- Local development should work without cloud credentials or per-call cost.
+- Ollama exposes native JSON-schema output; this is more reliable than
+  asking a local model for freeform JSON text.
+- The decision is reversible: provider selection is environment-driven.
+
+**Consequences:**
+- `/api/ai/import` no longer treats Claude streaming as the Sprint 1
+  acceptance target. It returns structured JSON after extraction.
+- Local imports may take close to the configured
+  `OLLAMA_EXTRACTION_TIMEOUT_MS` of 120 seconds.
+- Extraction quality needs QA against several real URLs because local
+  models still misplace quantities, units, or notes.
+- `src/lib/recipe-jsonld.ts` exists as an optional structured-data
+  shortcut, but it is disabled by default during AI validation via
+  `ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=false`.
 
 ---
 
 ## Decision: Claude Model Selection
 
 **Date:** 2026-04-29
-**Status:** Accepted
+**Status:** Superseded for Sprint 1 local validation; retained as a configurable cloud option
 **Decided by:** [CTO]
 
 **Context:**
 Recipe extraction from HTML/video transcripts and equipment adaptation require instruction-following quality and structured JSON output. Speed and cost matter since each import triggers a Claude call.
 
 **Decision:**
-`claude-sonnet-4-6` for all AI features.
+Originally `claude-sonnet-4-6` for all AI features. As of
+2026-05-01, Sprint 1 defaults to Ollama for local validation. Claude is
+still available via `AI_PROVIDER=anthropic` for later production/cloud
+evaluation.
 
 **Rationale:**
 - Best balance of quality and speed in the current Claude 4.x family

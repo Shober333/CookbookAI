@@ -23,7 +23,8 @@ The key insight: **structure beats talent**. A well-organized prompt system with
 
 ### Prerequisites
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed
-- An Anthropic API key (`ANTHROPIC_API_KEY`)
+- [Ollama](https://ollama.com/) installed for Sprint 1 local AI extraction
+- Optional: an Anthropic API key (`ANTHROPIC_API_KEY`) if `AI_PROVIDER=anthropic`
 - Git + Node.js (for Playwright E2E tests)
 
 ### Setup
@@ -38,7 +39,9 @@ git init
 
 # 3. Set up your environment
 cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+# Sprint 1 defaults to local Ollama:
+#   ollama serve
+#   ollama pull gemma4:e4b
 
 # 4. Fill in your project details
 # Open CLAUDE.md and replace all {{PLACEHOLDERS}} with your project info
@@ -291,43 +294,26 @@ If you're working as a team:
 
 ---
 
-## Claude API Integration
+## AI Provider Integration
 
-To use Claude AI in your app:
+Sprint 1 uses local Ollama models by default:
 
 ```bash
-# Install the SDK (choose your stack)
-npm install @anthropic-ai/sdk    # Node.js
-pip install anthropic             # Python
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=gemma4:e4b
+OLLAMA_EXTRACTION_TIMEOUT_MS=120000
 ```
 
-```python
-# Python example
-import anthropic
+Start Ollama locally:
 
-client = anthropic.Anthropic()  # uses ANTHROPIC_API_KEY from .env
-
-message = client.messages.create(
-    model="claude-sonnet-4-20250514",
-    max_tokens=1024,
-    messages=[{"role": "user", "content": "Hello, Claude!"}]
-)
-print(message.content[0].text)
+```bash
+ollama serve
+ollama pull gemma4:e4b
 ```
 
-```javascript
-// Node.js example
-import Anthropic from "@anthropic-ai/sdk";
-
-const client = new Anthropic(); // uses ANTHROPIC_API_KEY from .env
-
-const message = await client.messages.create({
-  model: "claude-sonnet-4-20250514",
-  max_tokens: 1024,
-  messages: [{ role: "user", content: "Hello, Claude!" }],
-});
-console.log(message.content[0].text);
-```
+Anthropic remains available for later cloud/provider validation by
+setting `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`.
 
 ---
 

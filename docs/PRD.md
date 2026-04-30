@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 
-> **Status:** Draft — Sprint 0
-> **Owner:** [CTO] — updated 2026-04-29
+> **Status:** Draft — Sprint 1
+> **Owner:** [CTO] — updated 2026-05-01
 
 ---
 
@@ -37,10 +37,9 @@
 > As a home cook, I want to paste a URL (or YouTube link) and have the recipe extracted automatically, so that I don't have to copy it by hand.
 
 **Acceptance Criteria:**
-- [ ] User pastes a URL; the app fetches the page content and sends it to Claude
-- [ ] Claude returns a structured recipe: title, description, servings, ingredients (with amounts + units), steps
-- [ ] Extracted recipe is displayed for review before saving
-- [ ] User can save the recipe to their library
+- [ ] User pastes a URL; the app fetches the page content and sends it to the configured AI provider
+- [ ] AI returns a structured recipe: title, description, servings, ingredients (with amounts + units), steps
+- [ ] Extracted recipe is saved and the user is taken to the recipe detail page
 - [ ] Unsupported or unparseable URLs show a clear error message
 
 ### Story 2: Recipe Library
@@ -66,8 +65,8 @@
 
 **Acceptance Criteria:**
 - [ ] User can specify available appliances (air fryer, microwave, slow cooker, oven, stovetop, grill, etc.)
-- [ ] Clicking "Adapt for my kitchen" sends the recipe + equipment profile to Claude
-- [ ] Claude returns a rewritten steps section; original steps are preserved for comparison
+- [ ] Clicking "Adapt for my kitchen" sends the recipe + equipment profile to the configured AI provider
+- [ ] AI returns a rewritten steps section; original steps are preserved for comparison
 - [ ] User can save the adapted version or discard it
 
 ### Story 5: User Account
@@ -96,7 +95,8 @@
 
 ## 5. Success Criteria
 
-- [ ] A user can register, import a recipe from a real URL, and see a structured result in under 30 seconds
+- [ ] A user can register, import a recipe from a real URL, and see a structured result
+- [ ] Sprint 1 local Ollama imports complete within the configured 120s timeout; later production target is under 30 seconds
 - [ ] Serving scaler correctly rescales all numeric ingredient quantities
 - [ ] Equipment adaptation produces a coherent, usable rewrite of the cooking steps
 - [ ] All user data is isolated per account (no cross-user data leakage)
@@ -106,9 +106,10 @@
 
 ## 6. Technical Constraints
 
-- **Must use:** Claude API (Anthropic) for recipe extraction and adaptation
+- **Must support:** local Ollama models for Sprint 1 recipe extraction and adaptation validation
+- **Should keep configurable:** Anthropic/Claude provider support for later cloud and production validation
 - **Must run in:** browser (web app)
 - **Must support:** multi-user with authentication and persistent data storage
 - **Must deploy to:** Vercel (free / Hobby tier — hundreds of users at scale target)
-- **Must not use:** paid third-party services beyond Claude API
+- **Must not use:** paid third-party services for the Sprint 1 local validation path
 - **Should support:** local development without cloud dependencies
