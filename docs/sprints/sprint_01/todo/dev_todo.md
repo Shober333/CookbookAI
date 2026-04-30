@@ -61,11 +61,11 @@
 |---|------|-------|--------|---------------------|
 | 3.1 | Write Claude system prompt for recipe extraction; structured JSON output matching the Recipe type; apply prompt caching (`cache_control`) | backend | `[x]` | Prompt in `src/lib/anthropic.ts`; sends `cache_control: { type: "ephemeral" }` on the system message |
 | 3.2 | `/api/ai/import` route — fetch URL content server-side, send to Claude via `streamText`, stream structured recipe JSON back | backend | `[~]` | POST with a valid recipe URL returns a streaming response; final JSON contains `title`, `servings`, `ingredients[]`, `steps[]`; uses `streamText` (not blocking call) — **route implemented; live streaming test with real key still needed** |
-| 3.3 | `ImportForm` component per COMPONENT_SPECS.md §5 — URL input, "Bring it in" button, streaming box with pulse dot and status rotation copy | frontend | `[ ]` | Streaming box appears on submit; status text rotates ("Reading the page…" → "Finding the recipe…" → "Done"); lines fade in per `--motion-fade-slow`; reduced-motion shows all at once |
-| 3.4 | Import page (`/import`) per PAGE_LAYOUTS.md §4 — eyebrow "Add a new one", headline "Bring a recipe home."; `ImportForm` mounted | frontend | `[ ]` | Page renders at 375px and 1280px per layout spec; ImportForm wired to API route |
+| 3.3 | `ImportForm` component per COMPONENT_SPECS.md §5 — URL input, "Bring it in" button, streaming box with pulse dot and status rotation copy | frontend | `[x]` | Streaming box appears on submit; status text rotates ("Reading the page…" → "Finding the recipe…" → "Done"); lines fade in per `--motion-fade-slow`; reduced-motion shows all at once |
+| 3.4 | Import page (`/import`) per PAGE_LAYOUTS.md §4 — eyebrow "Add a new one", headline "Bring a recipe home."; `ImportForm` mounted | frontend | `[x]` | Page renders at 375px and 1280px per layout spec; ImportForm wired to API route |
 | 3.5 | `/api/recipes` POST endpoint — validate payload, insert Recipe row | backend | `[x]` | Returns `201` with saved recipe; rejects unauthenticated requests with `401` |
-| 3.6 | **Auto-navigate on import success** — save recipe server-side on streaming complete; redirect to `/recipes/[id]`; no manual "Save" button | frontend | `[ ]` | Recipe saved to DB; user auto-redirects to `/recipes/[id]` ~1.5s after streaming completes; no extra click required |
-| 3.7 | Error handling: invalid URL, fetch failure, Claude parse failure | backend + frontend | `[ ]` | Each failure case shows correct copy from REGISTER.md §7; no raw error stack exposed |
+| 3.6 | **Auto-navigate on import success** — save recipe server-side on streaming complete; redirect to `/recipes/[id]`; no manual "Save" button | frontend | `[x]` | Recipe saved to DB; user auto-redirects to `/recipes/[id]` ~1.5s after streaming completes; no extra click required |
+| 3.7 | Error handling: invalid URL, fetch failure, Claude parse failure | backend + frontend | `[x]` | Each failure case shows correct copy from REGISTER.md §7; no raw error stack exposed |
 
 ---
 
