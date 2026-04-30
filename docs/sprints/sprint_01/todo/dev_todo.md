@@ -25,10 +25,10 @@
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|-------|--------|---------------------|
 | 1.1 | Initialize Next.js 15 project with TypeScript, Tailwind CSS, App Router | backend | `[x]` | `npm run dev` starts at `localhost:3000` with no errors |
-| 1.2 | Install shadcn/ui with Neutral style; do NOT accept defaults — override to UI kit tokens in next tasks | frontend | `[ ]` | shadcn init completes; `Button`, `Input` components present in `src/components/ui/` |
-| 1.3 | Configure `tailwind.config.ts` with all custom tokens from `docs/ui/UI_KIT.md` (colors, font families, font sizes, spacing, radius) | frontend | `[ ]` | `bg-paper`, `text-ink`, `font-display`, `text-display-lg`, `text-eyebrow` etc. all resolve via Tailwind classes |
-| 1.4 | Add CSS variables and reduced-motion rule to `src/app/globals.css` per `docs/ui/UI_KIT.md` §12 | frontend | `[ ]` | `:root` has all `--color-*`, `--measure-*` vars; `@media (prefers-reduced-motion: reduce)` block present; `*:focus-visible` uses terracotta ring |
-| 1.5 | Configure Fraunces, Inter, Caveat fonts in `src/app/layout.tsx` per `docs/ui/UI_KIT.md` §2; apply font variables to `<html>` tag | frontend | `[ ]` | Page renders in Fraunces body text on `localhost:3000`; all three font variables present on `<html>` |
+| 1.2 | Install shadcn/ui with Neutral style; do NOT accept defaults — override to UI kit tokens in next tasks | frontend | `[x]` | shadcn init completes; `Button`, `Input` components present in `src/components/ui/` |
+| 1.3 | Configure `tailwind.config.ts` with all custom tokens from `docs/ui/UI_KIT.md` (colors, font families, font sizes, spacing, radius) | frontend | `[x]` | `bg-paper`, `text-ink`, `font-display`, `text-display-lg`, `text-eyebrow` etc. all resolve via Tailwind classes |
+| 1.4 | Add CSS variables and reduced-motion rule to `src/app/globals.css` per `docs/ui/UI_KIT.md` §12 | frontend | `[x]` | `:root` has all `--color-*`, `--measure-*` vars; `@media (prefers-reduced-motion: reduce)` block present; `*:focus-visible` uses terracotta ring |
+| 1.5 | Configure Fraunces, Inter, Caveat fonts in `src/app/layout.tsx` per `docs/ui/UI_KIT.md` §2; apply font variables to `<html>` tag | frontend | `[x]` | Page renders in Fraunces body text on `localhost:3000`; all three font variables present on `<html>` |
 | 1.6 | Set up Prisma with SQLite; define schema (User, Recipe, EquipmentProfile, Auth.js tables) | backend | `[!]` | `npx prisma migrate dev` runs without errors; `dev.db` created — **BLOCKED: schema-engine error on local migrate** |
 | 1.7 | Install and configure Auth.js v5 with Prisma adapter and credentials provider | backend | `[x]` | Auth.js handler at `/api/auth/[...nextauth]` returns 200 |
 | 1.8 | Install Anthropic SDK and Vercel AI SDK; create `src/lib/anthropic.ts` with client singleton | backend | `[x]` | File exports `anthropic` client; `ANTHROPIC_API_KEY` documented in `.env.example` |
