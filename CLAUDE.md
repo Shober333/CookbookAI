@@ -96,6 +96,10 @@ CookbookAI/
 │   ├── agents/cto.md        # Claude Code CTO subagent
 │   ├── commands/            # Slash commands
 │   └── settings.local.json  # Tool permissions
+├── .codex/
+│   ├── README.md            # Codex entrypoint and read order
+│   ├── roles/               # Codex role prompts mapped to .claude/agents
+│   └── prompts/             # Codex workflow prompts mapped to .claude/commands
 │
 ├── frontend/
 │   ├── AGENTS.md            # Frontend domain rules
@@ -108,10 +112,12 @@ CookbookAI/
 │       └── _example/        # Reference module
 │
 ├── tests/
+│   ├── AGENTS.md            # Test domain rules
 │   ├── e2e/                 # Playwright E2E tests
 │   └── screenshots/         # Captured by E2E
 │
 └── docs/
+    ├── AGENTS.md            # Docs domain rules
     ├── PRD.md               # Product requirements (CTO-owned)
     ├── ARCHITECTURE.md      # Technical design (CTO-owned)
     ├── DECISIONS.md         # Decision log (CTO-owned)
@@ -147,6 +153,10 @@ ANTHROPIC_API_KEY=sk-ant-...    # Claude API — required for recipe adjustment
 | `/project:plan` | Force planning before complex work |
 | `/project:test` | Run test suite |
 | `/project:e2e` | Run Playwright E2E tests |
+
+Codex equivalents live in `.codex/prompts/`, with role-specific
+instructions in `.codex/roles/`. Those files mirror the corresponding
+Claude command and agent files while deferring to `AGENTS.md`.
 
 UI/UX is not a slash command — Alice operates portfolio-wide through
 Claude Desktop, not as a project-level Claude Code subagent.
