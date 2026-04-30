@@ -106,6 +106,11 @@ my-project/
 │       ├── test.md            # /project:test — run tests
 │       └── e2e.md             # /project:e2e — Playwright browser tests
 │
+├── .codex/
+│   ├── README.md              # Codex entrypoint and read order
+│   ├── roles/                 # Codex role prompts mapped to .claude/agents
+│   └── prompts/               # Codex workflow prompts mapped to .claude/commands
+│
 ├── backend/
 │   ├── AGENTS.md              # Backend domain rules
 │   └── modules/
@@ -128,11 +133,13 @@ my-project/
 │               └── integration/
 │
 ├── tests/
+│   ├── AGENTS.md              # Test domain rules
 │   ├── e2e/                   # Playwright E2E tests
 │   │   └── example.spec.ts    # Starter test file
 │   └── screenshots/           # GUI screenshots from tests
 │
 └── docs/
+    ├── AGENTS.md              # Documentation domain rules
     ├── PRD.md                 # Product requirements (FILL THIS IN)
     ├── ARCHITECTURE.md        # Technical architecture
     ├── DECISIONS.md           # Decision log
