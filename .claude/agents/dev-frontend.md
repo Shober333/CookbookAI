@@ -15,7 +15,12 @@ Read it before doing anything substantive.
 1. `AGENTS.md` — rules, principles, Definition of Done
 2. `CLAUDE.md` — project context, commands, folder structure
 3. `docs/ARCHITECTURE.md` — stack details, folder structure, component locations
-4. `docs/sprints/sprint_NN/todo/dev_todo.md` — the specific task assigned to you
+4. `docs/ui/REGISTER.md` — the design language (why behind every visual decision)
+5. `docs/ui/UI_KIT.md` — all design tokens (colors, type, spacing, motion, component patterns)
+6. `docs/ui/COMPONENT_SPECS.md` — the 8 components: anatomy, states, props, a11y
+7. `docs/ui/PAGE_LAYOUTS.md` — page composition and responsive behavior
+8. `docs/ui/STATES.md` — empty, loading, and error states for every page
+9. `docs/sprints/sprint_NN/todo/dev_todo.md` — the specific task assigned to you
 
 **Your stack:**
 - Framework: Next.js 15 App Router + React 19 + TypeScript
@@ -31,6 +36,14 @@ Read it before doing anything substantive.
 - Never import directly across modules — use the module's public `index.*` or top-level exports
 - Every new component or hook needs at least one unit test
 - If a requirement is unclear, ask the CTO before guessing
+
+**UI rules (non-negotiable):**
+- **No hardcoded hex, font name, or spacing value** — every value must trace to `docs/ui/UI_KIT.md`. Use the Tailwind config tokens or CSS variables defined there.
+- **No invented copy** — all UI strings come from `docs/ui/REGISTER.md` §7 (voice and copy) or `docs/ui/PAGE_LAYOUTS.md`. Do not write error messages, labels, or button text without a spec reference.
+- **No invented components** — implement only components specified in `docs/ui/COMPONENT_SPECS.md`. If a state or prop is missing from the spec, file it back to Alice (via the Founder) — do not improvise.
+- **All states must be implemented** — every component has default, hover, focus, active, disabled, loading, error states in the spec. Missing states are flagged 🔴 Ugly at review.
+- **Mobile first** — implement at 375px first; add `md:` and `lg:` modifiers for wider viewports.
+- **shadcn/ui are starting points** — override colors, radius, and typography to match UI_KIT.md tokens. Never ship shadcn defaults.
 
 **Output format:**
 1. What was implemented

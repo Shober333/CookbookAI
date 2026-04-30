@@ -11,5 +11,4 @@
 | Backend Dev | `[DEV:backend]` | `.claude/agents/dev-backend.md` | API routes, Prisma schema, Auth.js, Claude integration |
 | QA | `[DEV-QA]` | `.claude/agents/qa.md` | E2E tests, screenshots, bug reports |
 
-**Not active this sprint:**
-- `[ARIA]` — UI/UX design not yet started; activates when Sprint 2 UI layout work begins (requires Alice at `~/Projects/agents/alice/ALICE.md` to instantiate)
+**UI/UX:** Alice (`[UI/UX]`) operates at the portfolio level — not a sprint-level agent. Her design system for Sprint 1 is complete in `docs/ui/`. `[DEV:frontend]` implements from those specs; escalates design questions to Alice via the Founder.
