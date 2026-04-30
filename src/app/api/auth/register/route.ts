@@ -1,44 +1,63 @@
-import { NextRequest, NextResponse } from "next/server";
+import { hash } from "bcryptjs";
+import { NextResponse } from "next/server";
 import { z } from "zod";
-import bcryptjs from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { jsonError } from "@/lib/route-helpers";
 
-const schema = z.object({
-  name: z.string().optional(),
-  email: z.string().email(),
-  password: z.string().min(8),
+const registerSchema = z.object({
+  name: z.string().trim().max(120).optional(),
+  email: z.string().email().transform((value) => value.toLowerCase()),
+  password: z.string().min(8).max(128),
 });
 
-export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => null);
-  if (!body) {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+export async function POST(request: Request) {
+  let body: unknown;
+
+  try {
+    body = await request.json();
+  } catch {
+    return jsonError("Request body must be valid JSON.", 400);
   }
 
-  const parsed = schema.safeParse(body);
+  const parsed = registerSchema.safeParse(body);
+
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  }
-
-  const { name, email, password } = parsed.data;
-  const normalizedEmail = email.toLowerCase();
-
-  const existing = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
-  });
-  if (existing) {
     return NextResponse.json(
-      { error: "An account with this email already exists." },
-      { status: 409 }
+      { error: "Invalid registration payload.", details: parsed.error.flatten() },
+      { status: 400 },
     );
   }
 
-  const passwordHash = await bcryptjs.hash(password, 12);
-
-  const user = await prisma.user.create({
-    data: { email: normalizedEmail, name: name || null, passwordHash },
-    select: { id: true, email: true, name: true },
+  const existingUser = await prisma.user.findUnique({
+    where: { email: parsed.data.email },
+    select: { id: true },
   });
 
-  return NextResponse.json(user, { status: 201 });
+  if (existingUser) {
+    return jsonError("An account with this email already exists.", 409);
+  }
+
+  const user = await prisma.user.create({
+    data: {
+      name: parsed.data.name || null,
+      email: parsed.data.email,
+      passwordHash: await hash(parsed.data.password, 10),
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      createdAt: true,
+    },
+  });
+
+  return NextResponse.json(
+    {
+      user: {
+        ...user,
+        createdAt: user.createdAt.toISOString(),
+      },
+    },
+    { status: 201 },
+  );
 }

@@ -23,12 +23,11 @@
 
 ## 2. Key Commands
 
-> Stack not yet decided. CTO fills these in after Sprint 0 architecture decision.
-
 ```bash
 npm run dev        # Start dev server at localhost:3000
 npm run build      # Production build
 npm run typecheck  # TypeScript check
+npm run db:migrate # Create local SQLite file if needed; apply Prisma migrations
 
 # E2E Testing (Playwright — stack-independent)
 npx playwright test              # Run all E2E tests
