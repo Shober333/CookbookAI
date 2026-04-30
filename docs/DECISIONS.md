@@ -5,6 +5,74 @@
 
 ---
 
+## Decision: Design Language — Warm Domestic with Editorial Discipline
+
+**Date:** 2026-04-30
+**Status:** Accepted
+**Decided by:** Founder (Alice proposed; approved 2026-04-29)
+
+**Context:**
+CookbookAI sits at the intersection of an AI product (typically cold and tool-shaped) and a food product (typically decorative and twee). A design register needed to be locked before Sprint 1 UI implementation begins so that all visual decisions have a single authoritative source.
+
+**Options Considered:**
+1. Modern utility (Notion-for-recipes) — rejected: reads like a database, not food
+2. Editorial pure (NYT Cooking) — rejected: trustworthy but undifferentiated
+3. Warm domestic pure (paper + handwriting everywhere) — rejected: charming at 24 recipes, decorative noise at 200
+4. Playful AI-native (dark mode, AI is hero) — rejected: foregrounds the tool, not the food
+5. **Warm Domestic with editorial discipline** — chosen: kitchen warmth restrained by typographic discipline
+
+**Decision:**
+Option 5. Three typefaces (Fraunces / Inter / Caveat), five base colors plus terracotta as the sole AI accent, mobile-first, no gradients or drop shadows.
+
+**Rationale:**
+The hybrid earns differentiation through scarcity — warm moments (handwritten notes, Caveat) are budgeted per-screen, making them meaningful rather than decorative noise. Terracotta as a consistent AI signal teaches users "warm orange = AI did this" without explicit labeling.
+
+**Consequences:**
+All color, type, spacing, and copy decisions must trace to `docs/ui/UI_KIT.md` and `docs/ui/REGISTER.md`. The full design system is in `docs/ui/` (5 files, all locked). Devs may not invent tokens or copy.
+
+---
+
+## Decision: Topbar Mobile Collapse Strategy
+
+**Date:** 2026-04-30
+**Status:** Accepted
+**Decided by:** Founder (Alice proposed)
+
+**Context:**
+The Topbar has brand, nav links, search, and Import button. On mobile (< 768px) the full bar doesn't fit. Three collapse strategies were considered.
+
+**Options Considered:**
+1. Hamburger — collapse nav into a menu, show search icon
+2. Two-row — brand + import on row 1; search full-width on row 2
+3. **Minimal** — brand left, Import button right; no nav links on mobile; Equipment reachable from library page header
+
+**Decision:** Option 3 — Minimal.
+
+**Rationale:**
+Two routes (Library and Equipment) is too few to justify a hamburger. Minimal topbar preserves screen real estate for the recipe content — which is what users came for. Equipment is reachable from the library header on mobile.
+
+---
+
+## Decision: Post-Import Flow
+
+**Date:** 2026-04-30
+**Status:** Accepted
+**Decided by:** Founder (Alice proposed)
+
+**Context:**
+After Claude finishes extracting a recipe, two flows were considered: require the user to click "Save to library", or save automatically and navigate.
+
+**Options Considered:**
+1. **Auto-navigate** — save server-side on streaming complete; redirect to `/recipes/[id]` after ~1.5s
+2. Manual save — streaming box shows "Save to library" CTA; user clicks
+
+**Decision:** Option 1 — Auto-navigate.
+
+**Rationale:**
+The user's intent when pasting a URL is to bring the recipe in. Requiring an extra click after streaming completes adds friction with no benefit — they can always delete from the library if the extraction was wrong. Auto-save + navigate makes the success state feel instant.
+
+---
+
 ## Decision: Full-Stack Framework + Deployment Target
 
 **Date:** 2026-04-29
