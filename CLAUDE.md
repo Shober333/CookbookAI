@@ -46,8 +46,12 @@ A feature is "done" only when:
 2. **Unit tests pass** — test suite green; new logic has tests
 3. **E2E passes** — Playwright green when UI changed
 4. **No regressions** — existing features still work
-5. **Reviewed** — CTO Good/Bad/Ugly review completed (see `AGENTS.md`)
+5. **Reviewed** — CTO Good/Bad/Ugly review completed (see `AGENTS.md`).
+   For UI changes: Alice's design review is a second gate.
 6. **Screenshots** — captured for any GUI change (`tests/screenshots/`)
+7. **UI compliance** (for UI changes) — tokens used, no hardcoded
+   values, all states (empty/loading/error) implemented, mobile (375px)
+   verified, `prefers-reduced-motion` respected, 44×44px tap targets
 
 **"It compiles" is not done.** Behavior must be verified.
 
@@ -60,19 +64,22 @@ Role definitions live in `AGENTS.md`. Short index:
 | Tag | Role | Activate |
 |---|---|---|
 | `[CTO]` | Architecture, planning, reviews; owns PRD/ARCHITECTURE/DECISIONS | `/project:cto` or Claude Code subagent `cto` |
+| `[UI/UX]` | Alice — design language, kit, component specs, page layouts, states. Portfolio-wide role. | Founder addresses Alice directly via Claude Desktop |
 | `[DEV-LEAD]` | Coordinates dev body; writes dev reports | ad-hoc (multi-dev sprints) |
-| `[DEV:frontend]` | Frontend implementation | `/project:dev` |
+| `[DEV:frontend]` | Frontend implementation; implements Alice's specs | `/project:dev` |
 | `[DEV:backend]` | Backend: recipe import, storage, Claude API integration | `/project:dev` |
 | `[DEV-QA]` | Tests, regressions, screenshots | `/project:qa` |
-| `[ARIA]` | UI/UX — created by Alice (Meta-UI/UX) when needed | not yet instantiated |
 | `[FOUNDER]` | Human — final decision maker | always |
 
 **Governance:** `[CTO]` reviewable by Meta-CTO at
-`~/Projects/agents/claude/CLAUDE.md`. `[ARIA]` reviewable by Alice at
-`~/Projects/agents/alice/ALICE.md`.
+`~/Projects/agents/claude/CLAUDE.md`. UI/UX is owned directly by
+Alice (`~/Projects/agents/alice/ALICE.md`) — no project-level UI/UX
+sub-agent.
 
 **Reading order in a turn:** domain `AGENTS.md` (e.g.
 `frontend/AGENTS.md`) → root `AGENTS.md` → this file → `docs/PRD.md`.
+For UI tasks, additionally read `docs/ui/REGISTER.md`, `UI_KIT.md`,
+`COMPONENT_SPECS.md`, `PAGE_LAYOUTS.md`, `STATES.md`.
 
 ---
 
@@ -110,7 +117,12 @@ CookbookAI/
     ├── ARCHITECTURE.md      # Technical design (CTO-owned)
     ├── DECISIONS.md         # Decision log (CTO-owned)
     ├── knowledge/           # Domain research and references
-    ├── ui/UI_KIT.md         # Design tokens (Aria / Alice-owned)
+    ├── ui/                  # Design system (Alice-owned)
+    │   ├── REGISTER.md      # Design language: the why
+    │   ├── UI_KIT.md        # Tokens: colors, type, spacing, motion
+    │   ├── COMPONENT_SPECS.md  # The 8 components
+    │   ├── PAGE_LAYOUTS.md  # Page composition + responsive
+    │   └── STATES.md        # Empty / loading / error states
     └── sprints/sprint_01/   # Sprint artifacts
 ```
 
@@ -137,6 +149,9 @@ ANTHROPIC_API_KEY=sk-ant-...    # Claude API — required for recipe adjustment
 | `/project:test` | Run test suite |
 | `/project:e2e` | Run Playwright E2E tests |
 
+UI/UX is not a slash command — Alice operates portfolio-wide through
+Claude Desktop, not as a project-level Claude Code subagent.
+
 ---
 
 ## 8. Testing Strategy
@@ -158,4 +173,7 @@ ANTHROPIC_API_KEY=sk-ant-...    # Claude API — required for recipe adjustment
 - Don't skip tests for new logic
 - Don't hardcode secrets or credentials
 - Don't import across modules — use the module's public `index.*` exports
+- Don't hardcode hex colors, fonts, or spacing in TSX — every value
+  traces to `docs/ui/UI_KIT.md`
+- Don't invent UI copy, error messages, or design tokens — ask Alice
 - Don't change external API integrations without an irreversibility-flag escalation
