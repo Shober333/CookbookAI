@@ -96,7 +96,7 @@
 |---|------|-------|--------|---------------------|
 | 5.1 | `src/lib/utils.ts` — `scaleAmount(original, baseline, target)` and `convertUnit(amount, unit, system)` pure functions with rounding rules per COMPONENT_SPECS.md §§3–4 | backend | `[x]` | Unit tests cover: scale up, scale down, "to taste" passthrough, g→oz, ml→fl oz, tsp unchanged, rounding rules |
 | 5.2 | `ServingScaler` component per COMPONENT_SPECS.md §3 — stepper with −/+, ↑/↓ keyboard, disabled at min/max, `aria-live` on center value | frontend | `[x]` | Live rescales all ingredient amounts; original values not mutated; tabular numerals; all keyboard interactions work; aria-live announces changes |
-| 5.3 | `UnitToggle` component per COMPONENT_SPECS.md §4 — metric|imperial inline buttons, active underlined in terracotta, `aria-pressed` | frontend | `[x]` | Toggling converts all amounts using `convertUnit`; back-toggle returns to original; `aria-pressed` correct |
+| 5.3 | `UnitToggle` component per COMPONENT_SPECS.md §4 — metric\|imperial inline buttons, active underlined in terracotta, `aria-pressed` | frontend | `[x]` | Toggling converts all amounts using `convertUnit`; back-toggle returns to original; `aria-pressed` correct |
 | 5.4 | Wire `ServingScaler` and `UnitToggle` into recipe detail controls bar per PAGE_LAYOUTS.md §3 — mobile wraps to two rows | frontend | `[x]` | Both controls visible and functional; controls bar wraps correctly on mobile; state resets on page refresh |
 
 ---
