@@ -107,42 +107,102 @@ timeout (not `AbortSignal.timeout()`). Timeout: `OLLAMA_EXTRACTION_TIMEOUT_MS`
 
 ---
 
-### Task B5 — Unit conversion bug fix `[DEV:backend]` · Small
+### Task B5 — Unit conversion overhaul `[DEV:backend]` · Medium
 
-**What:** Canonicalize long-form metric units at extraction time so imperial
-conversion works for all ingredient variants.
+Two separate bugs plus a new feature, all in `src/lib/recipe-utils.ts` and
+`src/lib/recipe-ai-extractor.ts`.
 
-**Bug:** `RECOGNIZED_UNITS` includes `"gram"` and `"grams"`, so they pass
-normalization untouched and get stored as `gram`/`grams`. But `convertUnit`
-in `recipe-utils.ts` only switches on `"g"` — so toggling to imperial silently
-does nothing for those ingredients.
+---
 
-**Fix:** In `src/lib/recipe-ai-extractor.ts`, update `normalizeUnit()` to
-canonicalize long-form units to their short-form canonical equivalents before
-the ingredient is stored:
+#### Bug 1 — Long-form units not converting (original bug)
+
+`RECOGNIZED_UNITS` includes `"gram"`, `"grams"`, `"pound"`, `"pounds"`, etc.
+These pass normalization untouched and get stored in the DB in long form.
+`convertUnit` only switches on short forms (`"g"`, `"kg"`, `"ml"`, `"l"`) —
+so toggling has no effect.
+
+**Fix — normalize at extraction time** in `normalizeUnit()` in
+`src/lib/recipe-ai-extractor.ts`:
 
 ```
-gram / grams   → g
-kilogram / kilograms → kg  (already only "kg" in set, but defensive)
+gram / grams                                        → g
+kilogram / kilograms                                → kg
 milliliter / millilitre / milliliters / millilitres → ml
-liter / litre / liters / litres → l
-tablespoon / tablespoons → tbsp
-teaspoon / teaspoons → tsp
-ounce / ounces → oz
-pound / pounds → lb
+liter / litre / liters / litres                     → l
+tablespoon / tablespoons                            → tbsp
+teaspoon / teaspoons                                → tsp
+ounce / ounces                                      → oz
+pound / pounds                                      → lb
 ```
 
-`convertUnit` itself should not change — the fix is at the data layer so
-existing unit logic doesn't need multiple case arms.
+---
 
-**Note:** Recipes already saved with `gram`/`grams` in the DB will still not
-convert — the fix only applies to new imports. Existing records are not worth
-migrating (user can re-import if needed).
+#### Bug 2 — Conversion is one-directional (lb/oz can't become metric)
 
-**Files:**
-- `src/lib/recipe-ai-extractor.ts` — update `normalizeUnit()`
+`convertUnit` line 29: `if (system === "metric") return { amount, unit }` —
+bails out immediately. A recipe from a US site stored with `lb` or `oz` units
+shows those units unchanged even when the user switches to metric.
 
-**Tests:** Add unit tests for the canonical variants in the existing test suite.
+**Fix — make `convertUnit` bidirectional** in `src/lib/recipe-utils.ts`:
+
+When `system === "metric"`, convert known imperial units to metric:
+```
+oz  → g    (× 28.35, round to nearest gram if ≥ 50g, else 1 dp)
+lb  → kg   (× 0.4536, 2 dp)
+fl oz → ml (× 29.57, round to integer)
+qt  → l    (× 0.946, 2 dp)
+```
+
+When `system === "imperial"` (existing behaviour, keep):
+```
+g  → oz    (÷ 28.35, 1 dp)
+kg → lb    (÷ 0.4536, 1 dp)
+ml → fl oz (÷ 29.57, 1 dp)
+l  → qt    (÷ 0.946, 2 dp)
+```
+
+Units with no conversion needed in either direction (cup, tbsp, tsp, pinch,
+dash, clove, etc.) continue to pass through as-is by default.
+
+---
+
+#### New feature — cups/tbsp/tsp → ml in metric mode
+
+When `system === "metric"`, also convert cooking volume measures:
+```
+cup / cups → ml (× 240)
+tbsp       → ml (× 15)
+tsp        → ml (× 5)
+```
+
+This bundles into the existing metric/imperial toggle — no new UI control
+needed. Cups/spoons are an American convention; metric mode converts them
+to ml automatically. The stored unit in the DB remains `cup`/`tbsp`/`tsp`;
+conversion is display-only.
+
+**Do not convert cups/tbsp/tsp → grams** — that requires per-ingredient
+density data we don't have.
+
+---
+
+**Summary of changes:**
+
+`src/lib/recipe-ai-extractor.ts`
+- Update `normalizeUnit()` to canonicalize long-form units (Bug 1)
+
+`src/lib/recipe-utils.ts`
+- Update `convertUnit()`:
+  - Remove the early-return on `system === "metric"`; instead route metric
+    mode through its own imperial→metric conversion cases
+  - Add `cup`/`cups`/`tbsp`/`tsp` → ml cases for metric mode
+
+**Tests:** Expand unit tests to cover:
+- Each long-form canonical mapping (Bug 1)
+- `oz` → `g` in metric mode (Bug 2)
+- `lb` → `kg` in metric mode (Bug 2)
+- `1 cup` → `240 ml` in metric mode (new feature)
+- `1 tbsp` → `15 ml` in metric mode (new feature)
+- `200 g` → `7.1 oz` in imperial mode (regression — must still pass)
 
 ---
 

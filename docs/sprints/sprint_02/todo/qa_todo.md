@@ -49,6 +49,20 @@
 
 ---
 
+## Unit Conversion
+
+| # | Scenario | Steps | Expected | Status |
+|---|----------|-------|----------|--------|
+| U1 | Metric → imperial (g) | Import recipe with grams, toggle to imperial | `200 g` → `7.1 oz` | `[ ]` |
+| U2 | Imperial → metric (lb) | Import recipe with lb, toggle to metric | `1 lb` → `0.5 kg` | `[ ]` |
+| U3 | Imperial → metric (oz) | Import recipe with oz, toggle to metric | `4 oz` → `113.4 g` | `[ ]` |
+| U4 | Cups → ml in metric mode | Import recipe with cups, toggle to metric | `1 cup` → `240 ml`, `1 tbsp` → `15 ml`, `1 tsp` → `5 ml` | `[ ]` |
+| U5 | Cups stay in imperial mode | Import recipe with cups, toggle to imperial | `1 cup` stays `1 cup` | `[ ]` |
+| U6 | Long-form units normalize | Import recipe where AI outputs `grams` or `pounds` | Stored and displayed as `g` / `lb`; convert correctly | `[ ]` |
+| U7 | Toggle round-trip | Toggle metric → imperial → metric | Amounts return to original values (no drift) | `[ ]` |
+
+---
+
 ## Regression (re-run Sprint 1 suite)
 
 | # | Scenario | Status |
