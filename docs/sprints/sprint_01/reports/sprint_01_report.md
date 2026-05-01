@@ -3,9 +3,9 @@
 | Field | Value |
 |-------|-------|
 | **Sprint** | 01 |
-| **Status** | Dev complete; QA pending |
+| **Status** | Dev complete; QA mostly complete |
 | **Dev tasks completed** | 34 / 34 |
-| **QA scenarios completed** | 0 / 24 |
+| **QA scenarios completed** | 22 / 24 |
 | **Report date** | 2026-05-01 |
 
 ---
@@ -25,17 +25,16 @@
   page, owner checks, and delete.
 - Serving scaler and unit conversion controls on recipe detail, with unit
   tests for the shared conversion/scaling logic.
+- Playwright coverage for the core Sprint 1 flows and required UI
+  screenshots under `tests/screenshots/`.
 - Ollama-first local AI path through `AI_PROVIDER=ollama`, while keeping
   the provider switch configurable for cloud AI later.
 
-## What wasn't delivered (and why)
+## Remaining Gaps
 
-- Sprint 1 QA is not complete. `docs/sprints/sprint_01/todo/qa_todo.md`
-  still has all scenarios untested.
-- Playwright coverage is still placeholder-level; the Sprint 1 flows need
-  real E2E tests.
-- Required UI screenshots have not been captured under
-  `tests/screenshots/`.
+- Sprint 1 QA is mostly complete. `docs/sprints/sprint_01/todo/qa_todo.md`
+  still leaves live AI import validation open for real recipe and
+  non-recipe URLs.
 - Import extraction quality has not been measured across enough real
   recipe URLs.
 - Production AI strategy is not decided. Ollama is valid for local
@@ -49,12 +48,12 @@
   JSON handling, incorrect post-save redirect shape, Ollama timeout on
   full page text, misplaced ingredient quantities, and fractional cup
   rounding to zero.
-- Still open: `main` must include the CSS fix that removes the invalid
-  `shadcn/tailwind.css` import before local dev can be considered stable.
-- Still open: no QA evidence yet for cross-user recipe isolation. This is
-  the highest-risk acceptance gate.
+- Fixed after the progress review: `main` now includes the CSS fix that
+  removes the invalid `shadcn/tailwind.css` import.
+- Verified: cross-user recipe isolation passed automated QA.
 - Still open: import progress UI implies streaming, while the current
   Ollama extraction path returns a blocking JSON response.
+- Still open: live AI extraction quality needs real URL coverage.
 
 ## Key decisions made
 
@@ -72,6 +71,6 @@
   freeform model JSON is not trustworthy enough by itself.
 - Local AI is useful for development speed and privacy, but latency and
   deployment posture must be handled explicitly.
-- Sprint 1 is now in a verification phase. The next useful work is QA,
-  screenshot evidence, and extraction-quality measurement rather than new
-  feature scope.
+- Sprint 1 is close to final review. The remaining useful work is live
+  extraction-quality measurement and the production AI/provider decision,
+  rather than new feature scope.

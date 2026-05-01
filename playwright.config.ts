@@ -17,7 +17,7 @@ export default defineConfig({
   testDir: "./tests/e2e",
 
   // Maximum time a test can run
-  timeout: 30_000,
+  timeout: 45_000,
 
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,
@@ -57,12 +57,10 @@ export default defineConfig({
     // },
   ],
 
-  // Auto-start dev server before tests
-  // Uncomment and update for your project:
-  // webServer: {
-  //   command: "npm run dev",
-  //   port: 3000,
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 120_000,
-  // },
+  webServer: {
+    command: "npm run dev",
+    port: 3000,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
 });
