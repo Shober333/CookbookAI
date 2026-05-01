@@ -5,6 +5,101 @@
 
 ---
 
+## Decision: Production AI Provider — Anthropic on Vercel
+
+**Date:** 2026-05-01
+**Status:** Accepted
+**Decided by:** Founder
+
+**Context:**
+Sprint 1 validated AI extraction locally using Ollama. For production deployment on Vercel the team needed to decide which AI provider to use, balancing cost, quality, and operational simplicity.
+
+**Decision:**
+`AI_PROVIDER=anthropic` for the Vercel production environment. `AI_PROVIDER=ollama` remains the local development default. Zero code changes required — provider selection is already environment-driven.
+
+**Rationale:**
+- Claude (Sonnet 4.x) delivers higher structured-output reliability than Ollama cloud relay, especially for complex recipe HTML
+- No self-hosted infrastructure required; Anthropic API is stateless and serverless-compatible
+- Local dev continues at zero API cost via Ollama
+
+**Consequences:**
+- `.env.example` should document both paths clearly
+- `ANTHROPIC_API_KEY` must be set in Vercel environment settings before production deploy
+- No schema or code changes needed
+
+---
+
+## Decision: Guest Mode + URL-Level Recipe Deduplication
+
+**Date:** 2026-05-01
+**Status:** Accepted — implementation deferred post-Sprint 2
+**Decided by:** Founder
+
+**Context:**
+The Founder wants users to try the app without registering (guest mode) and wants to avoid paying for duplicate AI extractions when two users import the same URL.
+
+**Options Considered:**
+
+*Guest session approach:*
+1. Ephemeral (session-only, no persistence) — rejected: Founder explicitly wants persistence
+2. **Cookie-based guest User record** (chosen) — a real `User` row is created on first import, identified by a random `guestToken` stored in a cookie. Recipes are owned by that guest user normally. On account upgrade the guest user row is merged into the new authenticated user.
+3. Shared "anonymous" user — rejected: no per-session isolation, recipes bleed across visitors
+
+*Deduplication approach:*
+1. No deduplication — rejected: wastes AI compute for identical URLs
+2. **Reuse extracted data, create per-user recipe row** (chosen) — before calling AI, check `Recipe.sourceUrl` across all users. If a match exists, copy its extracted fields (title, description, ingredients, steps, servings, tags) into a new Recipe for the current user. No AI call. Each user still owns an independent copy (can edit/delete independently).
+3. Shared recipe row across users — rejected: breaks per-user isolation and independent editing
+
+**Decisions:**
+- Add `isGuest Boolean @default(false)` and `guestToken String? @unique` to `User` model
+- Add `@@index([sourceUrl])` to `Recipe` for fast deduplication lookups
+- Import route: before AI call, query `db.recipe.findFirst({ where: { sourceUrl } })`. If found, shallow-copy extracted fields for the current user and return immediately.
+- Guest sessions: on import without auth, create or retrieve the guest `User` via `guestToken` cookie; proceed normally from there
+- Account upgrade flow: out of scope for MVP — guest recipes remain on the guest user row
+
+**Consequences:**
+- Schema migration needed: `User.isGuest`, `User.guestToken`, `Recipe.sourceUrl` index
+- Import route gains a deduplication check before the AI call
+- Auth middleware must allow unauthenticated access to import for guest flow
+- Guest mode UI: out of scope for Sprint 2; flag as Sprint 3+
+
+---
+
+## Decision: YouTube Import — Description-First Strategy
+
+**Date:** 2026-05-01
+**Status:** Accepted — Sprint 3+ implementation
+**Decided by:** Founder
+
+**Context:**
+Many YouTube cooking creators either paste a link to their blog/recipe post in the video description, or write the full recipe out as text directly in the description. In both cases the app should not process video at all — the existing import pipelines handle both paths. This reduces cost and complexity significantly.
+
+**Decision:**
+Implement YouTube import as a four-tier waterfall. Tiers 1a and 1b both operate on the video description (fetched in a single YouTube Data API call) before touching any video content:
+
+1. **Tier 1a — Description has external blog URL (Sprint 3, first priority):** Detect YouTube URL → fetch video metadata via YouTube Data API → parse description for external HTTP/HTTPS URLs → filter out social links (youtube.com, instagram.com, twitter.com, etc.) → import the first candidate URL using the existing HTML import pipeline. If successful, done.
+
+2. **Tier 1b — Description contains recipe text (Sprint 3):** If no external URL found (or the linked site blocks the agent), run `looksLikeRecipePage()` on the description text. If it passes, send the description text directly to the AI extraction pipeline (same path as the text/paste import). If successful, done.
+
+3. **Tier 2 — Transcript fallback (Sprint 3):** If description has no URL and no recipe-like text, fetch the video's caption track via YouTube Data API and pass the transcript to the AI extraction pipeline.
+
+4. **Tier 3 — Gemini direct (Sprint 4+):** If no captions available, pass the YouTube URL as `fileData` to the Gemini API for audio+frame processing. Requires adding `AI_PROVIDER=gemini` branch.
+
+**Rationale:**
+- Tiers 1a and 1b cost one YouTube Data API call, zero AI calls in most cases
+- Tier 1b covers creators who paste the recipe as plain text in the description (common for short-form recipe channels)
+- The same `looksLikeRecipePage()` pre-screen already used for HTML import doubles as the description recipe detector — no new logic
+- Layering avoids over-engineering for edge cases
+
+**Implementation notes:**
+- YouTube URL detection: `youtube.com/watch`, `youtu.be/`
+- YouTube Data API key: add `YOUTUBE_API_KEY` to `.env.example` (free tier: 10,000 units/day)
+- Description URL extraction: simple regex for `https?://` links; exclude known social/non-recipe domains
+- Description text import uses the existing text/paste extraction path, not the HTML fetch path
+- The Gemini Developer API (API key auth) does NOT interact with the user's personal Google account or watch history — confirmed; that concern only applies to Google AI Studio (OAuth web UI)
+
+---
+
 ## Decision: Unit Conversion — Bidirectional + Cups/Spoons → ml
 
 **Date:** 2026-05-01
