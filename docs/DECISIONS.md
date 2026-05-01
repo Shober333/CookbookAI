@@ -5,44 +5,83 @@
 
 ---
 
-## Decision: Gemini API for YouTube / Video Recipe Import (deferred)
+## Decision: Unit Conversion — Bidirectional + Cups/Spoons → ml
 
 **Date:** 2026-05-01
-**Status:** Deferred — Sprint 3+
-**Decided by:** [CTO] (Founder flagged intent)
+**Status:** Accepted — Sprint 2 implementation (task B5)
+**Decided by:** [CTO] + Founder
 
 **Context:**
-The Founder confirmed that Gemini can extract recipes from YouTube videos. The
-import form placeholder already mentions "YouTube link" but the current path
-(fetch URL HTML → strip → AI extract) cannot handle videos. A working video
-import path requires a multimodal model that can process video content directly.
+The original `convertUnit` function was one-directional (metric→imperial only)
+and assumed all recipes are stored in metric units. Two bugs and a feature
+request surfaced during Sprint 1 QA that required revisiting the design.
 
-**Key clarification:**
-The watch-history issue the Founder observed was from using **Google AI Studio**
-(the interactive web UI), which runs under the user's Google identity.
-The **Gemini Developer API** (`generativelanguage.googleapis.com`) is
-key-based; inference is billed to the API project and does NOT create watch
-history or interact with the user's Google account in any way.
+**Bugs identified:**
+1. Long-form units (`gram`, `grams`, `pound`, `pounds`, etc.) stored by the AI
+   pass through `RECOGNIZED_UNITS` validation but do not match any switch case
+   in `convertUnit` — silent no-op when toggling.
+2. The `system === "metric"` early-return meant imperial units stored from
+   US recipes (`lb`, `oz`) never converted in either direction.
 
-**Proposed approach (for Sprint 3+):**
-- Add `AI_PROVIDER=gemini` as a third provider branch in the provider config.
-- Pass the YouTube URL as a `fileData` part (`{ fileUri: url, mimeType:
-  "video/*" }`) in the Gemini request — the API fetches the video itself.
-- Use `gemini-2.0-flash` or `gemini-1.5-pro` for multimodal extraction.
-- The same JSON schema and normalization pipeline as the current import applies.
-- `src/lib/anthropic.ts` should be renamed `src/lib/ai-provider.ts` when this
-  is added to avoid confusion.
+**Feature request:** Convert cooking volume measures (cups, tbsp, tsp) to ml
+when the user selects metric. The Founder noted this is distinct from
+imperial/metric but agreed bundling it into the existing toggle is preferable
+to a second control.
 
-**Why deferred:**
-- Sprint 2 (equipment adapter, search) is more valuable to current users than
-  video import.
-- Adding a third provider requires careful architecture to avoid branching
-  proliferation.
-- The Gemini API key management (separate from Anthropic) should be decided
-  after the production Anthropic path is validated first.
+**Decisions:**
+- **Normalize long-form units at extraction time** in `normalizeUnit()` before
+  DB storage. Canonical short forms: `g`, `kg`, `ml`, `l`, `oz`, `lb`,
+  `tbsp`, `tsp`. The switch in `convertUnit` does not need extra arms.
+- **Make `convertUnit` bidirectional:**
+  - Metric mode: `oz→g`, `lb→kg`, `fl oz→ml`, `qt→l`
+  - Imperial mode: `g→oz`, `kg→lb`, `ml→fl oz`, `l→qt` (existing behaviour)
+- **Bundle cups/tbsp/tsp → ml into the metric toggle:**
+  - Metric: `cup→240ml`, `tbsp→15ml`, `tsp→5ml`
+  - Imperial: cups/tbsp/tsp pass through unchanged
+  - Gram conversion for cups is density-dependent — out of scope for MVP.
+- Recipes already in the DB with long-form units are not migrated (re-import
+  fixes them). Not worth the migration complexity for the MVP.
 
-**Action required:** None until Sprint 3 planning. Founder should obtain a
-Gemini API key (Google AI console) when ready to start.
+---
+
+## Decision: YouTube Video Import Strategy
+
+**Date:** 2026-05-01
+**Status:** Accepted — transcript path in Sprint 3; Gemini direct in Sprint 4+
+**Decided by:** [CTO] + Founder
+
+**Context:**
+The import form placeholder mentions "YouTube link" but the current URL-fetch
+path cannot handle video content. Two implementation paths were evaluated.
+
+**Options Considered:**
+
+*Option A — YouTube transcript + existing AI (chosen for Sprint 3)*
+- Detect YouTube URL pattern (`youtube.com/watch`, `youtu.be/`)
+- Fetch caption track via YouTube Data API (free; ~50–100 units per fetch,
+  10,000 units/day free tier)
+- Send transcript text to the existing Ollama/Anthropic extraction pipeline
+- No new AI provider needed; cost is effectively $0 for the transcript fetch
+- Covers ~90%+ of cooking videos — recipe creators narrate what they do
+
+*Option B — Gemini direct video processing (Sprint 4+)*
+- Pass YouTube URL as `fileData` to Gemini API; model processes audio + frames
+- Handles videos without captions and reads on-screen quantities
+- Cost: ~$0.02–0.025 per 10-min video at Gemini 2.0 Flash pricing
+- Requires adding `AI_PROVIDER=gemini` branch; `src/lib/anthropic.ts` should
+  be renamed `src/lib/ai-provider.ts` when this lands
+
+**Decision:** Option A for Sprint 3. Option B as enhancement in Sprint 4+ for
+caption-less videos or where visual cues are critical.
+
+**Watch-history clarification:**
+Watch history was added during Founder testing because **Google AI Studio**
+(the interactive web UI) runs under the user's personal Google OAuth session.
+The **Gemini Developer API** (API key auth) is billed to the Cloud project and
+does not interact with or modify the user's personal Google account.
+
+**Action required for Sprint 3:** Obtain a YouTube Data API key (Google Cloud
+console, free tier sufficient). Add `YOUTUBE_API_KEY` to `.env.example`.
 
 ---
 

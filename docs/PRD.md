@@ -28,7 +28,7 @@
 | 5 | Unit conversion | Toggle between metric and imperial throughout a recipe | Must Have |
 | 6 | Equipment adapter | User specifies available appliances; AI rewrites the cooking method accordingly | Must Have |
 | 7 | Recipe export | Download a recipe as a Markdown file | Nice to Have |
-| 8 | Video import (Gemini) | Paste a YouTube URL; Gemini API extracts recipe from the video | Nice to Have |
+| 8 | Video import (YouTube) | Paste a YouTube URL; transcript fetched via YouTube Data API, extracted by existing AI pipeline. Gemini direct video processing as a fallback for caption-less videos (Sprint 4+) | Nice to Have |
 | 9 | Guest mode | Try the app without creating an account (ephemeral or persistent — TBD Founder) | Nice to Have |
 | 10 | Recipe tagging / search | Tag recipes by cuisine, dietary label, or equipment; full-text search | Nice to Have |
 | 11 | Ingredient substitution | Ask AI to swap an ingredient (e.g., "replace butter with olive oil") | Nice to Have |
