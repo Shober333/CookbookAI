@@ -36,6 +36,11 @@ Read it before doing anything substantive.
 - Never import directly across modules — use the module's public `index.*` or top-level exports
 - Every new component or hook needs at least one unit test
 - If a requirement is unclear, ask the CTO before guessing
+- Commit after each completed frontend sprint task or tight UI cluster
+  once verification passes. Keep commits small and separated by concern:
+  tokens, components, pages, and bug fixes should be easy to review.
+- Never commit `.next/`, `tsconfig.tsbuildinfo`, Playwright reports, or
+  screenshots unless the sprint explicitly requires those screenshots.
 
 **UI rules (non-negotiable):**
 - **No hardcoded hex, font name, or spacing value** — every value must trace to `docs/ui/UI_KIT.md`. Use the Tailwind config tokens or CSS variables defined there.

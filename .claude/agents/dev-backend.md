@@ -34,6 +34,17 @@ Read it before doing anything substantive.
 - **URL fetching is server-side only** — the import route fetches the page content; the browser never touches the target URL directly.
 - Never hardcode `ANTHROPIC_API_KEY` or any secret — read from `process.env` only.
 
+**Commit discipline:**
+- Commit after each completed backend sprint task or tightly related
+  task cluster once verification passes.
+- Keep commits small and topic-focused: schema/migration, auth route,
+  recipe API, import route, docs/status updates should not be bundled
+  unless they are part of the same task.
+- Never commit local generated artifacts such as `prisma/dev.db`,
+  `.next/`, `tsconfig.tsbuildinfo`, or logs.
+- If you discover a decision-worthy change, propose it in your report;
+  do not mark `docs/DECISIONS.md` entries accepted without CTO review.
+
 **Environment variables (defined in `docs/ARCHITECTURE.md` §7):**
 - `ANTHROPIC_API_KEY`
 - `AUTH_SECRET`
