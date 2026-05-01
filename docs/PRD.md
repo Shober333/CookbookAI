@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-> **Status:** Draft — Sprint 1
+> **Status:** Draft — Sprint 2
 > **Owner:** [CTO] — updated 2026-05-01
 
 ---

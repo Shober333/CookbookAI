@@ -62,8 +62,10 @@
 
 ### Equipment Adapter
 - **Purpose:** Take a saved recipe + user's appliance list, send to the configured AI provider, return rewritten steps
-- **Location:** `src/app/api/ai/adapt/route.ts`
+- **Location:** `src/app/api/ai/adapt/route.ts` (Sprint 2)
 - **Depends on:** Configured AI provider, Prisma (read recipe + equipment profile)
+- **Response shape:** `{ adaptedSteps: string[], notes: string }`
+- **Notes:** Uses same AI provider config as import. Ollama path uses `/api/chat` with JSON schema; Anthropic path uses `generateObject`. Adapted steps saved to `recipe.adaptedSteps` (nullable column added Sprint 2) — original `recipe.steps` is never overwritten.
 
 ### Recipe Library
 - **Purpose:** CRUD for user-owned recipes
@@ -145,9 +147,12 @@ SQLite and production Postgres migration-compatible for the MVP.
 | `PATCH` | `/api/recipes/[id]` | Update recipe title / notes | Required + owner |
 | `DELETE` | `/api/recipes/[id]` | Delete recipe | Required + owner |
 | `POST` | `/api/ai/import` | Extract recipe from URL → structured recipe JSON | Required |
-| `POST` | `/api/ai/adapt` | Adapt recipe for equipment → rewritten steps | Required |
-| `GET` | `/api/equipment` | Get user's equipment profile | Required |
+| `POST` | `/api/ai/adapt` | Adapt recipe steps for equipment → `{ adaptedSteps, notes }` | Required |
+| `GET` | `/api/equipment` | Get user's equipment profile (`{ appliances: string[] }`) | Required |
 | `PUT` | `/api/equipment` | Update user's equipment profile | Required |
+
+> `GET /api/recipes` accepts an optional `?q=` query param for title search (Sprint 2).
+> `PATCH /api/recipes/[id]` accepts `adaptedSteps` in its update payload (Sprint 2).
 
 ---
 
@@ -161,8 +166,9 @@ CookbookAI/
 │   │   │   ├── login/page.tsx
 │   │   │   └── register/page.tsx
 │   │   ├── (app)/                   # Protected routes (middleware-gated)
-│   │   │   ├── library/page.tsx     # Recipe library grid
+│   │   │   ├── library/page.tsx     # Recipe library grid + search
 │   │   │   ├── import/page.tsx      # Import new recipe
+│   │   │   ├── equipment/page.tsx   # Equipment profile settings (Sprint 2)
 │   │   │   └── recipes/[id]/page.tsx
 │   │   ├── api/
 │   │   │   ├── auth/[...nextauth]/route.ts
