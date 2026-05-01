@@ -1,6 +1,6 @@
 # States — CookbookAI
 
-> **Status:** Locked — Sprint 0
+> **Status:** Locked — Sprint 0 (updated Sprint 2)
 > **Owner:** [UI/UX] (Alice)
 > **Reads:** `REGISTER.md`, `UI_KIT.md`, `COMPONENT_SPECS.md`, `PAGE_LAYOUTS.md` first.
 > **Audience:** `[DEV:frontend]` agent or human dev.
@@ -20,12 +20,13 @@ explicit error state for every async operation will be flagged 🔴
 ## Index
 
 1. Library — empty state (the earned warm moment)
-2. Library — loading state
+2. Library — loading state, search empty state
 3. Recipe detail — error states (fetch fail, not found)
 4. Import — error states (invalid URL, paywall, parse fail, timeout)
-5. Equipment adapter — error states (rewrite fail)
+5. Adapt flow (inline `AdaptPanel`) — error states
 6. Auth — error states (invalid credentials, network, validation)
 7. Global — offline indicator, session expired
+8. Equipment settings — loading, save success, save error
 
 ---
 
@@ -139,17 +140,19 @@ config. Easy to swap if any URLs go behind paywalls.
 
 ---
 
-## 2. Library — loading state
+## 2. Library — loading state, search empty state
 
-Skeleton list. No animation, no shimmer.
+### 2a. Skeleton list (initial page load)
 
-### Layout
+No animation, no shimmer.
+
+#### Layout
 
 The page header renders normally (the count headline shows "Loading
 your library…" instead of the dynamic count). Below the header rule:
 six skeleton list rows.
 
-### Skeleton row
+#### Skeleton row
 
 ```
 [ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ ]   [ ▓▓▓▓▓ ]  [ ▓▓ ▓▓ ]
@@ -165,7 +168,7 @@ Each block:
   meta 90px, tags two pills 24px wide each
 - `border-radius: 2px` for text blocks, pill-shape for tag blocks
 
-### Why no shimmer animation
+#### Why no shimmer animation
 
 Shimmer is a tech-product convention. CookbookAI is editorial. Static
 skeleton blocks read calm; shimmer reads anxious. The 200–500ms loading
@@ -173,7 +176,7 @@ delay is short enough that users won't suspect a stall. If it ever
 becomes long enough to feel stuck, that's an engineering issue, not a
 UX bandage.
 
-### Loading state copy in header
+#### Loading state copy in header
 
 - Eyebrow: "Your library"
 - Headline (during load): "Loading your library…"
@@ -181,15 +184,70 @@ UX bandage.
 
 Once data resolves, headline updates to the real count.
 
-### Reduced-motion
+#### Reduced-motion
 
 No motion to suppress. State is already static.
 
-### Accessibility
+#### Accessibility
 
 - Skeleton container has `aria-busy="true"` and `aria-live="polite"`
 - Once loaded, the page announces the count to screen readers via the
   updated headline
+
+### 2b. Search empty result (Sprint 2)
+
+When a search term returns zero matches:
+
+#### Treatment
+
+Replace the recipe list with a centered message:
+
+```
+                  No recipes matching "<term>".
+```
+
+#### Tokens
+
+- `font-display text-deck italic text-ink-muted`
+- Centered, `pt-[40px]`
+- Container: same width as the recipe list, just empty
+
+#### Distinct from §1
+
+The §1 empty state is for "user has zero recipes total." The §2b state
+is for "user has recipes, but none match this search." Don't show the
+warm moment / Caveat invitation here — searching with no matches is a
+neutral information state, not a "let's get started" moment.
+
+#### Headline coordination
+
+Per Sprint 2 brief §3, the page headline switches to "Nothing matches."
+when this state is active. So the user sees:
+
+```
+Eyebrow: "Your library"
+Headline: "Nothing matches."
+Sub: hidden
+[ search input still showing the term ]
+———————————————————————————————————————
+              No recipes matching "<term>".
+```
+
+#### Accessibility
+
+- The empty-search message has `role="status"`
+- Headline change announces via `aria-live="polite"`
+
+### 2c. Search loading state
+
+When a search query is in flight:
+
+- Existing recipe list dims to `opacity-60` (don't unmount)
+- No skeleton, no spinner
+- New results replace the dimmed list when they arrive
+
+The dimming is the visual signal. Users tolerate brief visual
+quietness more than they tolerate flicker.
 
 ---
 
@@ -277,6 +335,26 @@ No "try again" — there's nothing to retry.
 The import flow has the most error variety — it touches user input,
 external URLs, and the AI service.
 
+### Note on "streaming"
+
+The import UI uses the term "streaming box" and "streamed lines." For
+historical reference: this terminology came from a Sprint 0 assumption
+that the backend would do literal LLM token streaming.
+
+The actual Sprint 1 implementation does **progressive phase
+indicators**: the JSON response accumulates server-side, and a
+client-side `detectPhase()` updates the status as keys appear in the
+buffer ("title" key seen → "Finding the recipe…", "ingredients" key
+seen → "Reading ingredients…", etc.).
+
+This is honest. The user-facing copy describes phases of work, not
+literal byte streaming. Both behaviors look indistinguishable to the
+user. No copy revision is needed; this note is preserved here so
+future developers and reviewers don't read "streaming" too literally.
+
+CTO Sprint 1 review #5 raised this question; resolved 2026-05-01 — no
+change.
+
 ### 4a. Invalid URL (client-side validation)
 
 Caught when the user clicks "Bring it in" with malformed input.
@@ -325,6 +403,10 @@ min-height 200px, same paper background, same focus styling). The
 "Bring it in" button stays. Submitting calls a different parsing
 endpoint (text → structured recipe).
 
+This flow is **post-MVP** — the textarea endpoint doesn't exist in
+Sprint 2. For now, the CTA reads "Try another link" and clears the
+input back to idle.
+
 ### 4c. No recipe found at URL
 
 Page exists but has no extractable recipe (e.g., a blog post without
@@ -335,10 +417,9 @@ structured recipe data).
 > **Status:** "No recipe here" (in `--color-accent-strong`)
 >
 > Body: "We couldn't find a recipe at that link. Make sure it's a
-> page with ingredients and steps — or paste the recipe text directly."
+> page with ingredients and steps."
 >
-> CTA: "Try another link" (clears input, returns to idle) and "Paste
-> recipe text instead →" (as in 4b)
+> CTA: "Try another link" (clears input, returns to idle)
 
 ### 4d. AI parse failure
 
@@ -349,9 +430,9 @@ The AI extracted something but produced output that fails our schema.
 > **Status:** "Something went wrong"
 >
 > Body: "We had trouble structuring this recipe. It happens occasionally
-> — try again, or paste the recipe text directly."
+> — try again, or paste a different link."
 >
-> CTA: "Try again" and "Paste recipe text instead →"
+> CTA: "Try again"
 
 ### 4e. Network timeout / AI service unavailable
 
@@ -375,35 +456,83 @@ Hard infrastructure failure.
 
 ---
 
-## 5. Equipment adapter — error states
+## 5. Adapt flow (inline `AdaptPanel`) — error states
 
-### 5a. Rewrite fail
+Sprint 2 replaces the standalone `/recipes/[id]/adapt` page (and its
+old error states) with the inline `AdaptPanel` component on the recipe
+detail page. See `COMPONENT_SPECS.md` §9 and Sprint 2 brief §2.
 
-The AI couldn't generate adapted steps with the selected equipment.
+The Sprint 0 standalone adapter page error states (formerly here) are
+deprecated. The error states below replace them.
+
+### 5a. Adapt API returns 5xx or network error
+
+Caused by: AI service timeout, server error, network drop while
+adapting.
 
 #### Treatment
 
-Inline below the "Rewrite steps" button (above where the diff would
-appear).
+Below the "Adapt for my kitchen" button (or the loading state, once it
+returns from loading):
 
 #### Copy
 
-> **Status:** "We couldn't rewrite this." (in `--color-accent-strong`)
->
-> Body: "The combination of equipment you've selected might not work
-> for this recipe. Try adding the original equipment back, or try
-> again."
->
-> CTA: "Try again"
+> "We couldn't adapt that. Try again."
 
-### 5b. No equipment selected
+`font-ui text-body-sm`, color `--color-accent-strong`. Button
+re-enables.
 
-The "Rewrite steps" button is disabled (per `PAGE_LAYOUTS.md` §5). No
-error state needed — the disabled state explains itself.
+### 5b. Adapt API returns valid JSON but empty `adaptedSteps`
 
-For screen readers, the button has `aria-describedby` pointing to a
-visually-hidden `<p>`: "Select at least one piece of equipment to
-rewrite the recipe."
+The AI returned a response but the steps array is empty or zero-length.
+
+#### Copy
+
+> "Adaptation didn't produce a usable result. Try again, or change your
+> equipment selection."
+
+The "change your equipment selection" suffix points the user toward
+`/equipment` if they want to reconfigure. Don't link inline (avoid
+making errors look like calls to action) — the user can tap the
+Equipment nav themselves.
+
+### 5c. Save API fails
+
+User clicked "Save this version" on a successful result, but the
+`PATCH /api/recipes/[id]` failed.
+
+#### Treatment
+
+Below the action buttons (Save / Discard):
+
+#### Copy
+
+> "We couldn't save that. Try again."
+
+`font-ui text-body-sm text-accent-strong`. Save button re-enables. The
+result panel **stays mounted** — don't blow away the AI result just
+because the save failed.
+
+### 5d. Discard fails
+
+User confirmed the discard dialog, but the `PATCH { adaptedSteps: null }`
+failed.
+
+#### Treatment
+
+Same line position as 5c.
+
+#### Copy
+
+> "We couldn't discard that. Try again."
+
+State stays at "Saved" until discard succeeds.
+
+### Accessibility (all 5a–5d)
+
+- Error message has `role="alert"` so screen readers announce on render
+- Buttons re-enable as soon as the error state mounts
+- Don't auto-dismiss errors — let the user read them and decide
 
 ---
 
@@ -521,8 +650,68 @@ Between page navigations (Next.js route transitions), the browser-native
 loading bar (or Next.js's built-in `loading.tsx` per route) handles
 this. We do not add a custom global progress bar.
 
-Per-route loading states are specified in `PAGE_LAYOUTS.md` and
-referenced above (§2 library, §3 recipe detail).
+Per-route loading states are specified in `PAGE_LAYOUTS.md` and in the
+Sprint 2 design brief.
+
+---
+
+## 8. Equipment settings — loading, save success, save error
+
+The `/equipment` page (Sprint 2 brief §1) has its own state set.
+
+### 8a. Loading the page
+
+When the page mounts and is fetching `GET /api/equipment`:
+
+- All chips render in their **off** state at 50% opacity
+- No separate skeleton — the chips themselves are the placeholders
+- "Save changes" button is disabled
+
+Once the GET resolves:
+
+- Chips fade to full opacity (`--motion-fade`, 280ms)
+- Chips matching the user's saved appliances flip to selected state
+- "Save changes" stays disabled (no changes to save yet)
+
+### 8b. Save success
+
+After `PUT /api/equipment` succeeds:
+
+#### Treatment
+
+Status line below the save button:
+
+```
+                  Saved.
+```
+
+#### Tokens
+
+- `font-display text-deck italic text-ink-muted`
+- Centered
+- Auto-clears after 2 seconds OR when the user changes a chip again
+- No checkmark, no toast — quiet acknowledgment
+
+### 8c. Save error
+
+If `PUT /api/equipment` fails:
+
+#### Copy
+
+> "We couldn't save that. Try again."
+
+#### Tokens
+
+- Same position as 8b (below the save button, centered)
+- Color: `--color-accent-strong`
+- Stays visible until user retries
+- Save button is re-enabled immediately
+
+### Accessibility (all 8a–8c)
+
+- Loading state: chips are `aria-disabled="true"` while at 50% opacity
+- Save status line: `role="status"` for success, `role="alert"` for error
+- Headline announces page-level changes via `aria-live="polite"`
 
 ---
 
@@ -532,10 +721,12 @@ For every page, the dev should ship:
 
 | Page | Empty | Loading | Error |
 |---|---|---|---|
-| `/library` | §1 (warm moment) | §2 (skeleton) | (no error state — falls back to "trouble loading" generic) |
+| `/library` | §1 (warm moment) | §2a (skeleton) | (no error state — falls back to "trouble loading" generic) |
+| `/library?q=…` | §2b (search empty result) | §2c (dimmed list) | (same as above) |
 | `/recipes/[id]` | n/a (would be 404) | embedded skeleton | §3a, §3b |
 | `/import` | n/a (idle is the empty state) | streaming itself is the loading | §4a–§4e |
-| `/recipes/[id]/adapt` | (no chips selected — disabled button) | "Rewriting…" button state | §5a |
+| `AdaptPanel` (inline on recipe detail) | idle state in component | "Adapting…" pulse on button | §5a–§5d |
+| `/equipment` | n/a (chips own off state) | §8a (chips at 50%) | §8c |
 | `/login`, `/register` | n/a | button "Signing in…" | §6a–§6d |
 | (global) | n/a | n/a | §7a (offline), §7b (session) |
 
@@ -572,3 +763,16 @@ empty states, or significant copy changes are design decisions — file
 back to Alice. The dev does not invent error copy; if a new error case
 appears that this file doesn't cover, that's a question, not an
 improvisation.
+
+---
+
+## Changelog
+
+| Date | Change | Trigger |
+|---|---|---|
+| 2026-04-29 | Initial lock — Sprint 0 | Founder approved register |
+| 2026-05-01 | §2 added 2b (search empty) and 2c (search dimmed) | Sprint 2 task F3 |
+| 2026-05-01 | §4 added Note on streaming clarifying progressive-phase model | CTO Sprint 1 review #5 |
+| 2026-05-01 | §4b paste-recipe-text flow noted as post-MVP | Endpoint not implemented in Sprint 2 |
+| 2026-05-01 | §5 replaced standalone-adapter error states with inline AdaptPanel error states | Sprint 2 brief §2 |
+| 2026-05-01 | §8 Equipment settings states added | Sprint 2 task F1 |

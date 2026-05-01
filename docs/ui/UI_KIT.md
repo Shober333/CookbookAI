@@ -1,6 +1,6 @@
 # UI Kit — CookbookAI Design Tokens
 
-> **Status:** Locked — Sprint 0
+> **Status:** Locked — Sprint 0 (updated Sprint 2)
 > **Owner:** [UI/UX] (Alice)
 > **Replaces:** the scaffold default
 > **See also:** `REGISTER.md` for the *why*; this file is the *what*.
@@ -285,19 +285,27 @@ Pattern-level rules. Per-component specs live in `COMPONENT_SPECS.md`.
 
 ### Buttons
 
-Three variants only.
+The system has three variants. The accent variant has two forms — see
+below.
 
 | Variant | Background | Text | Border | Use |
 |---|---|---|---|---|
-| **Primary** | `--color-ink` | `--color-paper` | none | The single primary action on a screen ("Bring it in") |
-| **Accent** | transparent | `--color-accent` | `0.5px solid --color-accent` | AI actions ("Adapt for my kitchen") |
-| **Ghost** | transparent | `--color-ink-muted` | none | Tertiary actions, nav |
+| **Primary** | `--color-ink` | `--color-paper` | none | The single primary action on a screen ("Bring it in", "Save changes") |
+| **Accent — filled** | `--color-accent` | `--color-paper` | none | Primary AI actions in inviting contexts ("Adapt for my kitchen", "+ Import") |
+| **Accent — outline** | transparent | `--color-accent` | `0.5px solid --color-accent` | Secondary AI actions inside text-heavy areas ("Re-adapt" inside saved AdaptPanel) |
+| **Ghost** | transparent | `--color-ink-muted` | none | Tertiary actions, nav, "Discard", "Sign out" |
+
+Why two accent forms: filled reads better against cream paper for
+primary AI actions; outline is less assertive when the action is
+secondary and embedded in body text. **Use filled by default.** Reach
+for outline only when the button is in-flow inside text-heavy content.
 
 All buttons:
 - Square corners (`--radius-none`)
 - Inter 500, `text-ui` size, uppercase with `0.14em` tracking for primary/accent only
 - Hover on primary: opacity 0.92
-- Hover on accent: background fills with `--color-accent`, text becomes `--color-paper`
+- Hover on accent (filled): background darkens to `--color-accent-strong`
+- Hover on accent (outline): background fills with `--color-accent`, text becomes `--color-paper`
 - Active: scale(0.98)
 - Disabled: ink at 30%, no hover, `cursor: not-allowed`
 - Min tap target: 44×44px on mobile (use padding, not min-height)
@@ -368,7 +376,8 @@ encoded as a constraint:
 | Library | 0 | None — library is reading-mode |
 | Recipe detail | 1 | The margin note (handwritten in Caveat) |
 | Import form | 0 | None — the streaming itself is the warmth |
-| Adapter | 0 | None — diff view is precise, not decorative |
+| Adapter (now inline on recipe detail) | 0 | None — adaptation is precise, not decorative |
+| Equipment settings | 0 | None — settings are utilitarian |
 | Empty library | 1 | The "It's quiet in here" Caveat invitation |
 | Auth screens | 0 | None — forms only |
 
@@ -472,3 +481,13 @@ Adding a token, changing a value, or removing a token is a
 **structural** change requiring Founder approval. Devs may not invent
 new tokens. If a dev finds they need a value not in this file, they
 file it as a question for Alice — not as a code change.
+
+---
+
+## Changelog
+
+| Date | Change | Trigger |
+|---|---|---|
+| 2026-04-29 | Initial lock — Sprint 0 | Founder approved register |
+| 2026-05-01 | §8 Buttons: split accent variant into filled and outline forms | Sprint 1 dev used filled accent in places where outline was originally specified; both reviewed and accepted as legitimate variants. Filled is the new default. |
+| 2026-05-01 | §10 Warm moment budget: added Equipment settings (0); updated Adapter row (now inline on recipe detail) | Sprint 2 added new surface; standalone adapter page deprecated. |
