@@ -69,8 +69,18 @@ const RECOGNIZED_UNITS = new Set([
   "gram",
   "grams",
   "kg",
+  "kilogram",
+  "kilograms",
   "ml",
+  "milliliter",
+  "millilitre",
+  "milliliters",
+  "millilitres",
   "l",
+  "liter",
+  "litre",
+  "liters",
+  "litres",
   "oz",
   "ounce",
   "ounces",
@@ -435,8 +445,33 @@ function normalizeStringArray(value: unknown): string[] {
 function normalizeUnit(value: unknown): string {
   if (typeof value !== "string") return "";
 
-  const unit = value.trim();
-  return unit === "null" || unit === "undefined" ? "" : unit;
+  const unit = value.trim().toLowerCase();
+  if (unit === "null" || unit === "undefined") return "";
+
+  const canonicalUnits: Record<string, string> = {
+    gram: "g",
+    grams: "g",
+    kilogram: "kg",
+    kilograms: "kg",
+    milliliter: "ml",
+    millilitre: "ml",
+    milliliters: "ml",
+    millilitres: "ml",
+    liter: "l",
+    litre: "l",
+    liters: "l",
+    litres: "l",
+    tablespoon: "tbsp",
+    tablespoons: "tbsp",
+    teaspoon: "tsp",
+    teaspoons: "tsp",
+    ounce: "oz",
+    ounces: "oz",
+    pound: "lb",
+    pounds: "lb",
+  };
+
+  return canonicalUnits[unit] ?? unit;
 }
 
 function toPositiveInteger(value: unknown): number {

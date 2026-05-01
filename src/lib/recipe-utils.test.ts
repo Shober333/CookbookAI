@@ -77,7 +77,7 @@ describe("roundScaled", () => {
 // ─── convertUnit ─────────────────────────────────────────────────────────────
 
 describe("convertUnit", () => {
-  it("passes through when system is metric", () => {
+  it("passes through metric units when system is metric", () => {
     expect(convertUnit(200, "g", "metric")).toEqual({ amount: 200, unit: "g" });
   });
 
@@ -88,6 +88,10 @@ describe("convertUnit", () => {
   it("converts g to oz", () => {
     // 100g / 28.35 = 3.527... → 3.5
     expect(convertUnit(100, "g", "imperial")).toEqual({ amount: 3.5, unit: "oz" });
+  });
+
+  it("converts g to oz as an imperial regression check", () => {
+    expect(convertUnit(200, "g", "imperial")).toEqual({ amount: 7.1, unit: "oz" });
   });
 
   it("converts kg to lb", () => {
@@ -103,6 +107,30 @@ describe("convertUnit", () => {
   it("converts l to qt", () => {
     // 1l / 0.946 = 1.0571... → 1.06
     expect(convertUnit(1, "l", "imperial")).toEqual({ amount: 1.06, unit: "qt" });
+  });
+
+  it("converts oz to g in metric mode", () => {
+    expect(convertUnit(2, "oz", "metric")).toEqual({ amount: 57, unit: "g" });
+  });
+
+  it("converts small oz amounts to g with one decimal", () => {
+    expect(convertUnit(1, "oz", "metric")).toEqual({ amount: 28.4, unit: "g" });
+  });
+
+  it("converts lb to kg in metric mode", () => {
+    expect(convertUnit(2, "lb", "metric")).toEqual({ amount: 0.91, unit: "kg" });
+  });
+
+  it("converts cup to ml in metric mode", () => {
+    expect(convertUnit(1, "cup", "metric")).toEqual({ amount: 240, unit: "ml" });
+  });
+
+  it("converts tbsp to ml in metric mode", () => {
+    expect(convertUnit(1, "tbsp", "metric")).toEqual({ amount: 15, unit: "ml" });
+  });
+
+  it("converts tsp to ml in metric mode", () => {
+    expect(convertUnit(1, "tsp", "metric")).toEqual({ amount: 5, unit: "ml" });
   });
 
   it("passes through tsp unchanged", () => {

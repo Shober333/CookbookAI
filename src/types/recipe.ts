@@ -12,6 +12,7 @@ export type RecipePayload = {
   servings: number;
   ingredients: RecipeIngredient[];
   steps: string[];
+  adaptedSteps?: string[] | null;
   tags?: string[];
 };
 
