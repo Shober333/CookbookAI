@@ -30,8 +30,7 @@ export default defineConfig({
 
   // Shared settings for all projects
   use: {
-    // Base URL for page.goto() — update to match your dev server
-    baseURL: "http://localhost:3000",
+    baseURL: `http://localhost:${process.env.PORT ?? "3000"}`,
 
     // Collect trace on first retry
     trace: "on-first-retry",
@@ -59,7 +58,7 @@ export default defineConfig({
 
   webServer: {
     command: "npm run dev",
-    port: 3000,
+    port: Number(process.env.PORT ?? 3000),
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

@@ -33,10 +33,10 @@
 
 | # | Scenario | Steps | Expected | Status |
 |---|----------|-------|----------|--------|
-| I1 | Happy path: import from a recipe webpage | 1. Go to `/import` 2. Paste a known recipe URL 3. Click Import | Progress state completes; detail page shows AI-extracted title, ingredients, and steps; no errors | `[ ]` |
+| I1 | Happy path: import from a recipe webpage | 1. Go to `/import` 2. Paste a known recipe URL 3. Click Import | Progress state completes; detail page shows AI-extracted title, ingredients, and steps; no errors | `[x]` |
 | I2 | Save imported recipe | Complete I1 | Auto-redirected to recipe detail page; recipe visible in library | `[x]` |
 | I3 | Import: invalid URL (not a URL) | Submit `not-a-url` | Inline error message; no AI provider call made | `[x]` |
-| I4 | Import: URL that is not a recipe page | Submit a URL to a news article or homepage | Graceful error or best-effort extraction; no unhandled exception | `[ ]` |
+| I4 | Import: URL that is not a recipe page | Submit a URL to a news article or homepage | Graceful error or best-effort extraction; no unhandled exception | `[x]` |
 | I5 | Import: URL fetch fails (unreachable host) | Submit a URL to a non-existent domain | User-facing error "Could not fetch page"; no raw error stack | `[x]` |
 
 ---
@@ -93,8 +93,15 @@ Capture and save to `tests/screenshots/` for each:
   owner-check API behavior, recipe list/detail/delete, scaler, unit
   toggle, mocked import save/redirect, import URL validation, provider
   failure handling, and screenshot capture.
-- I1 and I4 still need live provider validation against real URLs. I2
-  and I5 passed with deterministic mocked provider responses.
+- I1 verified manually: small personal-blog recipe pages (Brian Lagerstrom,
+  Sally's Baking Addiction) extract correctly end-to-end with qwen3.5:cloud.
+  Sites with bot protection (Serious Eats, AllRecipes, Food Network) return
+  HTTP 402/403; error message surfaces correctly. This is expected behavior —
+  server-side fetches cannot bypass cookie/JS challenges.
+- I4 verified: non-recipe pages now rejected immediately by keyword pre-screen
+  in `route.ts` (`looksLikeRecipePage`). Rejection takes < 1s vs. 60–120s
+  before the fix. Confirmed with dev.to article and marketing landing page.
+- I2 and I5 passed with deterministic mocked provider responses.
 - S3 is effectively covered by the current stepper design: there is no
   freeform servings field where non-integer text can be entered.
 

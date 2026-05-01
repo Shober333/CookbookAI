@@ -216,7 +216,7 @@ test.describe("Sprint 1 import", () => {
     });
     await page.getByPlaceholder("Paste a recipe URL or a YouTube link").fill("https://example.invalid/recipe");
     await page.getByRole("button", { name: "Bring it in" }).click();
-    await expect(page.getByText("We can't reach our recipe service right now.")).toBeVisible();
+    await expect(page.getByText("Could not fetch page.")).toBeVisible();
     await page.unroute("**/api/ai/import");
 
     await page.route("**/api/ai/import", async (route) => {

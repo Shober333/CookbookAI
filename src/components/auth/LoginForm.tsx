@@ -22,18 +22,22 @@ export function LoginForm({ callbackUrl = "/library" }: LoginFormProps) {
     setError("");
     setSubmitting(true);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
 
-    setSubmitting(false);
-
-    if (result?.error) {
+      if (result?.error) {
+        setError("Invalid email or password.");
+      } else {
+        router.push(callbackUrl);
+      }
+    } catch {
       setError("Invalid email or password.");
-    } else {
-      router.push(callbackUrl);
+    } finally {
+      setSubmitting(false);
     }
   }
 

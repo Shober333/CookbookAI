@@ -34,15 +34,22 @@ export function RegisterForm() {
       return;
     }
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-
-    setSubmitting(false);
+    let result: Awaited<ReturnType<typeof signIn>> | undefined;
+    try {
+      result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+    } catch {
+      // Auth.js v5 throws on certain failures instead of returning { error }
+    } finally {
+      setSubmitting(false);
+    }
 
     if (result?.error) {
+      setError("Account created — but sign-in failed. Please sign in manually.");
+    } else if (!result) {
       setError("Account created — but sign-in failed. Please sign in manually.");
     } else {
       router.push("/library");

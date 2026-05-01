@@ -4,6 +4,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 export const aiProvider = process.env.AI_PROVIDER ?? "ollama";
 export const ollamaBaseUrl = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
 export const ollamaModel = process.env.OLLAMA_MODEL ?? "llama3.2";
+export const isOllamaCloudModel = ollamaModel.endsWith(":cloud");
 
 function buildModel() {
   if (aiProvider === "anthropic") {
