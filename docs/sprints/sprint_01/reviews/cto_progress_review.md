@@ -59,7 +59,7 @@ quality verification, and formal review gates are still outstanding.
 - E2E coverage is still placeholder-only. The Sprint 1 QA checklist has
   not been run.
 - Required screenshots have not been captured.
-- Sprint reports and final review artifacts remain incomplete.
+- Final review artifacts remain incomplete until QA evidence exists.
 
 ---
 
@@ -89,7 +89,8 @@ quality verification, and formal review gates are still outstanding.
    streaming extraction, or whether Alice should revise the import state
    language.
 6. Decide the production AI provider strategy before deploy.
-7. Complete `docs/sprints/sprint_01/reports/sprint_01_report.md`.
+7. Keep `docs/sprints/sprint_01/reports/sprint_01_report.md` updated as
+   QA evidence comes in.
 8. Run final CTO Good/Bad/Ugly review after QA evidence exists.
 
 ---
