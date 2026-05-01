@@ -14,6 +14,7 @@ export const recipePayloadSchema = z.object({
   servings: z.number().int().positive().max(1000),
   ingredients: z.array(recipeIngredientSchema).min(1),
   steps: z.array(z.string().trim().min(1)).min(1),
+  adaptedSteps: z.array(z.string().trim().min(1)).min(1).nullable().optional(),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
 });
 
@@ -25,6 +26,7 @@ export const recipePatchSchema = recipePayloadSchema
     servings: true,
     ingredients: true,
     steps: true,
+    adaptedSteps: true,
     tags: true,
   })
   .partial()

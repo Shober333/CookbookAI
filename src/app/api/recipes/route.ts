@@ -6,14 +6,15 @@ import {
 import { recipePayloadSchema } from "@/lib/recipe-schema";
 import { getAuthenticatedUserId, jsonError } from "@/lib/route-helpers";
 
-export async function GET() {
+export async function GET(request: Request) {
   const userId = await getAuthenticatedUserId();
 
   if (!userId) {
     return jsonError("Authentication required.", 401);
   }
 
-  const recipes = await listRecipesForUser(userId);
+  const { searchParams } = new URL(request.url);
+  const recipes = await listRecipesForUser(userId, searchParams.get("q"));
 
   return NextResponse.json({ recipes });
 }

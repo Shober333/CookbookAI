@@ -19,15 +19,44 @@ export function roundScaled(amount: number, unit: string): number {
   return roundTo(amount, 1);
 }
 
-// convertUnit: converts a metric amount+unit to imperial.
-// Unchanged units (tsp, tbsp, cup, count) pass through as-is.
+// convertUnit: converts display units between metric and imperial systems.
+// Stored recipe data remains unchanged; this only affects presentation.
 export function convertUnit(
   amount: number | null,
   unit: string,
   system: "metric" | "imperial"
 ): { amount: number | null; unit: string } {
-  if (amount === null || system === "metric") return { amount, unit };
+  if (amount === null) return { amount, unit };
   const u = unit.toLowerCase().trim();
+
+  if (system === "metric") {
+    switch (u) {
+      case "oz": {
+        const grams = amount * 28.35;
+        return {
+          amount: grams >= 50 ? Math.round(grams) : roundTo(grams, 1),
+          unit: "g",
+        };
+      }
+      case "lb":
+      case "lbs":
+        return { amount: roundTo(amount * 0.4536, 2), unit: "kg" };
+      case "fl oz":
+        return { amount: Math.round(amount * 29.57), unit: "ml" };
+      case "qt":
+        return { amount: roundTo(amount * 0.946, 2), unit: "l" };
+      case "cup":
+      case "cups":
+        return { amount: Math.round(amount * 240), unit: "ml" };
+      case "tbsp":
+        return { amount: Math.round(amount * 15), unit: "ml" };
+      case "tsp":
+        return { amount: Math.round(amount * 5), unit: "ml" };
+      default:
+        return { amount, unit };
+    }
+  }
+
   switch (u) {
     case "g":
       return { amount: roundTo(amount / 28.35, 1), unit: "oz" };

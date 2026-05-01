@@ -1,4 +1,5 @@
 import type { Recipe } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { RecipePayload, RecipeResponse } from "@/types/recipe";
 
@@ -31,15 +32,33 @@ export function toRecipeResponse(recipe: Recipe): RecipeResponse {
     servings: recipe.servings,
     ingredients: parseJsonField(recipe.ingredients, []),
     steps: parseJsonField(recipe.steps, []),
+    adaptedSteps: recipe.adaptedSteps
+      ? parseJsonField(recipe.adaptedSteps, [])
+      : null,
     tags: deserializeStringArray(recipe.tags),
     createdAt: recipe.createdAt.toISOString(),
     updatedAt: recipe.updatedAt.toISOString(),
   };
 }
 
-export async function listRecipesForUser(userId: string): Promise<RecipeResponse[]> {
+export function buildRecipeListWhere(
+  userId: string,
+  query?: string | null,
+): Prisma.RecipeWhereInput {
+  const q = query?.trim();
+
+  return {
+    userId,
+    ...(q ? { title: { contains: q } } : {}),
+  };
+}
+
+export async function listRecipesForUser(
+  userId: string,
+  query?: string | null,
+): Promise<RecipeResponse[]> {
   const recipes = await prisma.recipe.findMany({
-    where: { userId },
+    where: buildRecipeListWhere(userId, query),
     orderBy: { createdAt: "desc" },
   });
 
@@ -59,6 +78,10 @@ export async function createRecipeForUser(
       servings: payload.servings,
       ingredients: JSON.stringify(payload.ingredients),
       steps: JSON.stringify(payload.steps),
+      adaptedSteps:
+        payload.adaptedSteps === undefined || payload.adaptedSteps === null
+          ? null
+          : JSON.stringify(payload.adaptedSteps),
       tags: serializeStringArray(payload.tags),
     },
   });
@@ -93,6 +116,12 @@ export async function updateRecipeForUser(
       }),
       ...(payload.steps !== undefined && {
         steps: JSON.stringify(payload.steps),
+      }),
+      ...(payload.adaptedSteps !== undefined && {
+        adaptedSteps:
+          payload.adaptedSteps === null
+            ? null
+            : JSON.stringify(payload.adaptedSteps),
       }),
       ...(payload.tags !== undefined && {
         tags: serializeStringArray(payload.tags),

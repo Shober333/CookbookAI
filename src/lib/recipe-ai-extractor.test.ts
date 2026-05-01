@@ -96,6 +96,40 @@ describe("normalizeExtractedRecipe", () => {
     });
   });
 
+  it("canonicalizes long-form units during extraction", () => {
+    expect(
+      normalizeExtractedRecipe(
+        {
+          title: "Unit Soup",
+          servings: 4,
+          ingredients: [
+            { amount: 100, unit: "grams", name: "carrots" },
+            { amount: 1, unit: "kilogram", name: "potatoes" },
+            { amount: 500, unit: "millilitres", name: "stock" },
+            { amount: 1, unit: "liter", name: "water" },
+            { amount: 2, unit: "tablespoons", name: "oil" },
+            { amount: 1, unit: "teaspoon", name: "salt" },
+            { amount: 4, unit: "ounces", name: "cheese" },
+            { amount: 1, unit: "pound", name: "beef" },
+          ],
+          steps: ["Simmer."],
+        },
+        "https://example.com/unit-soup",
+      ),
+    ).toMatchObject({
+      ingredients: [
+        { amount: 100, unit: "g", name: "carrots" },
+        { amount: 1, unit: "kg", name: "potatoes" },
+        { amount: 500, unit: "ml", name: "stock" },
+        { amount: 1, unit: "l", name: "water" },
+        { amount: 2, unit: "tbsp", name: "oil" },
+        { amount: 1, unit: "tsp", name: "salt" },
+        { amount: 4, unit: "oz", name: "cheese" },
+        { amount: 1, unit: "lb", name: "beef" },
+      ],
+    });
+  });
+
   it("passes through AI error payloads", () => {
     expect(
       normalizeExtractedRecipe(

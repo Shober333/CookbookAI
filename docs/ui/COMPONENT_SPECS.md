@@ -1,14 +1,13 @@
 # Component Specs — CookbookAI
 
-> **Status:** Locked — Sprint 0
+> **Status:** Locked — Sprint 0 (updated Sprint 2)
 > **Owner:** [UI/UX] (Alice)
 > **Reads:** `REGISTER.md` and `UI_KIT.md` first.
 > **Audience:** `[DEV:frontend]` agent or human dev implementing the UI.
 
-This file specifies the eight CookbookAI components: anatomy, states,
-props, accessibility, and copy. **No TSX is included** — implementation
-is the dev's authoring layer. All token references trace to
-`UI_KIT.md`.
+This file specifies the CookbookAI components: anatomy, states, props,
+accessibility, and copy. **No TSX is included** — implementation is
+the dev's authoring layer. All token references trace to `UI_KIT.md`.
 
 If a dev finds a state, prop, or behavior not specified here, that is a
 design question — file it back to Alice, do not improvise.
@@ -22,9 +21,10 @@ design question — file it back to Alice, do not improvise.
 3. `ServingScaler` — stepper for serving count
 4. `UnitToggle` — metric / imperial switch
 5. `ImportForm` — URL paste + AI streaming
-6. `EquipmentChip` — toggle for equipment in adapter
-7. `AdaptDiff` — old/new step comparison
+6. `EquipmentChip` — toggle for equipment selection
+7. `AdaptDiff` — *deprecated*; spec retained for post-MVP
 8. `Topbar` — app navigation bar
+9. `AdaptPanel` — inline adapt flow on recipe detail (Sprint 2)
 
 ---
 
@@ -68,16 +68,27 @@ A row with three columns at desktop, stacked at mobile.
 ### Props
 
 ```
-- recipe: { id, title, subtitle?, servings, totalMinutes, tags, isAdapted, sourceUrl }
+- recipe: { id, title, subtitle?, servings, totalMinutes, tags, adaptedSteps?, sourceUrl }
 - onClick?: handler — defaults to navigation to /recipes/[id]
 ```
 
-The `isAdapted` flag controls whether an `Adapted` tag (terracotta) appears.
+### Adapted tag (Sprint 2)
+
+When `recipe.adaptedSteps !== null && recipe.adaptedSteps.length > 0`,
+the tag list includes an extra `Adapted` chip at the end of the tag
+column, in terracotta.
+
+The `Adapted` chip uses the standard tag style with one variation:
+color and border switch to `--color-accent` (the AI signal). Background
+stays transparent. See `UI_KIT.md` §8 *Tag chips — Adapted variant*.
+
+The chip is derived from the recipe data, not a separately stored
+`isAdapted` flag. Don't introduce a redundant flag in the data model.
 
 ### Accessibility
 
 - Wrap as `<a href="/recipes/[id]">` so keyboard nav works natively
-- `aria-label` is auto-derived: `"${title}, ${servings} servings, ${minutes} minutes"`
+- `aria-label` is auto-derived: `"${title}, ${servings} servings, ${minutes} minutes${isAdapted ? ', adapted' : ''}"`
 - Tag list inside is `<ul role="list">` with `<li>` per tag
 
 ### Copy rules
@@ -100,7 +111,7 @@ The full recipe view. The most warmth-allowed screen in the product — exactly 
 │ Deck line (Fraunces italic, text-deck)        │
 │ Byline (Inter, text-ui-sm, ink-faint)         │
 ├──────────────────────────────────────────────┤
-│ [Stepper] [Unit Toggle]      [Adapt button]   │
+│ [Stepper] [Unit Toggle]                       │
 ├──────────────────────────────────────────────┤
 │ INGREDIENTS                          ┌────────┐
 │ 400 g  spaghetti                     │ margin │
@@ -112,8 +123,17 @@ The full recipe view. The most warmth-allowed screen in the product — exactly 
 │ ii.  Toast the pepper...
 │ iii. Add the butter...
 │ iv.  Toss off heat...
+├──────────────────────────────────────────────┤
+│ < AdaptPanel — see §9 >                      │
+├──────────────────────────────────────────────┤
+│ [ Download .md ]  [ Delete recipe ]           │
 └──────────────────────────────────────────────┘
 ```
+
+**Sprint 2 changes:** the "Adapt for my kitchen" button moved off the
+controls bar and into a dedicated `AdaptPanel` section below the
+method (see §9). The bottom of the page now hosts both the
+`Download .md` and `Delete recipe` actions side by side.
 
 ### Layout
 
@@ -132,12 +152,13 @@ The full recipe view. The most warmth-allowed screen in the product — exactly 
 ### Props
 
 ```
-- recipe: full Recipe object (title, deck, ingredients, steps, sourceUrl, ...)
+- recipe: full Recipe object (title, deck, ingredients, steps, sourceUrl, adaptedSteps, ...)
 - marginNote?: string — optional Caveat note. If absent, no margin note.
-- onAdaptClick: handler
 ```
 
 `marginNote` is data-driven — if null/empty, the margin note slot is hidden entirely. Don't fall back to a default.
+
+`adaptedSteps` (when non-null) is consumed by the embedded `AdaptPanel` (§9). RecipeDetail itself doesn't render the adapted version.
 
 ### Step number rendering
 
@@ -154,6 +175,13 @@ The single warm moment. Strict rules:
 - `transform: rotate(3deg)` on desktop (in-flow on mobile, no rotation)
 - `aria-hidden="true"` — decorative; data is conveyed elsewhere
 - Includes a small `↓` mark above the text
+
+### Bottom action row
+
+- "Download .md" — ghost variant, see `SPRINT_02_SPECS.md` §4
+- "Delete recipe" — ghost variant, existing
+- Separator: `·` middle-dot in `--color-ink-faint` between the two
+- Both are tertiary actions. Side-by-side at desktop, stacked at mobile.
 
 ### Accessibility
 
@@ -195,7 +223,7 @@ Stepper for adjusting recipe yield. Live re-renders all ingredient amounts on ch
 ```
 - value: number
 - min: number  // default 1
-- max: number  // default 12
+- max: number  // default 12 (Sprint 1 dev raised to 99 — acceptable)
 - onChange: (next: number) => void
 ```
 
@@ -268,14 +296,8 @@ Two text buttons, side by side. No background fill. The active one is underlined
 
 ### Conversion rules
 
-When switching to imperial:
-- `g` → `oz` (divide by 28.35, round to 1 decimal)
-- `kg` → `lb` (divide by 0.4536, round to 1 decimal)
-- `ml` → `fl oz` (divide by 29.57, round to 1 decimal)
-- `l` → `qt` (divide by 0.946, round to 2 decimals)
-- `tsp`, `tbsp`, `cup`, count units (whole eggs, etc.) stay unchanged
-
-Conversion is lossy round-tripping — we do not preserve original imperial values, since the source is metric in the recipe model.
+See Sprint 2 dev_todo.md task B5 for the canonical conversion table —
+the dev owns those mechanics. This spec governs only the UI.
 
 ### Accessibility
 
@@ -286,7 +308,15 @@ Conversion is lossy round-tripping — we do not preserve original imperial valu
 
 ## 5. ImportForm
 
-URL paste + streaming AI extraction. The streaming itself is the warmest moment in the import flow — see `REGISTER.md` Rule 2.
+URL paste + progressive AI extraction. The progressive phase indicators
+are the warmest moment in the import flow — see `REGISTER.md` Rule 2.
+
+**Note on terminology:** this spec uses "streaming box" historically.
+The actual implementation uses progressive phase indicators driven by
+parsing the JSON response as it accumulates — not literal LLM token
+streaming. The user-facing copy honestly describes phases ("Reading
+the page…", "Finding the recipe…"), so the language is accurate.
+See `STATES.md` §4 *Note on streaming* for more.
 
 ### Anatomy
 
@@ -321,7 +351,7 @@ URL paste + streaming AI extraction. The streaming itself is the warmest moment 
 - Validates as URL on blur — if invalid, shows error helper text below in `--color-accent-strong`
 
 #### "Bring it in" button
-- Primary variant
+- Filled accent variant (per UI_KIT.md §8 Buttons — Sprint 1 used filled, accepted)
 - Full width, height 38px
 - Disabled when input is empty or invalid
 
@@ -329,28 +359,33 @@ URL paste + streaming AI extraction. The streaming itself is the warmest moment 
 - Padding `18px 20px`, border `0.5px solid --color-border`
 - Background `--color-paper-sunken`, `--radius-sm`, min-height 160px
 - **Status header:** small terracotta pulse dot + status text in `text-eyebrow` color `--color-accent`
-- **Streamed lines:** opacity fade-in (`--motion-fade-slow`), staggered by `--motion-stream-line` (~420ms)
+- **Streamed lines:** opacity fade-in (`--motion-fade-slow`), staggered as new phases are detected
 
 ### States
 
 | State | Visual |
 |---|---|
 | Idle | Input + button only. No streaming box. |
-| Submitting (streaming) | Streaming box visible, pulse animating, status updating, lines streaming in |
-| Success | Pulse stops. Status: "Done". Final line: "✓ Recipe ready — save to library" with a save action |
+| Submitting (working) | Streaming box visible, pulse animating, status updating, lines streaming in |
+| Success | Pulse stops. Status: "Done". Final line: "✓ Recipe ready — save to library" with auto-navigation after 1.5s |
 | Error | See `STATES.md` §4 — error inline below streaming box |
+
+Internal `Status` enum should use `"working"` rather than `"streaming"`
+to avoid confusion in code; user-facing copy is unaffected.
 
 ### Streaming status copy
 
 Status text rotates as parsing progresses:
 
 1. "Reading the page…" — initial fetch
-2. "Finding the recipe…" — title + meta extracted
-3. "Reading ingredients…" — ingredient parsing
-4. "Reading the method…" — step parsing
+2. "Finding the recipe…" — title key seen in JSON
+3. "Reading ingredients…" — ingredients key seen
+4. "Reading the method…" — steps key seen
 5. "Done" — final state
 
-Status comes from the AI streaming response; the UI shows the latest message. The dev should not invent intermediate states.
+Status comes from `detectPhase()` parsing the accumulating JSON string;
+the UI shows the latest phase. The dev should not invent intermediate
+states.
 
 ### Props
 
@@ -374,7 +409,9 @@ When `prefers-reduced-motion: reduce`, the streaming box appears in final state 
 
 ## 6. EquipmentChip
 
-Toggle for equipment in the kitchen-adapter screen. Selected state is the AI signal — terracotta.
+Toggle for equipment selection. Selected state is the AI signal —
+terracotta. Used on the `/equipment` settings page (Kitchen settings,
+see `SPRINT_02_SPECS.md` §1).
 
 ### Anatomy
 
@@ -398,14 +435,39 @@ A horizontal button with a circular check indicator on the left and the equipmen
 | Off + Hover | `--color-accent` | transparent | unchanged | unchanged |
 | On | `--color-accent` | `--color-accent-bg` | filled terracotta circle with white `✓` | `--color-ink`, regular |
 | Focus | 2px terracotta ring outside container | | | |
+| Loading (page-level) | 50% opacity, no interaction | unchanged | unchanged | unchanged |
 
 ### Props
 
 ```
-- equipment: string
+- equipment: string  // display label
+- equipmentKey: string  // backend API key (e.g., "air_fryer")
 - isSelected: boolean
 - onToggle: () => void
+- disabled?: boolean  // page-level loading state
 ```
+
+### Backend keys (LOCKED — must match Zod schema)
+
+The 8 valid `equipmentKey` values, per `dev_todo.md` Task B1:
+
+| Display label | Backend key |
+|---|---|
+| Stovetop | `stovetop` |
+| Oven | `oven` |
+| Microwave | `microwave` |
+| Air fryer | `air_fryer` |
+| Slow cooker | `slow_cooker` |
+| Grill | `grill` |
+| Instant Pot | `instant_pot` |
+| Blender | `blender` |
+
+The UI shows the display label; the API stores the backend key. Don't
+expose underscore-cased keys to the user. Don't render any chip whose
+key isn't in this list.
+
+The Sprint 0 list included "Wok" and "Sous vide" instead of "Blender."
+The Sprint 2 list above is canonical and matches the API contract.
 
 ### Layout
 
@@ -421,11 +483,21 @@ A horizontal button with a circular check indicator on the left and the equipmen
 
 ---
 
-## 7. AdaptDiff
+## 7. AdaptDiff — *deprecated*
 
-Old/new step comparison. Precise — no warm moments.
+> **Status: deprecated for MVP.** Founder confirmed 2026-05-01.
+>
+> The Sprint 2 design contract (`SPRINT_02_SPECS.md` §2) replaces the
+> standalone adapter page with an inline `AdaptPanel` (§9) that does
+> **not** show a diff. The user has the original method visible above
+> the panel; explicit diff styling competes with the original method
+> visually rather than helping.
+>
+> This spec is retained for possible post-MVP use — e.g., a "compare
+> versions" feature when a recipe has multiple saved adaptations.
+> Until that need is real, do not implement.
 
-### Anatomy
+### Anatomy (retained for reference)
 
 ```
 ┌─ "Preview · adapted method" ─────────────────┐
@@ -444,7 +516,7 @@ Each step shows:
 - *If changed:* old text struck through above, new text below
 - *If unchanged:* just the (unchanged) step in body color
 
-### Tokens
+### Tokens (retained for reference)
 
 | Slot | Token |
 |---|---|
@@ -455,13 +527,7 @@ Each step shows:
 | New text | `text-body`, `--color-ink` |
 | Unchanged text | `text-body`, `--color-ink` |
 
-### Layout
-
-- Old text appears *first* (above), new text *below*
-- Old + new wrapped in a single block per step; vertical gap 4px
-- Steps separated by 8px padding-top/bottom
-
-### Props
+### Props (retained for reference)
 
 ```
 - steps: Array<{
@@ -471,10 +537,8 @@ Each step shows:
   }>
 ```
 
-### Accessibility
-
-- Section wrapped in `<section aria-label="Adapted method preview">`
-- Old text uses `<del>`, new text uses `<ins>`
+If/when this is revived, refresh the spec against then-current
+register and kit before implementing.
 
 ---
 
@@ -485,8 +549,12 @@ App navigation. Persistent across all authenticated routes.
 ### Anatomy
 
 ```
-[● CookbookAI]  [Library] [Equipment]   [search]   [+ Import]
+[● CookbookAI]  [Library] [Kitchen]      [Sign out]   [+ Import]
 ```
+
+The nav label "Kitchen" is the user-facing copy (LOCKED 2026-05-01,
+see `SPRINT_02_SPECS.md` §0). The route URL stays `/equipment` —
+URLs are technical, UI copy is editorial. They diverge here intentionally.
 
 | Slot | Token |
 |---|---|
@@ -496,14 +564,29 @@ App navigation. Persistent across all authenticated routes.
 | Nav buttons | `font-ui`, `text-ui`, padding `5px 10px`, `--radius-sm` |
 | Active nav | weight 500, `--color-ink` |
 | Inactive nav | `--color-ink-muted` |
-| Search field | inline, max-width 280px, height 28px |
-| Import button | primary variant, `text-ui` |
+| Sign out link | `font-ui`, `text-ui-sm`, `--color-ink-muted` (ghost variant). Hover: `--color-ink`. Hidden on mobile. |
+| Import button | filled accent variant (per UI_KIT.md §8) |
+
+### Nav links
+
+| Label | Route | Active matcher |
+|---|---|---|
+| Library | `/library` | `pathname === '/library' \|\| pathname.startsWith('/recipes/')` |
+| Kitchen | `/equipment` | `pathname.startsWith('/equipment')` |
 
 ### Layout
 
-- **Mobile (< 768px):** Brand left, Import button right. Nav and search collapse — see Open Question below. Sticky.
-- **Tablet (≥ 768px):** Brand, nav, [grow], search (max 240px), Import button.
-- **Desktop (≥ 1024px):** Brand, nav, search (centered, max 280px), Import button. Search field shows `⌘K` kbd hint.
+The right-side cluster, in order:
+
+1. (spacer — `flex-1`)
+2. **Sign out** link — desktop only, ghost variant, `mr-4`
+3. **+ Import** button — visible at all breakpoints, filled accent
+
+Layout per breakpoint:
+
+- **Mobile (< 768px):** Brand left, Import button right. Nav and Sign-out collapse — see Mobile collapse below. Sticky.
+- **Tablet (≥ 768px):** Brand, nav (Library, Kitchen), [grow], Sign-out, Import button.
+- **Desktop (≥ 1024px):** Brand, nav (Library, Kitchen), [grow], Sign-out, Import button. The search field originally specified for desktop is **deferred to post-MVP** — search lives on the library page itself for Sprint 2 (per `SPRINT_02_SPECS.md` §3).
 
 ### States
 
@@ -511,32 +594,231 @@ App navigation. Persistent across all authenticated routes.
 |---|---|
 | Default | All controls visible per breakpoint |
 | Scrolled | No change (no shadow, no shrink) |
-| Search focused | Search field border becomes `--color-accent` |
 
-### Search field behavior
+### Mobile collapse — RESOLVED
 
-- The search field is a *trigger*, not a real input
-- Clicking it (or pressing ⌘K anywhere) opens a search overlay (separate `SearchOverlay` component, to be specified later)
-- Visually it presents as an input but is rendered as a button
+Earlier this spec carried an open question about three options
+(hamburger, two-row, search-only). Founder resolved this 2026-05-01:
 
-### Open Question (for Founder)
+**Decision: Option 3 — search-button-only.**
 
-**Mobile collapse strategy:** options are:
+Concretely, on mobile (< 768px):
 
-1. **Hamburger** — collapse nav into a menu, show a search icon button
-2. **Two-row** — first row: brand + import; second row: search field full width with nav links inline
-3. **Search button only** — drop inline nav entirely on mobile; library is the default route, equipment reachable from the library page header
+- Brand on the left
+- "+ Import" button on the right
+- Nav links (Library, Kitchen) hidden — library is the default
+  authenticated route; Kitchen is reachable from the library page
+  header
+- Sign-out link hidden — moves to a profile menu post-MVP. For now
+  on mobile, users sign out by switching to desktop or using a future
+  account screen.
 
-**My recommendation: Option 3.** Two routes is too few to justify a hamburger; minimal topbar on mobile preserves screen real estate for the recipe (which is what users came for).
+### Sign-out long-term — RESOLVED
 
-This is a design decision the Founder should approve before implementation. **Do not implement either option without sign-off.**
+Founder confirmed 2026-05-01: keep the sign-out link in the topbar at
+desktop for MVP. Move to a profile menu when the profile/account
+surface is designed (post-MVP). The current placement is intentional
+and not a stopgap to fix in Sprint 2 or 3.
 
 ### Accessibility
 
 - Brand is `<a href="/">` wrapping mark + text
 - Nav is `<nav aria-label="Primary">` with `<ul role="list">`
 - Active nav item has `aria-current="page"`
+- Sign-out is a `<button>` (it triggers the NextAuth `signOut()` flow)
 - Import button is `<button>`, not a link
+
+---
+
+## 9. AdaptPanel — Sprint 2
+
+Inline adapt flow on the recipe detail page. Replaces the standalone
+`/recipes/[id]/adapt` page from Sprint 0. See `SPRINT_02_SPECS.md` §2
+for full rationale.
+
+### Position
+
+Within `RecipeDetail` (§2), between the Method section and the bottom
+action row (Download / Delete). Wrapped in a `<section
+aria-label="Adapt this recipe">`.
+
+### Component states
+
+The component handles five states:
+
+1. **Idle** — no adapted version saved, no rewrite in progress
+2. **Idle, no equipment** — variant of Idle when user has no saved
+   appliances; button disabled with hint
+3. **Loading** — AI rewrite in progress
+4. **Result** — AI returned successfully, user hasn't saved or
+   discarded yet
+5. **Saved** — recipe has `adaptedSteps` persisted; collapsed by
+   default with a toggle to expand
+
+### State 1 — Idle
+
+```
+┌──────────────────────────────────────────────────┐
+│  Eyebrow: "Make it yours"                        │
+│  Headline: "Adapt this for your kitchen."        │
+│  Sub: "We'll rewrite the steps using only        │
+│       what you've got."                          │
+│                                                  │
+│  [   Adapt for my kitchen   ]                    │
+└──────────────────────────────────────────────────┘
+```
+
+| Slot | Token |
+|---|---|
+| Eyebrow | `font-ui text-eyebrow text-accent`, "Make it yours" |
+| Headline | `font-display text-display-md font-medium text-ink`, "Adapt this for your kitchen." |
+| Sub | `font-display text-deck italic text-ink-muted` |
+| Button | filled accent variant, `h-[38px] px-4 rounded-sm`, "Adapt for my kitchen" |
+
+### State 1b — Idle, no equipment saved
+
+When `appliances.length === 0`:
+- Button is disabled
+- Hint below: "Save your equipment in **Kitchen settings** first."
+- "Kitchen settings" links to `/equipment`
+- Surrounding text: `font-ui text-ui-sm text-ink-faint`
+
+### State 2 — Loading
+
+The button is replaced inline with:
+
+```
+[●] Adapting…
+```
+
+| Slot | Token |
+|---|---|
+| Pulse dot | `bg-accent`, 6×6px circle, `--motion-pulse` animation |
+| Label | `font-ui text-ui text-accent`, "Adapting…" |
+
+Reduced motion: pulse dot static at full opacity.
+
+### State 3 — Result shown
+
+```
+┌──────────────────────────────────────────────────┐
+│  Eyebrow: "Adapted for your kitchen"             │
+│                                                  │
+│  NOTES                                           │
+│  "Replaced the air fryer with the oven; the      │
+│  tofu won't be quite as crisp but the sauce      │
+│  carries it." (italic, ink-muted)                │
+│                                                  │
+│  STEPS                                           │
+│  i.   Heat the oven to 230°C / 450°F...         │
+│  ii.  Whisk the peanut butter...                │
+│  iii. Roast the tofu for 22-25 minutes...       │
+│                                                  │
+│  [ Save this version ]    [ Discard ]            │
+└──────────────────────────────────────────────────┘
+```
+
+| Slot | Token |
+|---|---|
+| Container | `max-w-[620px]` |
+| Eyebrow | `font-ui text-eyebrow text-accent`, "Adapted for your kitchen" |
+| Notes label (only if `notes` non-empty) | `font-ui text-eyebrow text-ink-faint`, "Notes" |
+| Notes body | `font-display text-body italic text-ink-muted` |
+| Steps label | `font-ui text-eyebrow text-ink-faint`, "Steps" |
+| Step number | `font-display` italic, `--color-accent`, `min-w-[22px]` |
+| Step body | `font-display text-body text-ink` |
+| Steps list | `<ol style="list-style-type: lower-roman">` (same pattern as RecipeDetail method) |
+| "Save this version" | primary variant (`bg-ink text-paper h-[38px]`) |
+| "Discard" | ghost variant (`text-ink-muted`, no border, hover `text-ink underline`) |
+| Button row gap | `gap-3`. Mobile: stacked, full width, save on top. Desktop: side by side, left-aligned. |
+
+#### Identical-result handling
+
+If the AI returns steps character-for-character identical to the
+original (e.g., recipe was already perfectly suited to the user's
+equipment), still show the result panel with a one-line note:
+*"Notes — Your kitchen already has everything; no changes needed."*
+Don't suppress. Users learning the feature need to see it ran.
+
+### State 4 — Saved
+
+When recipe loads with non-null `adaptedSteps`:
+
+```
+┌──────────────────────────────────────────────────┐
+│  Eyebrow: "Adapted for your kitchen — saved"     │
+│  [ Show adapted version ▾ ]                     │
+└──────────────────────────────────────────────────┘
+```
+
+On click, expand:
+
+```
+│  STEPS                                           │
+│  i.   Heat the oven to 230°C / 450°F...         │
+│  ii.  Whisk the peanut butter...                │
+│  ...                                             │
+│                                                  │
+│  [ Hide ]   [ Re-adapt ]   [ Discard ]           │
+```
+
+| Action | Variant | Behavior |
+|---|---|---|
+| "Show adapted version" / "Hide" | ghost | Toggle expand/collapse |
+| "Re-adapt" | accent outline | Re-runs AI rewrite. **No confirmation** (Founder decision: re-adapt is non-destructive friction). On success, returns to Loading → Result; saving overwrites previous. |
+| "Discard" | ghost | `window.confirm("Discard the adapted version?")` then `PATCH` `{ adaptedSteps: null }` |
+
+The state-4 panel does not show a "Save this version" button — already
+saved.
+
+### Error states
+
+| Failure | Treatment |
+|---|---|
+| Adapt API returns 5xx or network error | Below the button: `font-ui text-body-sm text-accent-strong`: "We couldn't rewrite this. Try again, or check your kitchen settings." Two CTAs: "Try again" (filled accent) and "Adjust kitchen →" (ghost, links to `/equipment`). |
+| Adapt API returns valid JSON but empty `adaptedSteps` | Same treatment. Copy: "Adaptation didn't produce a usable result. Try again, or change your kitchen selection." |
+| Save API fails | Below the action buttons: "We couldn't save that. Try again." Save button re-enables. The result panel stays mounted. |
+
+### Props
+
+```
+- recipeId: string
+- originalSteps: string[]
+- savedAdaptedSteps: string[] | null
+- savedAdaptedNotes: string | null
+- userAppliances: string[]  // from /api/equipment
+- isShowingAdapted: boolean  // for parent to know which version is being viewed
+- onShowingAdaptedChange: (isShowing: boolean) => void  // for the Markdown export to read
+- onAdapt: (recipeId, appliances) => Promise<AdaptResponse>
+- onSaveAdapted: (recipeId, adaptedSteps) => Promise<void>
+- onDiscardAdapted: (recipeId) => Promise<void>
+```
+
+The `isShowingAdapted` lift-up exists so the recipe detail page knows
+which version (original or adapted) the user is currently viewing —
+the Download .md button reads this to decide what to export. See
+`SPRINT_02_SPECS.md` §4.
+
+### Accessibility
+
+- Wrapped in `<section aria-label="Adapt this recipe">`
+- Loading state announces via `role="status"`
+- Result panel announces via `aria-live="polite"` when it appears
+- Saved-state toggle has `aria-expanded`
+- Roman numerals follow the same hidden-decorative pattern as
+  RecipeDetail method
+
+### Reduced-motion
+
+- Loading pulse: respects `prefers-reduced-motion: reduce`
+- No fade-in on result panel; immediate display
+
+### Files
+
+- `src/components/recipe/AdaptPanel.tsx` — new
+- `src/app/(app)/recipes/[id]/page.tsx` — render `<AdaptPanel>` after `<RecipeDetail>`
+- `src/components/recipe/RecipeDetail.tsx` — remove the "Adapt for my kitchen" button from the controls bar (moves into AdaptPanel)
+- `/recipes/[id]/adapt` route — delete if it was created in Sprint 1
 
 ---
 
@@ -559,4 +841,23 @@ Components failing any item are flagged 🟡 **Bad** (rule drift) or 🔴 **Ugly
 
 ## Authority
 
-This file is owned by **[UI/UX] (Alice)**. Adding a component, removing one, or changing a contract is a design decision — file it back to Alice. Devs may not invent components or props that aren't specified here. New features get new specs.
+This file is owned by **[UI/UX] (Alice)**. Adding a component, removing
+one, or changing a contract is a design decision — file it back to
+Alice. Devs may not invent components or props that aren't specified
+here. New features get new specs.
+
+---
+
+## Changelog
+
+| Date | Change | Trigger |
+|---|---|---|
+| 2026-04-29 | Initial lock — Sprint 0 | Founder approved register |
+| 2026-05-01 | §1 RecipeListItem: Adapted tag now derives from `recipe.adaptedSteps !== null`, not a separate flag | Sprint 2 data model |
+| 2026-05-01 | §2 RecipeDetail: removed "Adapt" button from controls bar; added bottom action row (Download .md + Delete); referenced AdaptPanel | Sprint 2 inline adapt flow |
+| 2026-05-01 | §3 ServingScaler: documented Sprint 1 max=99 (acceptable) | Sprint 1 dev raised max |
+| 2026-05-01 | §5 ImportForm: added note clarifying "streaming" is progressive phase indicators, not literal token streaming. Button updated to filled accent. Internal `Status` enum recommended to use "working". | CTO Sprint 1 review #5 |
+| 2026-05-01 | §6 EquipmentChip: locked the 8 backend keys to match Zod schema; added `equipmentKey` prop; added `disabled` prop for page-level loading | Sprint 2 backend contract |
+| 2026-05-01 | §7 AdaptDiff: marked deprecated; spec retained for post-MVP | Sprint 2 inline adapt flow + Founder confirmation |
+| 2026-05-01 | §8 Topbar: nav label "Equipment" → "Kitchen" (route stays `/equipment`); added Sign-out link; resolved mobile collapse (Option 3); deferred topbar search to post-MVP | Sprint 1 dev addition + Founder decisions |
+| 2026-05-01 | §9 AdaptPanel: new component spec | Sprint 2 task F2 |
