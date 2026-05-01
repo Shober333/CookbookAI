@@ -107,9 +107,48 @@ timeout (not `AbortSignal.timeout()`). Timeout: `OLLAMA_EXTRACTION_TIMEOUT_MS`
 
 ---
 
+### Task B5 — Unit conversion bug fix `[DEV:backend]` · Small
+
+**What:** Canonicalize long-form metric units at extraction time so imperial
+conversion works for all ingredient variants.
+
+**Bug:** `RECOGNIZED_UNITS` includes `"gram"` and `"grams"`, so they pass
+normalization untouched and get stored as `gram`/`grams`. But `convertUnit`
+in `recipe-utils.ts` only switches on `"g"` — so toggling to imperial silently
+does nothing for those ingredients.
+
+**Fix:** In `src/lib/recipe-ai-extractor.ts`, update `normalizeUnit()` to
+canonicalize long-form units to their short-form canonical equivalents before
+the ingredient is stored:
+
+```
+gram / grams   → g
+kilogram / kilograms → kg  (already only "kg" in set, but defensive)
+milliliter / millilitre / milliliters / millilitres → ml
+liter / litre / liters / litres → l
+tablespoon / tablespoons → tbsp
+teaspoon / teaspoons → tsp
+ounce / ounces → oz
+pound / pounds → lb
+```
+
+`convertUnit` itself should not change — the fix is at the data layer so
+existing unit logic doesn't need multiple case arms.
+
+**Note:** Recipes already saved with `gram`/`grams` in the DB will still not
+convert — the fix only applies to new imports. Existing records are not worth
+migrating (user can re-import if needed).
+
+**Files:**
+- `src/lib/recipe-ai-extractor.ts` — update `normalizeUnit()`
+
+**Tests:** Add unit tests for the canonical variants in the existing test suite.
+
+---
+
 ## Phase 2 — Frontend
 
-> Start after B1–B4 are merged and the dev server runs cleanly.
+> Start after B1–B5 are merged and the dev server runs cleanly.
 
 ### Task F1 — Equipment settings page `[DEV:frontend]` · Medium
 
@@ -182,6 +221,47 @@ or token doesn't exist, use the closest existing one and flag it.
 
 ---
 
+### Task F4 — Recipe download as Markdown `[DEV:frontend]` · Small
+
+**What:** Add a "Download" button to the recipe detail page that exports the
+recipe as a `.md` file.
+
+**Behaviour:**
+- Pure client-side — no API call. Generate a Markdown string from the recipe
+  object in the browser, trigger download via:
+  ```typescript
+  const blob = new Blob([markdown], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  // anchor click + revokeObjectURL
+  ```
+- Filename: `<slugified-title>.md` (e.g. `lemon-pasta.md`).
+- Markdown format:
+  ```markdown
+  # Recipe Title
+  _Source: example.com_
+  **Servings:** 4
+
+  ## Ingredients
+  - 200 g spaghetti
+  - 120 ml cream
+
+  ## Steps
+  1. Boil the pasta.
+  2. Make the sauce.
+  ```
+- Ingredient amounts use current serving scale and unit system (export what
+  the user sees, not necessarily the stored canonical values).
+- Button placement: near the delete button on the recipe detail page. Label:
+  "Download .md". Use existing button/link styles.
+
+**Files:**
+- `src/components/recipe/RecipeDetail.tsx` (update — add download button + handler)
+- `src/lib/recipe-utils.ts` (add `recipeToMarkdown()` helper)
+
+**Tests:** Unit test `recipeToMarkdown()` with a sample recipe fixture.
+
+---
+
 ## Definition of Done (per task)
 
 - [ ] `npm run typecheck` passes
@@ -199,6 +279,8 @@ or token doesn't exist, use the closest existing one and flag it.
 | B2 adaptedSteps migration | [DEV:backend] | Not started |
 | B3 AI adaptation endpoint | [DEV:backend] | Not started |
 | B4 Library search backend | [DEV:backend] | Not started |
+| B5 Unit conversion bug fix | [DEV:backend] | Not started |
 | F1 Equipment settings page | [DEV:frontend] | Not started |
 | F2 Adapt flow on recipe detail | [DEV:frontend] | Not started |
 | F3 Library search input | [DEV:frontend] | Not started |
+| F4 Download as Markdown | [DEV:frontend] | Not started |

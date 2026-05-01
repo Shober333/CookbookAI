@@ -21,13 +21,17 @@
 
 | # | Feature | Description | Priority |
 |---|---------|-------------|----------|
-| 1 | Recipe import | Paste a URL (webpage or YouTube video); AI extracts and structures the full recipe | Must Have |
-| 2 | Recipe library | Browse, search, and organize saved recipes; each user has their own private library | Must Have |
-| 3 | Serving scaler | Rescale ingredient quantities for any number of servings | Must Have |
-| 4 | Unit conversion | Toggle between metric and imperial throughout a recipe | Must Have |
-| 5 | Equipment adapter | User specifies available appliances; AI rewrites the cooking method accordingly | Must Have |
-| 6 | Recipe tagging / search | Tag recipes by cuisine, dietary label, or equipment; full-text search | Nice to Have |
-| 7 | Ingredient substitution | Ask AI to swap an ingredient (e.g., "replace butter with olive oil") | Nice to Have |
+| 1 | Recipe import — URL | Paste a URL; AI fetches the page and extracts the full recipe | Must Have |
+| 2 | Recipe import — text/paste | Paste raw recipe text or HTML directly (fallback for bot-blocked sites) | Must Have |
+| 3 | Recipe library | Browse, search, and organize saved recipes; each user has their own private library | Must Have |
+| 4 | Serving scaler | Rescale ingredient quantities for any number of servings | Must Have |
+| 5 | Unit conversion | Toggle between metric and imperial throughout a recipe | Must Have |
+| 6 | Equipment adapter | User specifies available appliances; AI rewrites the cooking method accordingly | Must Have |
+| 7 | Recipe export | Download a recipe as a Markdown file | Nice to Have |
+| 8 | Video import (Gemini) | Paste a YouTube URL; Gemini API extracts recipe from the video | Nice to Have |
+| 9 | Guest mode | Try the app without creating an account (ephemeral or persistent — TBD Founder) | Nice to Have |
+| 10 | Recipe tagging / search | Tag recipes by cuisine, dietary label, or equipment; full-text search | Nice to Have |
+| 11 | Ingredient substitution | Ask AI to swap an ingredient (e.g., "replace butter with olive oil") | Nice to Have |
 
 ---
 

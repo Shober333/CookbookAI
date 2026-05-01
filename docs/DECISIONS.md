@@ -5,6 +5,47 @@
 
 ---
 
+## Decision: Gemini API for YouTube / Video Recipe Import (deferred)
+
+**Date:** 2026-05-01
+**Status:** Deferred — Sprint 3+
+**Decided by:** [CTO] (Founder flagged intent)
+
+**Context:**
+The Founder confirmed that Gemini can extract recipes from YouTube videos. The
+import form placeholder already mentions "YouTube link" but the current path
+(fetch URL HTML → strip → AI extract) cannot handle videos. A working video
+import path requires a multimodal model that can process video content directly.
+
+**Key clarification:**
+The watch-history issue the Founder observed was from using **Google AI Studio**
+(the interactive web UI), which runs under the user's Google identity.
+The **Gemini Developer API** (`generativelanguage.googleapis.com`) is
+key-based; inference is billed to the API project and does NOT create watch
+history or interact with the user's Google account in any way.
+
+**Proposed approach (for Sprint 3+):**
+- Add `AI_PROVIDER=gemini` as a third provider branch in the provider config.
+- Pass the YouTube URL as a `fileData` part (`{ fileUri: url, mimeType:
+  "video/*" }`) in the Gemini request — the API fetches the video itself.
+- Use `gemini-2.0-flash` or `gemini-1.5-pro` for multimodal extraction.
+- The same JSON schema and normalization pipeline as the current import applies.
+- `src/lib/anthropic.ts` should be renamed `src/lib/ai-provider.ts` when this
+  is added to avoid confusion.
+
+**Why deferred:**
+- Sprint 2 (equipment adapter, search) is more valuable to current users than
+  video import.
+- Adding a third provider requires careful architecture to avoid branching
+  proliferation.
+- The Gemini API key management (separate from Anthropic) should be decided
+  after the production Anthropic path is validated first.
+
+**Action required:** None until Sprint 3 planning. Founder should obtain a
+Gemini API key (Google AI console) when ready to start.
+
+---
+
 ## Decision: Design Language — Warm Domestic with Editorial Discipline
 
 **Date:** 2026-04-30
