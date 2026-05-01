@@ -22,10 +22,10 @@
 
 ## Exit Criteria
 
-- [ ] All tasks in `todo/dev_todo.md` completed
+- [x] All tasks in `todo/dev_todo.md` completed
 - [ ] All scenarios in `todo/qa_todo.md` pass
 - [ ] No critical bugs open
-- [ ] CTO Good/Bad/Ugly review completed (`reviews/cto_review.md`)
+- [ ] CTO Good/Bad/Ugly review completed
 - [ ] Screenshots captured for all main views
 
 ---
@@ -47,5 +47,5 @@
 
 - Dev tasks: `todo/dev_todo.md`
 - QA scenarios: `todo/qa_todo.md`
-- Dev report: `reports/dev_report.md`
-- CTO review: `reviews/cto_review.md`
+- Sprint report: `reports/sprint_01_report.md`
+- CTO progress review: `reviews/cto_progress_review.md`
