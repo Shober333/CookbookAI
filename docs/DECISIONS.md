@@ -103,6 +103,45 @@ Option 1 — Next.js 15 full-stack monorepo.
 
 ---
 
+## Decision: Switch Active Ollama Model to qwen3.5:cloud
+
+**Date:** 2026-05-01
+**Status:** Accepted
+**Decided by:** Founder
+
+**Context:**
+During Sprint 1 QA, live URL imports were tested against real recipe pages.
+`gemma4:e4b` (local GPU model) was the original default. QA revealed that
+Ollama cloud models provide better extraction quality and no local GPU
+requirement, making them practical for developer validation.
+
+**Options Considered:**
+1. Keep `gemma4:e4b` — requires local GPU; slower; lower structured-output
+   reliability.
+2. **Switch to `qwen3.5:cloud`** — Ollama-relayed cloud model (Qwen3 397B);
+   no local GPU; stronger instruction following; ~15–30s extraction time.
+
+**Decision:**
+`OLLAMA_MODEL=qwen3.5:cloud` is now the active default in `.env.example`.
+`gemma4:e4b` is retained as a commented-out alternative for GPU users.
+`MAX_SOURCE_CHARS` for cloud Ollama models is 15 000 characters;
+`num_ctx` is 32 768 tokens.
+
+**Rationale:**
+- Sprint 1 validation requires reliable extraction across diverse real URLs.
+  The cloud model outperforms the local GPU model at this without requiring
+  any infrastructure change — Ollama handles the relay transparently.
+- The provider is still `AI_PROVIDER=ollama`; the switch is a model-name
+  change only. Fully reversible.
+
+**Consequences:**
+- `ARCHITECTURE.md` references to `gemma4:e4b` should be updated to reflect
+  the current active model.
+- Extraction still blocks (non-streaming) and takes up to 30s on cloud.
+- `.env` files keep the old model commented out; switching back is one line.
+
+---
+
 ## Decision: Ollama-First AI Provider for Sprint 1 Local Validation
 
 **Date:** 2026-05-01

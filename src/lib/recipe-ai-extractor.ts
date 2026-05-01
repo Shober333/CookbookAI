@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import {
   aiProvider,
   claudeModel,
+  isOllamaCloudModel,
   ollamaBaseUrl,
   ollamaModel,
   recipeExtractionProviderOptions,
@@ -206,30 +207,41 @@ async function extractRecipeWithOllama(
   sourceText: string,
   sourceUrl: string,
 ): Promise<Record<string, unknown>> {
-  const response = await fetch(`${ollamaBaseUrl}/api/chat`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      model: ollamaModel,
-      stream: false,
-      format: recipeJsonSchema,
-      options: { temperature: 0, num_ctx: 4096 },
-      messages: [
-        {
-          role: "system",
-          content:
-            `${recipeExtractionSystemPrompt}\n\n` +
-            "Return a JSON object matching the provided schema. " +
-            "Use an empty string for unknown ingredient units.",
-        },
-        {
-          role: "user",
-          content: buildRecipePrompt(sourceText, sourceUrl),
-        },
-      ],
-    }),
-    signal: AbortSignal.timeout(getOllamaExtractionTimeoutMs()),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    getOllamaExtractionTimeoutMs(),
+  );
+
+  let response: Response;
+  try {
+    response = await fetch(`${ollamaBaseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: ollamaModel,
+        stream: false,
+        format: recipeJsonSchema,
+        options: { temperature: 0, num_ctx: isOllamaCloudModel ? 32_768 : 4096 },
+        messages: [
+          {
+            role: "system",
+            content:
+              `${recipeExtractionSystemPrompt}\n\n` +
+              "Return a JSON object matching the provided schema. " +
+              "Use an empty string for unknown ingredient units.",
+          },
+          {
+            role: "user",
+            content: buildRecipePrompt(sourceText, sourceUrl),
+          },
+        ],
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error("Ollama recipe extraction failed.");

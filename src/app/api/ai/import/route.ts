@@ -1,4 +1,4 @@
-import { aiProvider } from "@/lib/anthropic";
+import { aiProvider, isOllamaCloudModel } from "@/lib/anthropic";
 import {
   extractRecipeWithAi,
   prepareRecipeSourceForAi,
@@ -9,9 +9,24 @@ import { getAuthenticatedUserId, jsonError } from "@/lib/route-helpers";
 
 export const maxDuration = 120;
 
-const MAX_SOURCE_CHARS = aiProvider === "ollama" ? 3_500 : 60_000;
+const MAX_SOURCE_CHARS =
+  aiProvider !== "ollama" ? 60_000 : isOllamaCloudModel ? 15_000 : 3_500;
 const ENABLE_STRUCTURED_DATA_IMPORT =
   process.env.ENABLE_RECIPE_STRUCTURED_DATA_IMPORT === "true";
+
+const RECIPE_KEYWORDS = [
+  "ingredient",
+  "instructions",
+  "directions",
+  "how to make",
+  "prep time",
+  "cook time",
+];
+
+function looksLikeRecipePage(text: string): boolean {
+  const lower = text.toLowerCase();
+  return RECIPE_KEYWORDS.some((kw) => lower.includes(kw));
+}
 
 function stripHtml(html: string): string {
   return html
@@ -58,13 +73,20 @@ export async function POST(request: Request) {
   try {
     const response = await fetch(sourceUrl, {
       headers: {
-        "user-agent": "CookbookAI recipe importer",
+        "user-agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "accept":
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "accept-language": "en-US,en;q=0.9",
       },
       signal: AbortSignal.timeout(15_000),
     });
 
     if (!response.ok) {
-      return jsonError("Could not fetch the recipe URL.", 502);
+      return jsonError(
+        `We couldn't fetch that page (HTTP ${response.status}). The site may be blocking automated access.`,
+        502,
+      );
     }
 
     const contentType = response.headers.get("content-type") ?? "";
@@ -85,7 +107,17 @@ export async function POST(request: Request) {
 
     sourceText = contentType.includes("html") ? stripHtml(rawText) : rawText;
   } catch {
-    return jsonError("Could not fetch the recipe URL.", 502);
+    return jsonError(
+      "We couldn't reach that page. Check the URL and try again.",
+      502,
+    );
+  }
+
+  if (!looksLikeRecipePage(sourceText)) {
+    return jsonError(
+      "We couldn't find a recipe at that link. Make sure it's a page with ingredients and steps.",
+      422,
+    );
   }
 
   const clippedSource =

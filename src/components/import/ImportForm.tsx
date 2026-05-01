@@ -24,11 +24,9 @@ function detectPhase(text: string): Phase {
 }
 
 function mapApiError(status: number, body: { error?: string }): string {
-  if (status === 502)
-    return "We can't reach our recipe service right now. Try again in a moment.";
   if (status === 400)
     return "That doesn't look like a URL. Try something starting with https://.";
-  return body.error ?? "We can't reach our recipe service right now. Try again in a moment.";
+  return body.error ?? "Something went wrong. Try again in a moment.";
 }
 
 export function ImportForm() {
@@ -76,7 +74,10 @@ export function ImportForm() {
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          accumulated += decoder.decode();
+          break;
+        }
 
         accumulated += decoder.decode(value, { stream: true });
 
@@ -88,9 +89,7 @@ export function ImportForm() {
         }
       }
     } catch {
-      setErrorMsg(
-        "We can't reach our recipe service right now. Try again in a moment."
-      );
+      setErrorMsg("Something went wrong. Try again in a moment.");
       setStatus("error");
       return;
     }

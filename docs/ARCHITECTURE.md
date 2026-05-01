@@ -12,7 +12,7 @@
 | **Frontend** | Next.js 15 (App Router) + React 19 + TypeScript | Full-stack monorepo, Vercel-native, RSC for fast initial loads |
 | **Styling** | Tailwind CSS + shadcn/ui | Utility-first CSS; shadcn gives accessible, unstyled components we fully own |
 | **Backend** | Next.js API Routes (Vercel Serverless Functions) | No separate server; co-located with frontend; zero deploy config |
-| **AI** | Ollama local models by default (`gemma4:e4b`) + configurable Anthropic fallback | Sprint 1 validates AI behavior without cloud dependency; Anthropic remains an option for later production/cloud validation |
+| **AI** | Ollama models by default (`qwen3.5:cloud` active; `gemma4:e4b` available for local GPU) + configurable Anthropic fallback | Sprint 1 validates AI behavior without cloud dependency; Anthropic remains an option for later production/cloud validation |
 | **Auth** | Auth.js v5 (NextAuth) + Prisma adapter | De-facto standard for Next.js; credentials provider for email/password; extensible to OAuth later |
 | **ORM** | Prisma | Type-safe queries; handles SQLite ↔ Postgres swap via single env var |
 | **Database** | SQLite (local dev) → Neon serverless Postgres (production) | Zero-setup locally; Neon is Vercel's recommended Postgres partner with a free tier |
@@ -58,7 +58,7 @@
 - **Purpose:** Fetch a URL's HTML content, send a focused source excerpt to the configured AI provider, receive structured recipe JSON
 - **Location:** `src/app/api/ai/import/route.ts`
 - **Depends on:** Ollama local server by default, optional Anthropic/Vercel AI SDK provider path, Prisma (save)
-- **Notes:** Sprint 1 defaults to `AI_PROVIDER=ollama` and uses Ollama native JSON-schema output through `src/lib/recipe-ai-extractor.ts`. The route trims webpage text to a focused recipe excerpt for local-model latency. JSON-LD structured-data extraction exists in `src/lib/recipe-jsonld.ts` but is disabled unless `ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=true`, so current Sprint 1 validation exercises AI extraction.
+- **Notes:** Sprint 1 defaults to `AI_PROVIDER=ollama` and uses Ollama native JSON-schema output through `src/lib/recipe-ai-extractor.ts`. The route runs a keyword pre-screen (`looksLikeRecipePage`) before calling the AI — pages without recipe indicators are rejected immediately. Webpage text is trimmed to a focused recipe excerpt for model latency. JSON-LD structured-data extraction exists in `src/lib/recipe-jsonld.ts` but is disabled unless `ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=true`, so current Sprint 1 validation exercises AI extraction.
 
 ### Equipment Adapter
 - **Purpose:** Take a saved recipe + user's appliance list, send to the configured AI provider, return rewritten steps
@@ -218,7 +218,8 @@ CookbookAI/
 # AI provider (Sprint 1 local default)
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=gemma4:e4b
+OLLAMA_MODEL=qwen3.5:cloud          # cloud relay; no local GPU needed
+# OLLAMA_MODEL=gemma4:e4b           # local GPU alternative
 OLLAMA_EXTRACTION_TIMEOUT_MS=120000
 
 # Optional cloud provider

@@ -4,7 +4,7 @@
 |-------|-------|
 | **Sprint** | 01 |
 | **Goal** | Working app: register, import a recipe from a URL, browse library, scale servings |
-| **Status** | Dev-functional; QA pending |
+| **Status** | Dev-functional; QA mostly complete |
 | **Start** | 2026-04-29 |
 | **End** | TBD |
 
@@ -24,9 +24,9 @@
 
 - [x] All tasks in `todo/dev_todo.md` completed
 - [ ] All scenarios in `todo/qa_todo.md` pass
-- [ ] No critical bugs open
+- [x] No critical bugs open
 - [ ] CTO Good/Bad/Ugly review completed
-- [ ] Screenshots captured for all main views
+- [x] Screenshots captured for all main views
 
 ---
 
