@@ -7,7 +7,10 @@ import {
   toRoman,
   extractDomain,
   parseJsonObjectFromText,
+  slugify,
+  recipeToMarkdown,
 } from "./recipe-utils";
+import type { RecipeResponse } from "@/types/recipe";
 
 // ─── scaleAmount ─────────────────────────────────────────────────────────────
 
@@ -261,5 +264,135 @@ describe("parseJsonObjectFromText", () => {
 
   it("rejects text without a JSON object", () => {
     expect(() => parseJsonObjectFromText("I could not find a recipe.")).toThrow();
+  });
+});
+
+// ─── slugify ──────────────────────────────────────────────────────────────
+
+describe("slugify", () => {
+  it("lowercases and joins words with hyphens", () => {
+    expect(slugify("Cacio e Pepe with Brown Butter")).toBe(
+      "cacio-e-pepe-with-brown-butter",
+    );
+  });
+
+  it("strips non-ASCII punctuation", () => {
+    expect(slugify("Mom's Sunday Bolognese")).toBe("moms-sunday-bolognese");
+  });
+
+  it("strips trailing punctuation", () => {
+    expect(slugify("Hot Dogs!")).toBe("hot-dogs");
+  });
+
+  it("collapses repeated whitespace and hyphens", () => {
+    expect(slugify("  Spicy   Soba   Bowl  ")).toBe("spicy-soba-bowl");
+    expect(slugify("Cookies---and---cream")).toBe("cookies-and-cream");
+  });
+
+  it("strips diacritics", () => {
+    expect(slugify("Crème brûlée")).toBe("creme-brulee");
+  });
+});
+
+// ─── recipeToMarkdown ─────────────────────────────────────────────────────
+
+const FIXTURE: RecipeResponse = {
+  id: "r1",
+  userId: "u1",
+  title: "Cacio e Pepe",
+  description: "A simple Roman pasta.",
+  sourceUrl: "https://www.seriouseats.com/recipe/123",
+  servings: 4,
+  ingredients: [
+    { amount: 200, unit: "g", name: "spaghetti" },
+    { amount: 1, unit: "cup", name: "pecorino", notes: "grated" },
+    { amount: null, unit: "", name: "black pepper" },
+  ],
+  steps: ["Boil the pasta.", "Toss with pepper and cheese."],
+  adaptedSteps: ["Air fry the noodles.", "Stir in the cheese off heat."],
+  tags: ["italian", "pasta"],
+  createdAt: "2026-05-01T00:00:00.000Z",
+  updatedAt: "2026-05-01T00:00:00.000Z",
+};
+
+describe("recipeToMarkdown", () => {
+  it("renders the original recipe with metric units", () => {
+    const md = recipeToMarkdown(FIXTURE, {
+      servings: 4,
+      unitSystem: "metric",
+      useAdapted: false,
+    });
+    expect(md).toContain("# Cacio e Pepe\n");
+    expect(md).toContain("*A simple Roman pasta.*");
+    expect(md).toContain("_Source: seriouseats.com_  ");
+    expect(md).toContain("**Servings:** 4");
+    expect(md).toContain("## Ingredients");
+    expect(md).toContain("- 200 g spaghetti");
+    expect(md).toContain("- 240 ml pecorino, grated");
+    expect(md).toContain("- black pepper — to taste");
+    expect(md).toContain("## Method");
+    expect(md).toContain("1. Boil the pasta.");
+    expect(md).toContain("2. Toss with pepper and cheese.");
+    expect(md).not.toContain("Air fry");
+  });
+
+  it("scales ingredient amounts when servings change", () => {
+    const md = recipeToMarkdown(FIXTURE, {
+      servings: 8,
+      unitSystem: "metric",
+      useAdapted: false,
+    });
+    expect(md).toContain("- 400 g spaghetti");
+    expect(md).toContain("**Servings:** 8");
+  });
+
+  it("converts to imperial when requested", () => {
+    const md = recipeToMarkdown(FIXTURE, {
+      servings: 4,
+      unitSystem: "imperial",
+      useAdapted: false,
+    });
+    expect(md).toContain("- 7.1 oz spaghetti");
+    expect(md).toContain("- 1 cup pecorino, grated");
+  });
+
+  it("appends '(adapted for your kitchen)' and uses adapted steps when useAdapted=true", () => {
+    const md = recipeToMarkdown(FIXTURE, {
+      servings: 4,
+      unitSystem: "metric",
+      useAdapted: true,
+    });
+    expect(md).toContain("# Cacio e Pepe (adapted for your kitchen)");
+    expect(md).toContain("1. Air fry the noodles.");
+    expect(md).toContain("2. Stir in the cheese off heat.");
+    expect(md).not.toContain("Boil the pasta.");
+  });
+
+  it("falls back to original steps when useAdapted=true but no adapted steps", () => {
+    const md = recipeToMarkdown(
+      { ...FIXTURE, adaptedSteps: null },
+      { servings: 4, unitSystem: "metric", useAdapted: true },
+    );
+    expect(md).toContain("1. Boil the pasta.");
+  });
+
+  it("skips empty fields cleanly", () => {
+    const minimal: RecipeResponse = {
+      ...FIXTURE,
+      description: null,
+      sourceUrl: null,
+      ingredients: [],
+      adaptedSteps: null,
+    };
+    const md = recipeToMarkdown(minimal, {
+      servings: 4,
+      unitSystem: "metric",
+      useAdapted: false,
+    });
+    expect(md).not.toContain("Source");
+    expect(md).not.toContain("undefined");
+    expect(md).not.toContain("## Ingredients");
+    expect(md).toContain("**Servings:** 4");
+    expect(md).toContain("## Method");
   });
 });

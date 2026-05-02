@@ -1,3 +1,5 @@
+import type { RecipeResponse } from "@/types/recipe";
+
 // scaleAmount: proportionally scales an ingredient amount.
 // Returns null for "to taste" ingredients (null input → passthrough).
 export function scaleAmount(
@@ -164,4 +166,89 @@ function extractFirstJsonObject(text: string): string | null {
 function roundTo(n: number, decimals: number): number {
   const f = Math.pow(10, decimals);
   return Math.round(n * f) / f;
+}
+
+const COMBINING_MARKS_RE = /[̀-ͯ]/g;
+
+// slugify: lowercase ASCII title with hyphen-separated words.
+export function slugify(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(COMBINING_MARKS_RE, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export interface RecipeMarkdownOptions {
+  servings: number;
+  unitSystem: "metric" | "imperial";
+  useAdapted: boolean;
+}
+
+// recipeToMarkdown: serializes a recipe to a Markdown export.
+// Renders the user's currently-displayed amounts (scaled + converted),
+// and either the original or adapted method per `useAdapted`.
+export function recipeToMarkdown(
+  recipe: RecipeResponse,
+  options: RecipeMarkdownOptions,
+): string {
+  const { servings, unitSystem, useAdapted } = options;
+  const lines: string[] = [];
+
+  const titleSuffix = useAdapted ? " (adapted for your kitchen)" : "";
+  lines.push(`# ${recipe.title}${titleSuffix}`);
+  lines.push("");
+
+  if (recipe.description && recipe.description.trim().length > 0) {
+    lines.push(`*${recipe.description.trim()}*`);
+    lines.push("");
+  }
+
+  const domain = extractDomain(recipe.sourceUrl);
+  if (domain) {
+    lines.push(`_Source: ${domain}_  `);
+  }
+  lines.push(`**Servings:** ${servings}`);
+  lines.push("");
+
+  if (recipe.ingredients.length > 0) {
+    lines.push("## Ingredients");
+    lines.push("");
+    for (const ing of recipe.ingredients) {
+      const scaled = scaleAmount(ing.amount, recipe.servings, servings);
+      const rounded = scaled !== null ? roundScaled(scaled, ing.unit) : null;
+      const { amount, unit } = convertUnit(rounded, ing.unit, unitSystem);
+      const noteSuffix = ing.notes ? `, ${ing.notes}` : "";
+
+      if (ing.amount === null) {
+        lines.push(`- ${ing.name} — to taste${noteSuffix}`);
+        continue;
+      }
+
+      const amountStr = formatAmount(amount);
+      const unitStr = unit ? ` ${unit}` : "";
+      const prefix = amountStr ? `${amountStr}${unitStr} ` : "";
+      lines.push(`- ${prefix}${ing.name}${noteSuffix}`);
+    }
+    lines.push("");
+  }
+
+  const stepsToExport =
+    useAdapted && recipe.adaptedSteps && recipe.adaptedSteps.length > 0
+      ? recipe.adaptedSteps
+      : recipe.steps;
+
+  if (stepsToExport.length > 0) {
+    lines.push("## Method");
+    lines.push("");
+    stepsToExport.forEach((step, i) => {
+      lines.push(`${i + 1}. ${step}`);
+    });
+    lines.push("");
+  }
+
+  return lines.join("\n").replace(/\n+$/, "\n");
 }
