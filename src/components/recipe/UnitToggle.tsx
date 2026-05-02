@@ -23,12 +23,13 @@ export function UnitToggle({ value, onChange }: UnitToggleProps) {
             type="button"
             onClick={() => onChange(system)}
             aria-pressed={value === system}
+            data-active={value === system}
             className={[
+              "unit-toggle-button",
               "px-[10px] py-[3px] font-ui text-ui-sm lowercase transition-colors",
-              "border-b",
               value === system
-                ? "font-medium text-ink border-accent"
-                : "text-ink-faint border-transparent hover:text-ink",
+                ? "font-medium text-ink"
+                : "text-ink-faint hover:text-ink",
             ].join(" ")}
           >
             {system}

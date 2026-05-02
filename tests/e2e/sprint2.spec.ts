@@ -212,7 +212,8 @@ test.describe("Sprint 2 — AI adaptation", () => {
     await page.goto(`/recipes/${recipe.id}`);
     const adaptBtn = page.getByRole("button", { name: "Adapt for my kitchen" });
     await expect(adaptBtn).toBeDisabled();
-    await expect(page.getByRole("link", { name: /Set up your kitchen/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Kitchen settings" })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Set up your kitchen/ })).toHaveCount(0);
   });
 
   test("A5: unauthenticated POST /api/ai/adapt returns 401", async ({ page, request }) => {
@@ -354,9 +355,9 @@ test.describe("Sprint 2 screenshots", () => {
     const recipe = await createRecipe(page, sampleRecipe({ title: "S2 Screenshot Adapt" }));
 
     // recipe-adapt-loading: hold the response open so the pulse is visible
-    let releaseAdapt: (() => void) | null = null;
+    const releaseAdapt: { current: (() => void) | null } = { current: null };
     const heldAdapt = new Promise<void>((resolve) => {
-      releaseAdapt = resolve;
+      releaseAdapt.current = resolve;
     });
 
     await page.route("**/api/ai/adapt", async (route) => {
@@ -376,7 +377,10 @@ test.describe("Sprint 2 screenshots", () => {
       fullPage: true,
     });
 
-    releaseAdapt?.();
+    if (!releaseAdapt.current) {
+      throw new Error("Adapt release callback was not initialised");
+    }
+    releaseAdapt.current();
     await expect(page.getByText("Adapted for your kitchen", { exact: true })).toBeVisible();
     await expect(page.getByText("Air fry the pasta sauce ingredients for 8 minutes.")).toBeVisible();
     await page.screenshot({

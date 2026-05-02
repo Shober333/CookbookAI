@@ -4,7 +4,7 @@
 |-------|-------|
 | **Sprint** | 02 |
 | **Goal** | Complete the two remaining PRD Must Haves: equipment adaptation and recipe search |
-| **Status** | Planning |
+| **Status** | CTO accepted for Founder review |
 | **Start** | 2026-05-01 |
 | **End** | TBD |
 
@@ -32,11 +32,11 @@
 
 ## Exit Criteria
 
-- [ ] All tasks in `todo/dev_todo.md` completed
-- [ ] All scenarios in `todo/qa_todo.md` pass
-- [ ] No critical bugs open
-- [ ] CTO Good/Bad/Ugly review completed
-- [ ] Screenshots captured for new UI: equipment settings, adapt flow, library search
+- [x] All tasks in `todo/dev_todo.md` completed
+- [x] All scenarios in `todo/qa_todo.md` pass
+- [x] No critical bugs open
+- [x] CTO Good/Bad/Ugly review completed
+- [x] Screenshots captured for new UI: equipment settings, adapt flow, library search
 
 ---
 

@@ -2,7 +2,7 @@
 
 > **Owner:** [DEV-QA]
 > Run all scenarios after Phase 2 is complete. Screenshots required for all new UI.
-> **Run date:** 2026-05-02 · **Status:** All scenarios pass.
+> **Run date:** 2026-05-02 · **Status:** All scenarios pass after UI/UX and QA fix verification.
 
 ---
 
@@ -64,6 +64,7 @@
 | U5 | Cups stay in imperial mode | Import recipe with cups, toggle to imperial | `1 cup` stays `1 cup` | `[x]` |
 | U6 | Long-form units normalize | AI outputs `grams` or `pounds` | Normalised to `g` / `lb` at extraction time | `[x]` |
 | U7 | Toggle round-trip | Toggle metric → imperial → metric | Amounts return to original values (no drift) | `[x]` |
+| U8 | Toggle active visual state | Toggle metric → imperial | Ingredient values and active underline both move to imperial | `[x]` |
 
 ---
 
@@ -85,13 +86,15 @@ Saved to `tests/screenshots/`:
 - [x] `recipe-adapted.png` — recipe detail with adapted steps panel
 - [x] `recipe-adapted-saved.png` — recipe detail with saved adapted steps toggle
 - [x] `library-search.png` — library page with search active and results
+- [x] Sprint 1 carryover screenshots regenerated against Sprint 2 build after UI/UX review (`library-empty.png`, `library-populated.png`, `recipe-detail.png`, `recipe-scaled.png`, `recipe-unit-toggled.png`, `import-form.png`, `import-preview.png`)
 
 ---
 
 ## QA Evidence
 
 - **Vitest:** 6 files / 77 tests pass (`npm test`).
-- **Playwright (Chromium):** 15 / 15 tests pass — `tests/e2e/sprint1.spec.ts` (4 cases) + new `tests/e2e/sprint2.spec.ts` (11 cases).
+- **Playwright (Chromium):** 15 / 15 tests pass — `tests/e2e/sprint1.spec.ts` (4 cases) + new `tests/e2e/sprint2.spec.ts` (11 cases). Re-run after Alice review and frontend fixes on 2026-05-02.
+- **Targeted UI/UX re-check:** saved-adaptation Topbar stays sticky after scroll (`header.getBoundingClientRect().top === 0`) and no real layout regression exists. Post-fix E2E assertions confirm the no-equipment AdaptPanel renders only the `Kitchen settings` link and the UnitToggle active underline follows the selected system.
 - **Build:** `npm run build` clean (typecheck + Next 15 prerender).
 - **Visual review:** Kitchen page renders the locked Sprint 2 chip order (Stovetop · Oven · Air fryer / Slow cooker · Microwave · Instant Pot / Grill · Blender), terracotta-selected chips, square Save button, inline "Saved." copy. Recipe detail shows the inline AdaptPanel below Method (eyebrow + Notes + Steps + Save / Discard) and the new "Download .md · Delete recipe" bottom action row. Topbar nav reads "Kitchen", route stays `/equipment`.
 - **Auth-error noise:** Sprint 1 auth test intentionally exercises a wrong-password path, which logs `[auth][error] CredentialsSignin` from Auth.js. Expected behaviour, not a regression.
@@ -100,10 +103,32 @@ Saved to `tests/screenshots/`:
 
 ## Bugs Found
 
-None.
+Resolved in frontend fix pass:
+
+**Bug:** UnitToggle underline stays on metric while imperial values render
+**Steps to Reproduce:**
+1. Open a recipe detail page.
+2. Click `imperial`.
+3. Observe ingredients and the UnitToggle active underline.
+**Expected:** `imperial` has the active underline and imperial values render.
+**Actual before fix:** Ingredient values render as imperial and `imperial` has `aria-pressed="true"`, but the terracotta underline remains under `metric`. Targeted computed-style check showed `metric` border color as accent and `imperial` border color as transparent despite the React classes being reversed correctly.
+**Resolution:** `UnitToggle` now drives the active border through `data-active`, with Playwright CSS assertions for both active and inactive states.
+**Severity:** Medium
+**Repro environment:** Chromium via `npx playwright test`; desktop viewport; `tests/screenshots/recipe-unit-toggled.png`.
+
+**Bug:** No-equipment AdaptPanel shows duplicate links to Kitchen
+**Steps to Reproduce:**
+1. Register or use a user with no saved equipment.
+2. Open any recipe detail page.
+3. Look at the disabled AdaptPanel prompt.
+**Expected:** One route to Kitchen setup, preferably the inline `Kitchen settings` link per Alice's review.
+**Actual before fix:** The panel shows both `Kitchen settings` and `Set up your kitchen →`, both linking to `/equipment`.
+**Resolution:** Removed the duplicate `Set up your kitchen →` paragraph and added a Playwright assertion that it is absent.
+**Severity:** Low
+**Repro environment:** Chromium via `npx playwright test`; desktop viewport; also visible in regenerated `tests/screenshots/recipe-unit-toggled.png`.
 
 ---
 
 ## Recommendation
 
-**Ship.** All scenarios pass, screenshots captured, no regressions introduced. Ready for CTO Good/Bad/Ugly review.
+**Ship to CTO review.** Automated regression coverage is green, the saved-adaptation Topbar concern is cleared as a screenshot artifact, and both UI follow-ups from QA/Alice have passing regression coverage.

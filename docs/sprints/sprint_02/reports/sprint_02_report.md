@@ -4,7 +4,7 @@
 |-------|-------|
 | **Sprint** | 02 |
 | **Goal** | Equipment adapter (profile + AI rewrite) + library search |
-| **Status** | Dev complete; QA complete; awaiting CTO review |
+| **Status** | Dev complete; QA complete after fix pass; awaiting CTO review |
 | **Dev tasks completed** | 9 / 9 (B1–B5, F1–F4) |
 | **QA scenarios completed** | 21 / 21 |
 | **Report date** | 2026-05-02 |
@@ -93,7 +93,12 @@ No blockers escalated to the CTO; all resolved within the sprint.
   vide" appliance list. `SPRINT_02_SPECS.md` §8 calls these updates out
   for a housekeeping commit; not landed in this sprint.
 
-No production-affecting bugs found. None opened in `qa_todo.md`.
+QA/Alice fix pass resolved two UI follow-ups before CTO handoff:
+
+- UnitToggle active underline now follows the selected measurement system.
+- No-equipment AdaptPanel now exposes only one route to Kitchen setup.
+
+No production-affecting bugs remain open in `qa_todo.md`.
 
 ---
 
@@ -101,7 +106,7 @@ No production-affecting bugs found. None opened in `qa_todo.md`.
 
 - `npm run typecheck` — clean.
 - `npm test` (Vitest) — **77 / 77** across 6 files. 12 new cases covering `slugify` and `recipeToMarkdown`; existing `convertUnit` / `roundScaled` cases extended for B5.
-- `npx playwright test` (Chromium) — **15 / 15**: Sprint 1 (4) + new `tests/e2e/sprint2.spec.ts` (11) covering E1–E5, A1–A6, S1–S4, F4 download, screenshot capture.
+- `npx playwright test` (Chromium) — **15 / 15**: Sprint 1 (4) + new `tests/e2e/sprint2.spec.ts` (11) covering E1–E5, A1–A6, S1–S4, F4 download, screenshot capture, UnitToggle visual state, and duplicate-link regression.
 - `npm run build` (Next 15 production build) — clean; no prerender errors.
 
 Screenshots captured to `tests/screenshots/`: `equipment-empty.png`,
@@ -161,7 +166,7 @@ Manual flows on `localhost:3000`:
 ## Recommendation
 
 **Ready for CTO Good/Bad/Ugly review.** Scope landed in full, QA is
-green, no critical or production-blocking issues open. Suggested
+green after the UI fix pass, no critical or production-blocking issues open. Suggested
 follow-up after this sprint:
 
 - Merge `sprint-02/qa` into main once the report is signed off (no
