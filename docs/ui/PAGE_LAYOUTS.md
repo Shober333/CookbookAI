@@ -1,6 +1,6 @@
 # Page Layouts — CookbookAI
 
-> **Status:** Locked — Sprint 0
+> **Status:** Locked — Sprint 0 (updated Sprint 3)
 > **Owner:** [UI/UX]
 > **Reads:** `REGISTER.md`, `UI_KIT.md`, `COMPONENT_SPECS.md` first.
 > **Audience:** `[DEV:frontend]` agent or human dev.
@@ -340,8 +340,14 @@ leaving just the typographic recipe content. Spec at that time.
 
 ## 4. Import — `/import`
 
-URL paste + streaming. The streaming itself is the warmth. See
+URL or text paste + streaming. The streaming itself is the warmth. See
 `COMPONENT_SPECS.md` §5.
+
+**Sprint 03 update:** the page now offers two import modes — `link`
+and `text`. The full mode-aware spec lives in
+`docs/sprints/sprint_03/sprint_03_design_brief.md`. This section covers
+the page-level layout; the brief governs mode behavior, copy, and the
+new error/feedback states.
 
 ### Layout
 
@@ -354,7 +360,9 @@ URL paste + streaming. The streaming itself is the warmth. See
 │              Display: "Bring a recipe home."       │
 │              Deck (italic)                         │
 │                                                    │
-│              [ URL input ]                         │
+│              [ link  |  text ]   ← mode switch     │
+│                                                    │
+│              [ URL input  OR  textarea ]           │
 │              [ Bring it in (button) ]              │
 │                                                    │
 │              ┌─ Streaming box ──────┐              │
@@ -368,7 +376,8 @@ URL paste + streaming. The streaming itself is the warmth. See
 
 - Container: `--measure-narrow` (480px), centered horizontally
 - Vertical: top-aligned at 64px below topbar at desktop; on mobile, 32px below topbar (keep above the fold)
-- Header → input: 22px gap
+- Header → mode switch: 22px gap
+- Mode switch → input: 14px
 - Input → button: 8px
 - Button → streaming box (when shown): 26px
 
@@ -376,33 +385,44 @@ URL paste + streaming. The streaming itself is the warmth. See
 
 - Container goes full width with 20px gutters
 - Top alignment 24px below topbar (keep input visible above keyboard when focused)
-- Same content, no layout changes besides width
+- Mode switch buttons sized for ≥ 44×44px tap targets (see brief §10)
+- Textarea max height clamps to `min(50vh, 400px)` so submit stays visible above the keyboard
 
 ### Three-stage flow
 
-1. **Idle** — input + button only. Streaming box absent.
-2. **Submitting** — Streaming box mounts and animates. Input + button
-   stay visible but disabled. Button label changes to "Bringing it in…"
-3. **Success** — Streaming box shows final state. After ~1.5s, the
-   page can either:
-   - **Stay** with a "Save to library" CTA in the box, OR
-   - **Auto-navigate** to `/recipes/[id]` of the saved recipe
+1. **Idle** — mode switch + input/textarea + button. Streaming box absent.
+2. **Submitting** — Streaming box mounts and animates. Mode switch,
+   input, and button are all disabled. Button label changes to
+   "Bringing it in…". Phase copy varies by mode and resolved source
+   kind (web URL, text, YouTube link, YouTube description) — see brief
+   §5.
+3. **Success** — Streaming box shows final state. **Auto-navigate**
+   to `/recipes/[id]` after 1.5s.
+4. **Reused** — when the backend short-circuits via dedupe, the box
+   shows a single quiet line and auto-navigates on the same timer.
+   See brief §7.
 
-**My recommendation:** auto-navigate. The user's intent was to bring
-the recipe in; they don't need to click again. Save happens
-server-side on success. This is a design decision for the Founder to
-confirm. If we keep "Save to library" as an explicit step, it's a
-button at the bottom of the streaming box.
+Auto-navigate is the locked default. Founder confirmed (Sprint 1).
 
 ### Error states
 
-See `STATES.md` §4. Errors include: invalid URL, paywall blocking
-extraction, no recipe found at URL, AI parse failure, network timeout.
+See `STATES.md` §4. Errors now include:
+
+- Invalid URL (4a)
+- Paywall blocking extraction (4b — refreshed Sprint 03)
+- No recipe at URL (4c)
+- AI parse failure (4d)
+- Network timeout (4e)
+- Text-mode validation: blank or too short (4f — Sprint 03)
+- Text-mode non-recipe (4g — Sprint 03)
+- YouTube no recipe found (4h — Sprint 03)
+- YouTube service unavailable / API key missing (4i — Sprint 03)
 
 ### Reduced motion
 
 Per `COMPONENT_SPECS.md` §5 — streaming box appears in final state, no
-fade staggering, pulse dot static.
+fade staggering, pulse dot static. Mode switch has no animation by
+default.
 
 ---
 

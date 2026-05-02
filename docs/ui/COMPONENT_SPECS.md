@@ -1,6 +1,6 @@
 # Component Specs — CookbookAI
 
-> **Status:** Locked — Sprint 0 (updated Sprint 2)
+> **Status:** Locked — Sprint 0 (updated Sprint 2, Sprint 3)
 > **Owner:** [UI/UX]
 > **Reads:** `REGISTER.md` and `UI_KIT.md` first.
 > **Audience:** `[DEV:frontend]` agent or human dev implementing the UI.
@@ -308,8 +308,18 @@ the dev owns those mechanics. This spec governs only the UI.
 
 ## 5. ImportForm
 
-URL paste + progressive AI extraction. The progressive phase indicators
-are the warmest moment in the import flow — see `REGISTER.md` Rule 2.
+URL or text paste + progressive AI extraction. The progressive phase
+indicators are the warmest moment in the import flow — see
+`REGISTER.md` Rule 2.
+
+**Sprint 03 update:** the form now supports two modes (`link`, `text`)
+selected via a switch above the input area. URL mode also routes
+YouTube URLs through a description-first waterfall. The full Sprint 03
+spec — mode switch, textarea, phase copy per mode, dedupe feedback,
+new error states — lives at
+`docs/sprints/sprint_03/sprint_03_design_brief.md`. This section
+captures the locked anatomy and contracts; the brief governs Sprint 03
+copy and behavior.
 
 **Note on terminology:** this spec uses "streaming box" historically.
 The actual implementation uses progressive phase indicators driven by
@@ -325,7 +335,9 @@ See `STATES.md` §4 *Note on streaming* for more.
 │ Display headline (Fraunces 500, text-display-md) │
 │ Deck line (Fraunces italic)               │
 │                                            │
-│ [ URL input field, full width ]            │
+│ [ link  |  text ]    ← mode switch        │
+│                                            │
+│ [ URL input  OR  textarea ]                │
 │ [    Bring it in (primary button)    ]    │
 │                                            │
 │ ┌─ Streaming box (appears on submit) ──┐ │
@@ -340,26 +352,50 @@ See `STATES.md` §4 *Note on streaming* for more.
 
 - Container width: `--measure-narrow` (480px), centered
 - Vertical center on tall viewports, top-aligned ~30px below topbar otherwise
+- Header → mode switch: 22px
+- Mode switch → input: 14px
 - Input + button stack with 8px gap
 - Streaming box appears below with 26px top margin
 
 ### Sub-components
 
-#### URL input
+#### Mode switch (Sprint 03)
+- Two-option selector: `link` | `text`. See Sprint 03 design brief §2.
+- Variant of the `UnitToggle` visual pattern (no background fill, active
+  underlined in terracotta), sized for primary control: `text-ui` (12px),
+  padding `12px 18px` for ≥ 44×44px tap targets, `gap-2` between buttons
+- `role="tablist"`, each button `role="tab"` with `aria-selected`
+- Disabled (50% opacity, `aria-disabled="true"`) while submitting
+
+#### URL input (`link` mode)
 - See `UI_KIT.md` §8 Inputs for tokens
 - Placeholder: "Paste a recipe URL or a YouTube link"
 - Validates as URL on blur — if invalid, shows error helper text below in `--color-accent-strong`
 
+#### Textarea (`text` mode, Sprint 03)
+- Same tokens as the URL input (`--color-paper`, `0.5px solid --color-border-strong`,
+  `--radius-sm`, focus ring), vertically scaling: `min-h-[200px]`,
+  `max-h-[min(50vh,400px)]` mobile / `max-h-[480px]` desktop, `resize-y`
+- Padding `12px 14px`, font `font-ui text-body`
+- Placeholder: "Paste the recipe — ingredients, steps, and any notes."
+- Validation: blank → "Paste a recipe to import."; < 40 non-whitespace
+  chars → "Paste a bit more — we need ingredients and steps to work
+  with." (see `STATES.md` §4f)
+
 #### "Bring it in" button
 - Filled accent variant (per UI_KIT.md §8 Buttons — Sprint 1 used filled, accepted)
 - Full width, height 38px
-- Disabled when input is empty or invalid
+- Disabled when the active input is empty or invalid
 
 #### Streaming box
 - Padding `18px 20px`, border `0.5px solid --color-border`
 - Background `--color-paper-sunken`, `--radius-sm`, min-height 160px
 - **Status header:** small terracotta pulse dot + status text in `text-eyebrow` color `--color-accent`
 - **Streamed lines:** opacity fade-in (`--motion-fade-slow`), staggered as new phases are detected
+- Phase copy varies by mode and resolved source kind — see Sprint 03 design brief §5
+- **Reused dedupe:** when the response includes `reused: true`, the box
+  shows a single quiet line ("Already in our library — adding it to
+  yours.") and auto-navigates on the standard 1.5s timer. See brief §7
 
 ### States
 
@@ -375,24 +411,47 @@ to avoid confusion in code; user-facing copy is unaffected.
 
 ### Streaming status copy
 
-Status text rotates as parsing progresses:
+Status text rotates as parsing progresses. The phase copy depends on
+mode and resolved source kind:
 
-1. "Reading the page…" — initial fetch
-2. "Finding the recipe…" — title key seen in JSON
-3. "Reading ingredients…" — ingredients key seen
-4. "Reading the method…" — steps key seen
-5. "Done" — final state
+- **URL mode (web URL):** "Reading the page…" → "Finding the recipe…"
+  → "Reading ingredients…" → "Reading the method…" → "Done"
+- **Text mode:** "Reading what you pasted…" → … (same tail) (Sprint 03)
+- **YouTube link path** (`sourceKind: "youtube-link"`): "Looking up the
+  video…" → "Following the link in the description… *(domain.com)*" →
+  "Reading the page…" → … (Sprint 03). The trailing domain is in
+  italic `--color-ink-faint`; if the backend hasn't surfaced the
+  candidate domain by phase 2, drop the hint rather than fabricate.
+- **YouTube description path** (`sourceKind: "youtube-description"`):
+  "Looking up the video…" → "Reading the description…" → … (Sprint 03)
 
 Status comes from `detectPhase()` parsing the accumulating JSON string;
-the UI shows the latest phase. The dev should not invent intermediate
-states.
+for YouTube paths the backend additionally signals the resolved
+`sourceKind`. The UI shows the latest phase. The dev should not invent
+intermediate states. Full phase tables in Sprint 03 design brief §5.
+
+### Backend response contract (Sprint 03)
+
+```ts
+type ImportResponse = {
+  recipe: Recipe
+  reused?: boolean             // B3 — true when dedupe short-circuited the AI call
+  sourceKind?: "url" | "text" | "youtube-link" | "youtube-description"
+}
+```
+
+Defaults: `reused = false`; `sourceKind` falls back to the user-chosen
+mode when absent.
 
 ### Props
 
 ```
-- onSubmit: (url) => Promise<StreamingResponse>
-- onSuccess: (recipe) => void
+- onSubmit: (payload: { mode: 'link' | 'text'; url?: string; text?: string }) => Promise<StreamingResponse>
+- onSuccess: (recipe: Recipe) => void
 ```
+
+The `mode` field on the payload is new in Sprint 03. URL mode sends
+`{ mode: 'link', url }`; text mode sends `{ mode: 'text', text }`.
 
 ### Accessibility
 
@@ -400,10 +459,15 @@ states.
 - Status text inside has `role="status"`
 - Pulse dot is `aria-hidden="true"`
 - "Recipe ready" final state announces work complete
+- Mode switch (Sprint 03): `role="tablist"`, each button `role="tab"`
+  with `aria-selected`; Left/Right arrows move between tabs;
+  Enter/Space activates; Tab moves focus into the input area
+- Textarea (Sprint 03): linked to its error helper via `aria-describedby`
+  when invalid; `aria-invalid="true"` on validation failure
 
 ### Reduced motion
 
-When `prefers-reduced-motion: reduce`, the streaming box appears in final state (all lines visible at once). The pulse dot still appears during fetch but does not animate (steady opacity 1).
+When `prefers-reduced-motion: reduce`, the streaming box appears in final state (all lines visible at once). The pulse dot still appears during fetch but does not animate (steady opacity 1). Mode switch has no animation on toggle.
 
 ---
 
@@ -861,3 +925,4 @@ here. New features get new specs.
 | 2026-05-01 | §7 AdaptDiff: marked deprecated; spec retained for post-MVP | Sprint 2 inline adapt flow + Founder confirmation |
 | 2026-05-01 | §8 Topbar: nav label "Equipment" → "Kitchen" (route stays `/equipment`); added Sign-out link; resolved mobile collapse (Option 3); deferred topbar search to post-MVP | Sprint 1 dev addition + Founder decisions |
 | 2026-05-01 | §9 AdaptPanel: new component spec | Sprint 2 task F2 |
+| 2026-05-02 | §5 ImportForm: added mode switch (`link` \| `text`), textarea sub-component, mode-aware phase copy (URL/text/YouTube), backend response contract (`reused`, `sourceKind`), updated props. Detail in `docs/sprints/sprint_03/sprint_03_design_brief.md`. | Sprint 3 task U1 |

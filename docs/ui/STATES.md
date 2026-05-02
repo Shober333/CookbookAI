@@ -1,6 +1,6 @@
 # States — CookbookAI
 
-> **Status:** Locked — Sprint 0 (updated Sprint 2)
+> **Status:** Locked — Sprint 0 (updated Sprint 2, Sprint 3)
 > **Owner:** [UI/UX]
 > **Reads:** `REGISTER.md`, `UI_KIT.md`, `COMPONENT_SPECS.md`, `PAGE_LAYOUTS.md` first.
 > **Audience:** `[DEV:frontend]` agent or human dev.
@@ -335,6 +335,12 @@ No "try again" — there's nothing to retry.
 The import flow has the most error variety — it touches user input,
 external URLs, and the AI service.
 
+**Sprint 03 update:** the page now supports two modes (link, text)
+and routes YouTube URLs through a description-first waterfall. New
+states 4f–4j cover the additions; the canonical Sprint 03 spec (copy,
+phase mapping, mode-switch behavior) is at
+`docs/sprints/sprint_03/sprint_03_design_brief.md`.
+
 ### Note on "streaming"
 
 The import UI uses the term "streaming box" and "streamed lines." For
@@ -398,14 +404,14 @@ In the streaming box, after the streaming halts:
 
 #### "Paste recipe text instead" flow
 
-Clicking this swaps the URL input for a textarea (full width,
-min-height 200px, same paper background, same focus styling). The
-"Bring it in" button stays. Submitting calls a different parsing
-endpoint (text → structured recipe).
+Clicking this swaps the form into `text` mode (mode switch sets to
+`text`, the URL input is replaced by a textarea, focus moves to the
+textarea, the previous URL value is discarded). The "Bring it in"
+button stays. Submitting posts the text payload through the shared
+import service. See Sprint 03 design brief §9.2 for full copy.
 
-This flow is **post-MVP** — the textarea endpoint doesn't exist in
-Sprint 2. For now, the CTA reads "Try another link" and clears the
-input back to idle.
+**Status update (Sprint 03):** the text endpoint ships in B2, so this
+CTA is now live. The previous "post-MVP" caveat is resolved.
 
 ### 4c. No recipe found at URL
 
@@ -453,6 +459,79 @@ Hard infrastructure failure.
   status change announces
 - The input field's `aria-invalid` is set to `true` when in error
 - Error text is linked via `aria-describedby` from the input
+
+### 4f. Text mode — blank or too short (Sprint 03)
+
+Client-side validation, fired on submit before the streaming box
+mounts. Helper text below the textarea, border switches to
+`--color-accent-strong`. Mirrors the URL `aria-invalid` pattern (4a).
+
+| Failure | Copy |
+|---|---|
+| Blank | "Paste a recipe to import." |
+| < 40 non-whitespace chars | "Paste a bit more — we need ingredients and steps to work with." |
+
+See Sprint 03 design brief §4 for the validation thresholds.
+
+### 4g. Text mode — non-recipe text (Sprint 03)
+
+Server returns from B1 pre-screen or AI extraction with no usable
+recipe.
+
+> **Status:** "No recipe here"
+>
+> Body: "We didn't find a recipe in that text. Make sure it has
+> ingredients and steps."
+>
+> CTA: "Try again" — clears the textarea on click and refocuses
+
+### 4h. YouTube — no recipe found (Sprint 03)
+
+YouTube metadata fetched, no candidate URL identified, description
+failed pre-screen.
+
+> **Status:** "No recipe in this video"
+>
+> Body: "We couldn't find a recipe link or recipe text in the
+> description. Try the recipe page directly, or paste the recipe text."
+>
+> Primary CTA: "Paste recipe text instead →" — switches to `text`
+>   mode, discards URL, focuses textarea
+> Secondary CTA: "Try another link" — clears, returns to idle
+
+### 4i. YouTube — service unavailable / API key missing (Sprint 03)
+
+Backend returns a controlled configuration or upstream error from B4.
+The user-facing copy does not expose the API-key vs network
+distinction.
+
+> **Status:** "Can't read this video"
+>
+> Body: "We can't reach YouTube right now. Try the recipe page
+> directly."
+>
+> CTA: "Try another link"
+
+### 4j. Reused-from-library (Sprint 03 — success feedback, not error)
+
+When B3 dedupe short-circuits the AI call, the streaming box shows a
+single quiet line in place of the phase progression. Documented here
+for state-catalog completeness; full spec in Sprint 03 design brief
+§7.
+
+> **Status:** "Done"
+>
+> Line: *"Already in our library — adding it to yours."*
+>
+> Auto-navigate at the standard 1.5s timer.
+
+No error styling — this is a success path with abbreviated phases.
+
+### Accessibility (all 4f–4j)
+
+- Same conventions as 4a–4e
+- Reused-from-library line uses `role="status"` (success), not
+  `role="alert"`
 
 ---
 
@@ -724,7 +803,7 @@ For every page, the dev should ship:
 | `/library` | §1 (warm moment) | §2a (skeleton) | (no error state — falls back to "trouble loading" generic) |
 | `/library?q=…` | §2b (search empty result) | §2c (dimmed list) | (same as above) |
 | `/recipes/[id]` | n/a (would be 404) | embedded skeleton | §3a, §3b |
-| `/import` | n/a (idle is the empty state) | streaming itself is the loading | §4a–§4e |
+| `/import` | n/a (idle is the empty state) | streaming itself is the loading | §4a–§4i (errors); §4j (reused) is success-feedback |
 | `AdaptPanel` (inline on recipe detail) | idle state in component | "Adapting…" pulse on button | §5a–§5d |
 | `/equipment` | n/a (chips own off state) | §8a (chips at 50%) | §8c |
 | `/login`, `/register` | n/a | button "Signing in…" | §6a–§6d |
@@ -776,3 +855,4 @@ improvisation.
 | 2026-05-01 | §4b paste-recipe-text flow noted as post-MVP | Endpoint not implemented in Sprint 2 |
 | 2026-05-01 | §5 replaced standalone-adapter error states with inline AdaptPanel error states | Sprint 2 brief §2 |
 | 2026-05-01 | §8 Equipment settings states added | Sprint 2 task F1 |
+| 2026-05-02 | §4 added states 4f (text validation), 4g (non-recipe text), 4h (YouTube no-recipe), 4i (YouTube unavailable), 4j (reused dedupe). §4b paywall CTA refreshed from post-MVP to live. | Sprint 3 task U1 |
