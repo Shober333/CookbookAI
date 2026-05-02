@@ -76,6 +76,14 @@ body {
   font-feature-settings: "tnum";
 }
 
+.unit-toggle-button {
+  border-bottom: 1px solid transparent;
+}
+
+.unit-toggle-button[data-active="true"] {
+  border-bottom-color: var(--color-accent);
+}
+
 @keyframes fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }

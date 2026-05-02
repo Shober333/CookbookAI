@@ -158,6 +158,8 @@ test.describe("Sprint 1 recipe library", () => {
     await page.getByRole("button", { name: "imperial" }).click();
     await expect(page.getByRole("button", { name: "imperial" })).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByText("7.1 oz spaghetti")).toBeVisible();
+    await expect(page.getByRole("button", { name: "imperial" })).toHaveCSS("border-bottom-color", "rgb(184, 92, 56)");
+    await expect(page.getByRole("button", { name: "metric" })).toHaveCSS("border-bottom-color", "rgba(0, 0, 0, 0)");
 
     await page.getByRole("button", { name: "metric" }).click();
     await expect(page.getByText("200 g spaghetti")).toBeVisible();
@@ -271,6 +273,8 @@ test.describe("Sprint 1 screenshots", () => {
 
     await page.getByRole("button", { name: "imperial" }).click();
     await expect(page.getByRole("button", { name: "imperial" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "imperial" })).toHaveCSS("border-bottom-color", "rgb(184, 92, 56)");
+    await expect(page.getByRole("button", { name: "metric" })).toHaveCSS("border-bottom-color", "rgba(0, 0, 0, 0)");
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, "recipe-unit-toggled.png"), fullPage: true });
 
     await page.route("**/api/ai/import", async (route) => {

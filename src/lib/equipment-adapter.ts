@@ -9,7 +9,7 @@ import {
   ollamaBaseUrl,
   ollamaModel,
 } from "@/lib/anthropic";
-import { normalizeAppliances } from "@/lib/equipment-service";
+import { applianceKeys, normalizeAppliances } from "@/lib/equipment-service";
 import { parseJsonObjectFromText } from "@/lib/recipe-utils";
 
 export const equipmentAdaptationSchema = z.object({
@@ -36,7 +36,8 @@ export type EquipmentAdaptation = z.infer<typeof equipmentAdaptationSchema>;
 export function normalizeEquipmentAdaptation(
   value: unknown,
 ): EquipmentAdaptation {
-  const parsed = equipmentAdaptationSchema.safeParse(value);
+  const normalized = normalizeRawEquipmentAdaptation(value);
+  const parsed = equipmentAdaptationSchema.safeParse(normalized);
 
   if (!parsed.success) {
     throw new Error("Invalid equipment adaptation response.");
@@ -45,6 +46,25 @@ export function normalizeEquipmentAdaptation(
   return {
     adaptedSteps: parsed.data.adaptedSteps.map((step) => step.trim()),
     notes: parsed.data.notes.trim(),
+  };
+}
+
+function normalizeRawEquipmentAdaptation(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const record = value as Record<string, unknown>;
+  const adaptedSteps =
+    record.adaptedSteps ??
+    record.steps ??
+    record.adapted_steps ??
+    record.instructions;
+
+  return {
+    ...record,
+    adaptedSteps,
+    notes: typeof record.notes === "string" ? record.notes : "",
   };
 }
 
@@ -129,7 +149,9 @@ async function adaptRecipeStepsWithOllama(
   }
 
   if (!response.ok) {
-    throw new Error("Ollama equipment adaptation failed.");
+    throw new Error(
+      `Ollama equipment adaptation failed: ${await readErrorBody(response)}`,
+    );
   }
 
   const body = (await response.json()) as { message?: { content?: string } };
@@ -149,6 +171,11 @@ function buildEquipmentAdaptationPrompt(
 ): string {
   const applianceText =
     appliances.length > 0 ? appliances.join(", ") : "no special appliances";
+  const unavailableAppliances = applianceKeys.filter(
+    (appliance) => !appliances.includes(appliance),
+  );
+  const unavailableText =
+    unavailableAppliances.length > 0 ? unavailableAppliances.join(", ") : "none";
   const stepText = steps
     .map((step, index) => `${index + 1}. ${step}`)
     .join("\n");
@@ -156,15 +183,29 @@ function buildEquipmentAdaptationPrompt(
   return `Recipe: ${title}
 
 Available appliances: ${applianceText}
+Unavailable appliances: ${unavailableText}
 
 Original steps:
 ${stepText}
 
-Adapt these steps to the available appliances. Preserve food safety guidance and return concise, cookable instructions.`;
+Adapt these steps to the available appliances only. If the original method uses an unavailable appliance, replace that method with a practical technique using the available appliances and common non-powered kitchen tools such as bowls, knives, pans, baking dishes, foil, utensils, and a thermometer. Do not say you cannot adapt the recipe just because stovetop is unavailable. Preserve food safety guidance and return concise, cookable instructions.`;
 }
 
 function getOllamaAdaptationTimeoutMs(): number {
   const timeout = Number(process.env.OLLAMA_EXTRACTION_TIMEOUT_MS);
 
   return Number.isInteger(timeout) && timeout > 0 ? timeout : 120_000;
+}
+
+async function readErrorBody(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { error?: unknown };
+    if (typeof body.error === "string" && body.error.trim().length > 0) {
+      return body.error.trim();
+    }
+  } catch {
+    // Fall through to the status text below.
+  }
+
+  return `${response.status} ${response.statusText}`.trim();
 }

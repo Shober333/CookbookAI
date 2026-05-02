@@ -234,14 +234,6 @@ function IdleState({
             </Link>{" "}
             first.
           </p>
-          <p className="mt-2 font-ui text-ui-sm text-ink-muted">
-            <Link
-              href="/equipment"
-              className="underline-offset-2 hover:underline"
-            >
-              Set up your kitchen →
-            </Link>
-          </p>
         </>
       )}
     </div>
