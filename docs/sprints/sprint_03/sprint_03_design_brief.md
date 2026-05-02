@@ -277,20 +277,16 @@ description and is importing that.
 | 6 | "Reading the method…" | … |
 | 7 | "Done" | Final state |
 
-**Domain hint format** (Founder-approved 2026-05-02): the candidate
-URL's source domain is appended to phase 2 in italic muted ink:
+**Domain hint format** (Founder-approved 2026-05-02; CTO contract fix
+pass 2026-05-02): the candidate URL's source domain is appended to
+phase 2 in italic muted ink:
 
-- The trailing `(domain.com)` portion uses `--color-ink-faint`,
-  not terracotta — it must not compete with phase status
-- Strip `www.` and any path; show the bare host
-- If the backend hasn't communicated the candidate domain yet (e.g., the
-  whole flow finishes before phase 2 is rendered), drop the hint and
-  show the bare phase copy. Don't fabricate a domain.
-
-The backend B5 needs to surface the candidate domain at the boundary
-point — either via a `phase` token alongside `domain`, or as part of
-the final `sourceKind` response with the resolved URL/domain. Either
-shape works for this UI rule.
+- The trailing `(domain.com)` portion uses `--color-ink-faint`, not
+  terracotta — it must not compete with phase status
+- The domain string comes from `ImportResponse.sourceDomain` (see §6)
+- Backend normalizes the domain: strip `www.`, path, query, fragment
+- If `sourceDomain` is absent or `null` when phase 2 renders, drop the
+  hint and show bare phase copy. UI must not fabricate a domain.
 
 ### 5.4 YouTube — description text path (`sourceKind: "youtube-description"`)
 
@@ -333,23 +329,42 @@ the full path.
 ## 6. Backend response contract (UI-facing)
 
 For F2 to surface dedupe / YouTube feedback, the response from
-`POST /api/ai/import` should include these fields. `[DEV:backend]`
-owns the contract; the UI requires at minimum:
+`POST /api/ai/import` includes these fields. `[DEV:backend]` owns the
+contract:
 
 ```ts
 type ImportResponse = {
-  recipe: Recipe              // existing
-  reused?: boolean            // B3 — true if dedupe short-circuited the AI call
-  sourceKind?:                // B5 — names the resolved import path
-    | "url"                   //   plain web URL (default)
-    | "text"                  //   text/paste
-    | "youtube-link"          //   YouTube → external recipe URL
-    | "youtube-description"   //   YouTube → description-as-text
+  recipe: Recipe                       // existing
+  reused?: boolean                     // B3 — true if dedupe short-circuited the AI call
+  sourceKind?:                         // B5 — names the resolved import path
+    | "url"                            //   plain web URL (default)
+    | "text"                           //   text/paste
+    | "youtube-link"                   //   YouTube → external recipe URL
+    | "youtube-description"            //   YouTube → description-as-text
+  sourceUrl?: string | null            // B5 — resolved final source when ≠ submitted URL
+  sourceDomain?: string | null         // B5 — display-normalized domain for the YouTube hint
 }
 ```
 
-Defaults (when fields absent): `reused = false`, `sourceKind = "url"`
-or `"text"` matching the user-chosen mode.
+### Field rules
+
+- **`reused`** — `true` only when B3 dedupe replaced the AI call. Defaults to `false`.
+- **`sourceKind`** — defaults to `"url"` or `"text"` matching the user-chosen mode.
+- **`sourceUrl`** — populated when the resolved source differs from the submitted URL (e.g., the YouTube URL → the candidate recipe page URL). May be `null` or absent for ordinary URL/text imports.
+- **`sourceDomain`** — display-normalized: strip `www.`, path, query, and fragment. Bare host only.
+  - **Backend must populate** `sourceDomain` for `sourceKind: "youtube-link"` when a candidate URL is chosen.
+  - **Backend must never fabricate.** If the candidate domain is genuinely unknown, omit the field or set it to `null`.
+  - **UI degrades gracefully:** when `sourceDomain` is absent, the streaming-box phase 2 line drops the hint and shows the bare phase copy ("Following the link in the description…").
+
+### Why these fields, not streaming phase tokens
+
+The CTO fix pass (2026-05-02) chose the response-contract approach
+over per-phase streaming tokens. Reasons:
+
+1. Cleaner backend implementation — no need for a parallel phase channel.
+2. Easier to assert in QA — one final response shape to validate.
+3. UI can fold the YouTube-specific phases into the line list at the
+   end without animation choreography.
 
 If the contract diverges, file the change back to `[UI/UX]` so this
 brief and the copy in §5–7 stay accurate.
@@ -523,16 +538,27 @@ When an error is showing and the user toggles mode:
 
 ### Tap targets
 
-| Element | Mobile size |
-|---|---|
-| Mode switch buttons | ≥ 44 × 70px ✓ |
-| URL input | 38px high — existing, **already non-compliant** for tap target. Not in this sprint's scope to fix. Flagged. |
-| Submit button | 38px high — same flag. |
-| Textarea | 200px+ ✓ |
+The project DoD (`CLAUDE.md`) and design principles (`AGENTS.md`)
+require ≥ 44×44px tap targets on mobile. Because Sprint 03 changes the
+`/import` page, this gate is binding here — the brief cannot waive it
+locally. (CTO fix pass 2026-05-02.)
 
-The 38px input/button height is a pre-existing kit drift documented in
-`UI_KIT.md` §8. It is not blocking Sprint 03 acceptance, but should
-be revisited when next the kit opens.
+| Element | Mobile | Desktop |
+|---|---|---|
+| Mode switch buttons | ≥ 44px (padding `12px 18px`) ✓ | same |
+| URL input | `min-h-[44px]` | `md:h-[38px]` (preserves editorial density) |
+| Submit button | `min-h-[44px]` | `md:h-[38px]` |
+| Textarea | `min-h-[200px]` ✓ | same |
+
+Implementation rule for `[DEV:frontend]`: write the mobile floor as
+`min-h-[44px]` then override with `md:h-[38px]` at the `md:` (≥ 768px)
+breakpoint. This keeps the kit's 38px desktop rhythm while satisfying
+the mobile floor.
+
+This is a sprint-local override applied to the `/import` surface.
+`UI_KIT.md` §8 (Inputs: 38px both viewports) and §11 (Tap targets:
+44×44 mobile) currently disagree internally — kit reconciliation is
+out of scope for U1 but should be picked up when the kit next opens.
 
 ### Mobile-specific layout
 
@@ -654,3 +680,4 @@ treatments not specified here. New error scenarios go back to `[UI/UX]`.
 |---|---|---|
 | 2026-05-02 | Initial draft — `[UI/UX]` U1 | Sprint 03 kickoff, dev_todo task U1 |
 | 2026-05-02 | Locked. Founder approved Q1 (defer source URL field), Q2 (no mode persistence), Q3 (show YouTube candidate domain). §5.3 phase 2 updated to include the domain-hint format. | Founder review |
+| 2026-05-02 | CTO fix pass: §6 contract adds `sourceUrl` and `sourceDomain` fields with normalization rules (response-contract approach over streaming phase tokens). §10 removes the tap-target waiver — URL input and submit button now `min-h-[44px]` mobile, `md:h-[38px]` desktop. §5.3 references `sourceDomain` directly. | `[CTO]` U1 fix pass |

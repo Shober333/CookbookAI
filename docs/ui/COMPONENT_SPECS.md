@@ -371,6 +371,7 @@ See `STATES.md` §4 *Note on streaming* for more.
 - See `UI_KIT.md` §8 Inputs for tokens
 - Placeholder: "Paste a recipe URL or a YouTube link"
 - Validates as URL on blur — if invalid, shows error helper text below in `--color-accent-strong`
+- **Sprint 03 mobile floor:** `min-h-[44px]` on mobile, `md:h-[38px]` desktop — required by project DoD ≥ 44×44 tap target. Sprint-local override on the kit's 38px-both-viewports rule (kit reconciliation pending). See Sprint 03 brief §10.
 
 #### Textarea (`text` mode, Sprint 03)
 - Same tokens as the URL input (`--color-paper`, `0.5px solid --color-border-strong`,
@@ -384,7 +385,7 @@ See `STATES.md` §4 *Note on streaming* for more.
 
 #### "Bring it in" button
 - Filled accent variant (per UI_KIT.md §8 Buttons — Sprint 1 used filled, accepted)
-- Full width, height 38px
+- Full width, `min-h-[44px]` on mobile, `md:h-[38px]` desktop (Sprint 03 fix; project DoD requires ≥ 44×44 mobile tap target)
 - Disabled when the active input is empty or invalid
 
 #### Streaming box
@@ -419,9 +420,10 @@ mode and resolved source kind:
 - **Text mode:** "Reading what you pasted…" → … (same tail) (Sprint 03)
 - **YouTube link path** (`sourceKind: "youtube-link"`): "Looking up the
   video…" → "Following the link in the description… *(domain.com)*" →
-  "Reading the page…" → … (Sprint 03). The trailing domain is in
-  italic `--color-ink-faint`; if the backend hasn't surfaced the
-  candidate domain by phase 2, drop the hint rather than fabricate.
+  "Reading the page…" → … (Sprint 03). The trailing domain reads from
+  `ImportResponse.sourceDomain`, in italic `--color-ink-faint`. If the
+  field is absent or `null`, drop the hint and show bare phase copy —
+  UI must not fabricate.
 - **YouTube description path** (`sourceKind: "youtube-description"`):
   "Looking up the video…" → "Reading the description…" → … (Sprint 03)
 
@@ -435,13 +437,19 @@ intermediate states. Full phase tables in Sprint 03 design brief §5.
 ```ts
 type ImportResponse = {
   recipe: Recipe
-  reused?: boolean             // B3 — true when dedupe short-circuited the AI call
+  reused?: boolean                     // B3 — true when dedupe short-circuited the AI call
   sourceKind?: "url" | "text" | "youtube-link" | "youtube-description"
+  sourceUrl?: string | null            // B5 — resolved final source when ≠ submitted URL
+  sourceDomain?: string | null         // B5 — display-normalized domain for the YouTube hint
 }
 ```
 
 Defaults: `reused = false`; `sourceKind` falls back to the user-chosen
-mode when absent.
+mode when absent. `sourceUrl` and `sourceDomain` populate only when
+the resolved source differs from the submitted URL (typically YouTube
+external-link path). `sourceDomain` is normalized backend-side (strip
+`www.`, path, query, fragment); UI must not fabricate it. See Sprint
+03 design brief §6 for full rules.
 
 ### Props
 
@@ -926,3 +934,4 @@ here. New features get new specs.
 | 2026-05-01 | §8 Topbar: nav label "Equipment" → "Kitchen" (route stays `/equipment`); added Sign-out link; resolved mobile collapse (Option 3); deferred topbar search to post-MVP | Sprint 1 dev addition + Founder decisions |
 | 2026-05-01 | §9 AdaptPanel: new component spec | Sprint 2 task F2 |
 | 2026-05-02 | §5 ImportForm: added mode switch (`link` \| `text`), textarea sub-component, mode-aware phase copy (URL/text/YouTube), backend response contract (`reused`, `sourceKind`), updated props. Detail in `docs/sprints/sprint_03/sprint_03_design_brief.md`. | Sprint 3 task U1 |
+| 2026-05-02 | §5 ImportForm: contract gains `sourceUrl` and `sourceDomain` fields (CTO fix pass). URL input + submit button get mobile `min-h-[44px]` floor with `md:h-[38px]` desktop override — required by project DoD. | Sprint 3 U1 fix pass |
