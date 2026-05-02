@@ -13,7 +13,10 @@ export function RecipeListItem({ recipe, isLast }: RecipeListItemProps) {
     recipe.servings === 1 ? "1 serving" : `${recipe.servings} servings`;
   const metaParts = [servingsLabel, domain].filter(Boolean);
 
-  const ariaLabel = `${recipe.title}, ${servingsLabel}`;
+  const isAdapted =
+    !!recipe.adaptedSteps && recipe.adaptedSteps.length > 0;
+
+  const ariaLabel = `${recipe.title}, ${servingsLabel}${isAdapted ? ", adapted" : ""}`;
 
   return (
     <Link
@@ -25,11 +28,8 @@ export function RecipeListItem({ recipe, isLast }: RecipeListItemProps) {
         isLast ? "border-transparent" : "border-border-soft hover:border-accent",
       ].join(" ")}
     >
-      {/* inner wrapper shifts right on hover */}
       <div className="transition-transform duration-150 ease-out group-hover:translate-x-[6px]">
-        {/* Desktop: 3-column flex */}
         <div className="flex items-start gap-4">
-          {/* Title + sub-title column */}
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-body font-medium text-ink">
               {recipe.title}
@@ -39,27 +39,23 @@ export function RecipeListItem({ recipe, isLast }: RecipeListItemProps) {
                 {recipe.description}
               </p>
             )}
-            {/* Mobile-only: meta below title */}
             <p className="mt-[3px] font-ui text-ui-sm text-ink-faint md:hidden">
               {metaParts.join(" · ")}
             </p>
           </div>
 
-          {/* Meta column — desktop only */}
           <p className="hidden shrink-0 font-ui text-ui-sm text-ink-faint md:block md:w-[90px]">
             {metaParts.join(" · ")}
           </p>
 
-          {/* Tags column */}
           <div className="hidden shrink-0 items-start justify-end gap-1 md:flex md:w-[110px]">
-            <TagList tags={recipe.tags ?? []} />
+            <TagList tags={recipe.tags ?? []} isAdapted={isAdapted} />
           </div>
         </div>
 
-        {/* Mobile-only tags */}
-        {(recipe.tags?.length ?? 0) > 0 && (
+        {((recipe.tags?.length ?? 0) > 0 || isAdapted) && (
           <div className="mt-[6px] flex flex-wrap gap-1 md:hidden">
-            <TagList tags={recipe.tags ?? []} />
+            <TagList tags={recipe.tags ?? []} isAdapted={isAdapted} />
           </div>
         )}
       </div>
@@ -67,7 +63,7 @@ export function RecipeListItem({ recipe, isLast }: RecipeListItemProps) {
   );
 }
 
-function TagList({ tags }: { tags: string[] }) {
+function TagList({ tags, isAdapted }: { tags: string[]; isAdapted: boolean }) {
   return (
     <>
       {tags.slice(0, 3).map((tag) => (
@@ -78,6 +74,11 @@ function TagList({ tags }: { tags: string[] }) {
           {tag}
         </span>
       ))}
+      {isAdapted && (
+        <span className="rounded-sm border-[0.5px] border-accent px-[5px] py-[2px] font-ui text-tag uppercase tracking-[0.08em] text-accent">
+          Adapted
+        </span>
+      )}
     </>
   );
 }

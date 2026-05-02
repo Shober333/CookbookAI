@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { RecipeResponse } from "@/types/recipe";
 import { ServingScaler } from "./ServingScaler";
 import { UnitToggle } from "./UnitToggle";
+import { AdaptPanel, type AdaptResponse } from "./AdaptPanel";
 import {
   scaleAmount,
   roundScaled,
@@ -12,29 +13,39 @@ import {
   formatAmount,
   toRoman,
   extractDomain,
+  recipeToMarkdown,
+  slugify,
 } from "@/lib/recipe-utils";
 
 interface RecipeDetailProps {
   recipe: RecipeResponse;
   marginNote?: string;
+  userAppliances?: string[];
 }
 
-export function RecipeDetail({ recipe, marginNote }: RecipeDetailProps) {
+export function RecipeDetail({
+  recipe,
+  marginNote,
+  userAppliances = [],
+}: RecipeDetailProps) {
   const router = useRouter();
   const [servings, setServings] = useState(recipe.servings);
   const [unitSystem, setUnitSystem] = useState<"metric" | "imperial">("metric");
   const [deleting, setDeleting] = useState(false);
+  const [savedAdaptedSteps, setSavedAdaptedSteps] = useState<string[] | null>(
+    recipe.adaptedSteps ?? null,
+  );
+  const [isShowingAdapted, setIsShowingAdapted] = useState(false);
 
   const domain = extractDomain(recipe.sourceUrl);
 
-  // Derive display ingredients: scale then convert
   const displayIngredients = recipe.ingredients.map((ing) => {
     const scaled = scaleAmount(ing.amount, recipe.servings, servings);
     const rounded = scaled !== null ? roundScaled(scaled, ing.unit) : null;
     const { amount: converted, unit: convertedUnit } = convertUnit(
       rounded,
       ing.unit,
-      unitSystem
+      unitSystem,
     );
     return {
       name: ing.name,
@@ -54,6 +65,69 @@ export function RecipeDetail({ recipe, marginNote }: RecipeDetailProps) {
     } catch {
       setDeleting(false);
     }
+  }
+
+  async function handleAdapt(
+    recipeId: string,
+    appliances: string[],
+  ): Promise<AdaptResponse> {
+    const res = await fetch("/api/ai/adapt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipeId, appliances }),
+    });
+    if (!res.ok) {
+      throw new Error("Adapt request failed");
+    }
+    const data = (await res.json()) as AdaptResponse;
+    return data;
+  }
+
+  async function handleSaveAdapted(
+    recipeId: string,
+    adaptedSteps: string[],
+  ): Promise<void> {
+    const res = await fetch(`/api/recipes/${recipeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ adaptedSteps }),
+    });
+    if (!res.ok) {
+      throw new Error("Save failed");
+    }
+    setSavedAdaptedSteps(adaptedSteps);
+  }
+
+  async function handleDiscardAdapted(recipeId: string): Promise<void> {
+    const res = await fetch(`/api/recipes/${recipeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ adaptedSteps: null }),
+    });
+    if (!res.ok) {
+      throw new Error("Discard failed");
+    }
+    setSavedAdaptedSteps(null);
+  }
+
+  function handleDownload() {
+    const useAdapted =
+      isShowingAdapted &&
+      savedAdaptedSteps !== null &&
+      savedAdaptedSteps.length > 0;
+    const markdown = recipeToMarkdown(
+      { ...recipe, adaptedSteps: savedAdaptedSteps },
+      { servings, unitSystem, useAdapted },
+    );
+    const blob = new Blob([markdown], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${slugify(recipe.title)}${useAdapted ? "-adapted" : ""}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   const eyebrowParts = [
@@ -122,13 +196,6 @@ export function RecipeDetail({ recipe, marginNote }: RecipeDetailProps) {
           onChange={setServings}
         />
         <UnitToggle value={unitSystem} onChange={setUnitSystem} />
-        <button
-          type="button"
-          onClick={() => router.push(`/recipes/${recipe.id}/adapt`)}
-          className="w-full rounded-sm bg-accent px-3 py-[5px] font-ui text-ui text-paper transition-colors hover:bg-accent-strong md:ml-auto md:w-auto"
-        >
-          Adapt for my kitchen
-        </button>
       </div>
 
       {/* Divider */}
@@ -212,8 +279,33 @@ export function RecipeDetail({ recipe, marginNote }: RecipeDetailProps) {
         </ol>
       </section>
 
-      {/* Delete */}
-      <div className="mt-[44px] border-t-[0.5px] border-border pt-5">
+      {/* Adapt panel */}
+      <AdaptPanel
+        recipeId={recipe.id}
+        originalSteps={recipe.steps}
+        savedAdaptedSteps={savedAdaptedSteps}
+        savedAdaptedNotes={null}
+        userAppliances={userAppliances}
+        isShowingAdapted={isShowingAdapted}
+        onShowingAdaptedChange={setIsShowingAdapted}
+        onAdapt={handleAdapt}
+        onSaveAdapted={handleSaveAdapted}
+        onDiscardAdapted={handleDiscardAdapted}
+      />
+
+      {/* Bottom action row */}
+      <div className="mt-[44px] flex flex-wrap items-center gap-3 border-t-[0.5px] border-border pt-5">
+        <button
+          type="button"
+          onClick={handleDownload}
+          aria-label="Download recipe as Markdown"
+          className="font-ui text-ui-sm text-ink-muted underline-offset-2 hover:text-ink hover:underline"
+        >
+          Download .md
+        </button>
+        <span aria-hidden="true" className="font-ui text-ui-sm text-ink-faint">
+          ·
+        </span>
         <button
           type="button"
           onClick={handleDelete}

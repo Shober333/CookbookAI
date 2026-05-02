@@ -6,7 +6,7 @@ import { signOut } from "next-auth/react";
 
 const NAV_LINKS = [
   { href: "/library", label: "Library" },
-  { href: "/equipment", label: "Equipment" },
+  { href: "/equipment", label: "Kitchen" },
 ];
 
 export function Topbar() {
