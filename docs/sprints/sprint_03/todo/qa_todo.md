@@ -52,7 +52,7 @@
 
 | # | Scenario | Steps | Expected | Status |
 |---|----------|-------|----------|--------|
-| Y1 | YouTube URL with external recipe link | Mock YouTube metadata response with recipe URL in description | Import follows the external URL path and saves recipe | `[ ]` |
+| Y1 | YouTube URL with external recipe link | Mock YouTube metadata response with recipe URL in description | Import follows the external URL path, saves recipe, and response includes `sourceKind: "youtube-link"`, `sourceUrl`, and normalized `sourceDomain` | `[ ]` |
 | Y2 | YouTube URL with multiple social links | Mock description with social links and one recipe link | Social/video links are filtered; recipe candidate is selected | `[ ]` |
 | Y3 | YouTube URL with recipe-like description | Mock description with recipe text and no external URL | Import uses text extraction path and saves recipe | `[ ]` |
 | Y4 | YouTube URL with no recipe signal | Mock description without recipe link/text | User sees designed unsupported/no-recipe state; no recipe created | `[ ]` |
@@ -67,7 +67,7 @@
 |---|----------|-------|----------|--------|
 | U1 | URL mode remains default | Open `/import` | Existing URL import flow is the first visible mode | `[ ]` |
 | U2 | Mode switch keyboard accessible | Tab through mode control and switch modes with keyboard | Focus states visible; mode changes without mouse | `[ ]` |
-| U3 | Mobile layout at 375px | Open `/import` at 375px and switch modes | No horizontal scroll; controls and textarea fit; tap targets >= 44px | `[ ]` |
+| U3 | Mobile layout at 375px | Open `/import` at 375px and switch modes | No horizontal scroll; mode switch, URL input, submit button, and textarea all fit; interactive tap targets are >= 44x44px | `[ ]` |
 | U4 | Reduced motion | Enable reduced motion and submit import | Progress state respects `prefers-reduced-motion` | `[ ]` |
 | U5 | Import form screenshots | Capture URL mode, text mode, reused URL status, YouTube status | Screenshots saved under `tests/screenshots/` | `[ ]` |
 

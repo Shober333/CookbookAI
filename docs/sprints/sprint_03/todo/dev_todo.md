@@ -2,8 +2,8 @@
 
 > **Owner:** [DEV-LEAD]
 > **Sprint goal:** Import resilience + cost control.
-> **Status:** Founder approved 2026-05-02. Implementation may start after
-> `[UI/UX]` completes U1 for frontend-facing states.
+> **Status:** Founder approved 2026-05-02. `[UI/UX]` U1 is locked;
+> implementation may start against `sprint_03_design_brief.md`.
 
 ---
 
@@ -61,6 +61,37 @@ multiple import modes: URL, text/paste, and YouTube URL handling.
 
 ---
 
+## Sprint 03 API Contract
+
+Public request bodies use `mode` at the route/UI boundary. The shared
+backend service may translate that into an internal `kind` discriminant,
+but the external `POST /api/ai/import` contract stays mode-based:
+
+```ts
+{ mode: "url", url: string }
+{ mode: "text", text: string, sourceUrl?: string | null }
+```
+
+The response shape used by B3, B5, and F2 is:
+
+```ts
+type ImportResponse = {
+  recipe: Recipe
+  reused?: boolean
+  sourceKind?: "url" | "text" | "youtube-link" | "youtube-description"
+  sourceUrl?: string | null
+  sourceDomain?: string | null
+}
+```
+
+Defaults: `reused = false`; `sourceKind` falls back to the submitted
+mode. For `sourceKind: "youtube-link"`, B5 must populate `sourceUrl`
+with the resolved recipe URL and `sourceDomain` with a display-normalized
+bare host (strip `www.`, path, query, fragment). UI must not fabricate
+`sourceDomain` if it is absent or `null`.
+
+---
+
 ## Phase 1 — Backend Foundation
 
 ### Task B1 — Extract shared import service `[DEV:backend]` · Medium
@@ -73,6 +104,8 @@ share validation, AI extraction, persistence, and error handling.
 - Introduce a service-level function that accepts one of:
   - `{ kind: "url", url: string }`
   - `{ kind: "text", text: string, sourceUrl?: string | null }`
+- The API route translates public `mode` request bodies into this internal
+  service shape.
 - Keep auth requirements unchanged for Sprint 03: authenticated users only.
 - Keep existing recipe schema validation and normalization behavior.
 - Keep `looksLikeRecipePage()` or equivalent pre-screening for text sources.
@@ -218,6 +251,11 @@ any user.
 - Avoid duplicate AI calls where possible:
   - Candidate URL should go through URL dedupe first.
   - Description text should only call AI after pre-screening.
+- When the external-link path succeeds, return
+  `sourceKind: "youtube-link"`, `sourceUrl`, and normalized `sourceDomain`
+  per the Sprint 03 API contract above.
+- When the description-text path succeeds, return
+  `sourceKind: "youtube-description"`.
 
 **Files:**
 - `src/app/api/ai/import/route.ts`
@@ -230,6 +268,8 @@ any user.
 - YouTube URL with no recipe link/text returns user-safe failure.
 - Candidate URL dedupe prevents AI call.
 - API key/network failures produce useful error response.
+- YouTube external-link response includes `sourceUrl` and normalized
+  `sourceDomain`.
 
 ---
 
@@ -273,6 +313,9 @@ duplicate URL or a YouTube description path.
 - If response includes metadata such as `sourceKind: "youtube-link"` or
   `sourceKind: "youtube-description"`, show a status that matches the import
   progress language.
+- If `sourceKind: "youtube-link"` includes `sourceDomain`, show the
+  `[UI/UX]`-specified muted domain hint; if absent or `null`, show the bare
+  phase copy.
 - Do not add celebratory toasts.
 - Preserve auto-navigate.
 
@@ -283,6 +326,8 @@ duplicate URL or a YouTube description path.
 **Tests:**
 - E2E mocks reused import and asserts quiet feedback appears.
 - E2E mocks YouTube description import and asserts progress/status copy.
+- E2E mocks YouTube external-link import and asserts the candidate domain hint
+  appears only when `sourceDomain` is present.
 
 ---
 
