@@ -72,12 +72,26 @@ export async function POST(request: Request) {
 
     return NextResponse.json(adaptation);
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown adaptation error";
     console.error("[equipment-adapt] AI adaptation failed", {
       provider: process.env.AI_PROVIDER ?? "ollama",
       recipeId: recipe.id,
       error: error instanceof Error ? error.name : "UnknownError",
+      message,
     });
 
-    return jsonError("Could not adapt the recipe for your equipment.", 502);
+    const isProviderAccessError =
+      message.includes("requires a subscription") ||
+      message.includes("401") ||
+      message.includes("402") ||
+      message.includes("403");
+
+    return jsonError(
+      isProviderAccessError
+        ? "The configured AI model is unavailable. Check the local model or provider access."
+        : "Could not adapt the recipe for your equipment.",
+      isProviderAccessError ? 503 : 502,
+    );
   }
 }

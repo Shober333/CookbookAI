@@ -29,7 +29,7 @@ export function RecipeListItem({ recipe, isLast }: RecipeListItemProps) {
       ].join(" ")}
     >
       <div className="transition-transform duration-150 ease-out group-hover:translate-x-[6px]">
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-4 md:grid md:grid-cols-[minmax(0,1fr)_112px_minmax(0,240px)]">
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-body font-medium text-ink">
               {recipe.title}
@@ -44,11 +44,17 @@ export function RecipeListItem({ recipe, isLast }: RecipeListItemProps) {
             </p>
           </div>
 
-          <p className="hidden shrink-0 font-ui text-ui-sm text-ink-faint md:block md:w-[90px]">
+          <p
+            data-testid="recipe-list-meta"
+            className="hidden min-w-0 break-words font-ui text-ui-sm leading-[1.35] text-ink-faint md:block"
+          >
             {metaParts.join(" · ")}
           </p>
 
-          <div className="hidden shrink-0 items-start justify-end gap-1 md:flex md:w-[110px]">
+          <div
+            data-testid="recipe-list-tags"
+            className="hidden min-w-0 flex-wrap items-start justify-end gap-1 md:flex"
+          >
             <TagList tags={recipe.tags ?? []} isAdapted={isAdapted} />
           </div>
         </div>
@@ -69,13 +75,17 @@ function TagList({ tags, isAdapted }: { tags: string[]; isAdapted: boolean }) {
       {tags.slice(0, 3).map((tag) => (
         <span
           key={tag}
-          className="rounded-sm border-[0.5px] border-border px-[5px] py-[2px] font-ui text-tag uppercase tracking-[0.08em] text-ink-faint"
+          data-testid="recipe-list-tag"
+          className="max-w-full rounded-sm border-[0.5px] border-border px-[5px] py-[2px] text-center font-ui text-tag uppercase leading-[1.3] tracking-[0.08em] text-ink-faint"
         >
           {tag}
         </span>
       ))}
       {isAdapted && (
-        <span className="rounded-sm border-[0.5px] border-accent px-[5px] py-[2px] font-ui text-tag uppercase tracking-[0.08em] text-accent">
+        <span
+          data-testid="recipe-list-tag"
+          className="max-w-full rounded-sm border-[0.5px] border-accent px-[5px] py-[2px] text-center font-ui text-tag uppercase leading-[1.3] tracking-[0.08em] text-accent"
+        >
           Adapted
         </span>
       )}

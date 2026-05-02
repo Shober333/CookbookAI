@@ -29,6 +29,73 @@ Sprint 1 validated AI extraction locally using Ollama. For production deployment
 
 ---
 
+## Decision Note: Paid AI Provider Cost Comparison
+
+**Date:** 2026-05-02
+**Status:** CTO recommendation — Founder decision pending
+**Decided by:** [CTO] recommendation; Founder to accept/supersede production provider
+
+**Context:**
+During real Ollama testing, the Founder hit paid-tier limitations on Ollama
+cloud and also expressed concern about Anthropic API usage based on reported
+bad experiences. The current accepted production-provider decision still says
+`AI_PROVIDER=anthropic`, so a paid-provider comparison is needed before deploy
+planning continues.
+
+**Pricing basis:**
+Prices are USD per 1M tokens for standard realtime API calls, excluding batch
+discounts, cached-input discounts, tool/search charges, and free tiers.
+Estimated cost assumes one recipe extraction/adaptation call uses roughly
+10k input tokens and 1k output tokens.
+
+| Provider / model | Input / 1M | Output / 1M | Est. / 1k recipe calls | Notes |
+|---|---:|---:|---:|---|
+| OpenAI GPT-5 nano | $0.05 | $0.40 | $0.90 | Cheapest; likely needs validation on messy recipe pages. |
+| Groq GPT-OSS 20B | $0.075 | $0.30 | $1.05 | Very cheap and fast; quality needs project testing. |
+| Gemini 2.5 Flash-Lite | $0.10 | $0.40 | $1.40 | Strong budget candidate for high-volume extraction. |
+| Groq GPT-OSS 120B | $0.15 | $0.60 | $2.10 | Better Groq quality target while still cheap. |
+| OpenAI GPT-5.4 nano | $0.20 | $1.25 | $3.25 | Newer nano-tier OpenAI model; reasonable fallback candidate. |
+| OpenAI GPT-5 mini | $0.25 | $2.00 | $4.50 | Reliable structured-output fallback. |
+| Gemini 2.5 Flash | $0.30 | $2.50 | $5.50 | CTO-recommended production default candidate. |
+| Gemini 3 Flash Preview | $0.50 | $3.00 | $8.00 | Better capability, but preview status adds deployment risk. |
+| OpenAI GPT-5.4 mini | $0.75 | $4.50 | $12.00 | Strong but likely overkill for recipe import/adaptation. |
+| Claude Haiku 4.5 | $1.00 | $5.00 | $15.00 | Cheapest current Anthropic option. |
+| Claude Sonnet 4.6 | $3.00 | $15.00 | $45.00 | Current implemented Anthropic target; expensive for this use case. |
+
+**Recommendation:**
+1. **Primary production candidate:** Gemini 2.5 Flash. It has structured
+   output support, low cost, long context, and aligns with the already planned
+   Gemini path for future YouTube/video import.
+2. **Cheap experiment:** Groq GPT-OSS 120B. Cost is excellent and structured
+   output support exists, but extraction/adaptation quality must be tested
+   against the project sample set before adoption.
+3. **Reliability fallback:** OpenAI GPT-5 mini. More expensive than Gemini
+   Flash, but strong structured-output support and easy fit with the existing
+   `@ai-sdk/openai` dependency.
+4. **Budget models:** Gemini Flash-Lite, OpenAI nano, and Groq 20B should only
+   become defaults if QA proves they handle noisy recipe pages cleanly.
+
+**Consequences if Founder accepts the recommendation:**
+- Supersede the 2026-05-01 "Production AI Provider — Anthropic on Vercel"
+  decision.
+- Rename `src/lib/anthropic.ts` to `src/lib/ai-provider.ts` before adding
+  more provider branches.
+- Add `AI_PROVIDER=gemini`, `GEMINI_API_KEY`, and `GEMINI_MODEL` env support.
+- Keep local Ollama or LM Studio as the no-bill dev path.
+- Retain OpenAI/Groq as optional fallback experiments, not the first
+  production default.
+
+**Sources checked 2026-05-02:**
+- Google Gemini pricing: https://ai.google.dev/gemini-api/docs/pricing
+- Google Gemini structured outputs: https://ai.google.dev/gemini-api/docs/structured-output
+- OpenAI pricing: https://openai.com/api/pricing/
+- OpenAI model docs: https://developers.openai.com/api/docs/models
+- Groq pricing: https://groq.com/pricing
+- Groq structured outputs: https://console.groq.com/docs/structured-outputs
+- Anthropic pricing: https://platform.claude.com/docs/en/about-claude/pricing
+
+---
+
 ## Decision: Guest Mode + URL-Level Recipe Deduplication
 
 **Date:** 2026-05-01

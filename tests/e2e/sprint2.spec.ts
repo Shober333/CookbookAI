@@ -245,6 +245,50 @@ test.describe("Sprint 2 — AI adaptation", () => {
 // ─── Library search (S1–S4) ───────────────────────────────────────────────
 
 test.describe("Sprint 2 — library search", () => {
+  test("library rows keep long source and tags in separate columns", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await register(page, uniqueEmail("library-layout"));
+    await createRecipe(
+      page,
+      sampleRecipe({
+        title: "Vanilla Bean St. Patrick's Day Cookies",
+        description:
+          "Using your choice of cookie cutters, you can enjoy these soft-baked vanilla bean sugar cookies.",
+        sourceUrl:
+          "https://www.sallysbakingaddiction.com/vanilla-bean-st-patricks-day-cookies/",
+        servings: 24,
+        tags: ["cookies", "st. patrick's day", "dessert"],
+      }),
+    );
+
+    await page.goto("/library");
+    const row = page.getByRole("link", {
+      name: /Vanilla Bean St\. Patrick's Day Cookies, 24 servings/,
+    });
+    await expect(row).toBeVisible();
+
+    const metaBox = await row.getByTestId("recipe-list-meta").boundingBox();
+    const tagsBox = await row.getByTestId("recipe-list-tags").boundingBox();
+    if (!metaBox || !tagsBox) {
+      throw new Error("Recipe library row layout boxes were not visible");
+    }
+
+    expect(metaBox.x + metaBox.width).toBeLessThanOrEqual(tagsBox.x);
+
+    const desktopTags = row
+      .getByTestId("recipe-list-tags")
+      .getByTestId("recipe-list-tag");
+    const tagCount = await desktopTags.count();
+    for (let i = 0; i < tagCount; i += 1) {
+      const tagBox = await desktopTags.nth(i).boundingBox();
+      if (!tagBox) throw new Error("Recipe tag was not visible");
+      expect(tagBox.x).toBeGreaterThanOrEqual(tagsBox.x - 0.5);
+      expect(tagBox.x + tagBox.width).toBeLessThanOrEqual(
+        tagsBox.x + tagsBox.width + 0.5,
+      );
+    }
+  });
+
   test("S1+S2+S3: filter by title, empty state, and clear", async ({ page }) => {
     const email = uniqueEmail("search");
     await register(page, email);

@@ -14,6 +14,31 @@ describe("normalizeEquipmentAdaptation", () => {
     });
   });
 
+  it("defaults missing notes instead of rejecting an otherwise usable rewrite", () => {
+    expect(
+      normalizeEquipmentAdaptation({
+        adaptedSteps: ["Bake the chicken until browned and cooked through."],
+      }),
+    ).toEqual({
+      adaptedSteps: ["Bake the chicken until browned and cooked through."],
+      notes: "",
+    });
+  });
+
+  it("accepts common model variants for adapted step keys", () => {
+    expect(
+      normalizeEquipmentAdaptation({
+        steps: ["Roast the sauce ingredients instead of using the stovetop."],
+        notes: null,
+      }),
+    ).toEqual({
+      adaptedSteps: [
+        "Roast the sauce ingredients instead of using the stovetop.",
+      ],
+      notes: "",
+    });
+  });
+
   it("rejects empty adapted steps", () => {
     expect(() =>
       normalizeEquipmentAdaptation({ adaptedSteps: [], notes: "" }),
