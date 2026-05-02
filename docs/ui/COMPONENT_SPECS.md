@@ -1,7 +1,7 @@
 # Component Specs — CookbookAI
 
 > **Status:** Locked — Sprint 0 (updated Sprint 2)
-> **Owner:** [UI/UX] (Alice)
+> **Owner:** [UI/UX]
 > **Reads:** `REGISTER.md` and `UI_KIT.md` first.
 > **Audience:** `[DEV:frontend]` agent or human dev implementing the UI.
 
@@ -10,7 +10,7 @@ accessibility, and copy. **No TSX is included** — implementation is
 the dev's authoring layer. All token references trace to `UI_KIT.md`.
 
 If a dev finds a state, prop, or behavior not specified here, that is a
-design question — file it back to Alice, do not improvise.
+design question — file it back to `[UI/UX]`, do not improvise.
 
 ---
 
@@ -841,9 +841,9 @@ Components failing any item are flagged 🟡 **Bad** (rule drift) or 🔴 **Ugly
 
 ## Authority
 
-This file is owned by **[UI/UX] (Alice)**. Adding a component, removing
-one, or changing a contract is a design decision — file it back to
-Alice. Devs may not invent components or props that aren't specified
+This file is owned by **[UI/UX]**. Adding a component, removing one, or
+changing a contract is a design decision — file it back to `[UI/UX]`.
+Devs may not invent components or props that aren't specified
 here. New features get new specs.
 
 ---

@@ -1,7 +1,7 @@
 # UI Kit — CookbookAI Design Tokens
 
 > **Status:** Locked — Sprint 0 (updated Sprint 2)
-> **Owner:** [UI/UX] (Alice)
+> **Owner:** [UI/UX]
 > **Replaces:** the scaffold default
 > **See also:** `REGISTER.md` for the *why*; this file is the *what*.
 
@@ -475,12 +475,12 @@ shadcn primitives — they are project-specific compositions that may
 
 ## 14. Authority
 
-This file is owned by **[UI/UX] (Alice)** at `~/Projects/agents/alice/ALICE.md`.
+This file is owned by **[UI/UX]**.
 
 Adding a token, changing a value, or removing a token is a
 **structural** change requiring Founder approval. Devs may not invent
 new tokens. If a dev finds they need a value not in this file, they
-file it as a question for Alice — not as a code change.
+file it as a question for `[UI/UX]` — not as a code change.
 
 ---
 

@@ -1,7 +1,7 @@
 # Register — CookbookAI Design Language
 
 > **Status:** Locked — Sprint 0
-> **Owner:** [UI/UX] (Alice) — locked 2026-04-29 with the Founder
+> **Owner:** [UI/UX] — locked 2026-04-29 with the Founder
 > **Why this exists:** The register is the *why* behind every visual
 > decision in this product. UI_KIT.md tells you what; this file tells
 > you why. When in doubt, the register wins over the kit.
@@ -233,11 +233,10 @@ Stating these explicitly so future contributors don't drift:
 
 ## 10. Authority
 
-This file is owned by **[UI/UX] (Alice)** — `~/Projects/agents/alice/ALICE.md`.
+This file is owned by **[UI/UX]**.
 
-Edits to this file are **structural** changes (per the precedence rules
-in `~/Projects/agents/alice/ALICE.md`) and require Founder approval
-before commit. The Founder approved this register on 2026-04-29.
+Edits to this file are **structural** changes and require Founder
+approval before commit. The Founder approved this register on 2026-04-29.
 
 When the register conflicts with anything else — the kit, a component
 spec, a dev's improvisation — **the register wins**. The kit and specs

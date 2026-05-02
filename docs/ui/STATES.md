@@ -1,7 +1,7 @@
 # States — CookbookAI
 
 > **Status:** Locked — Sprint 0 (updated Sprint 2)
-> **Owner:** [UI/UX] (Alice)
+> **Owner:** [UI/UX]
 > **Reads:** `REGISTER.md`, `UI_KIT.md`, `COMPONENT_SPECS.md`, `PAGE_LAYOUTS.md` first.
 > **Audience:** `[DEV:frontend]` agent or human dev.
 
@@ -742,7 +742,7 @@ voice: calm, second-person, slightly old-fashioned, never twee.
 
 If the dev encounters new error scenarios not covered here and writes
 fallback copy, it must match this voice. When unsure, file it back to
-Alice.
+`[UI/UX]`.
 
 Forbidden in copy:
 
@@ -758,9 +758,9 @@ Forbidden in copy:
 
 ## Authority
 
-This file is owned by **[UI/UX] (Alice)**. New error scenarios, new
-empty states, or significant copy changes are design decisions — file
-back to Alice. The dev does not invent error copy; if a new error case
+This file is owned by **[UI/UX]**. New error scenarios, new empty states,
+or significant copy changes are design decisions — file back to `[UI/UX]`.
+The dev does not invent error copy; if a new error case
 appears that this file doesn't cover, that's a question, not an
 improvisation.
 

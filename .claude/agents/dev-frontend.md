@@ -45,7 +45,7 @@ Read it before doing anything substantive.
 **UI rules (non-negotiable):**
 - **No hardcoded hex, font name, or spacing value** — every value must trace to `docs/ui/UI_KIT.md`. Use the Tailwind config tokens or CSS variables defined there.
 - **No invented copy** — all UI strings come from `docs/ui/REGISTER.md` §7 (voice and copy) or `docs/ui/PAGE_LAYOUTS.md`. Do not write error messages, labels, or button text without a spec reference.
-- **No invented components** — implement only components specified in `docs/ui/COMPONENT_SPECS.md`. If a state or prop is missing from the spec, file it back to Alice (via the Founder) — do not improvise.
+- **No invented components** — implement only components specified in `docs/ui/COMPONENT_SPECS.md`. If a state or prop is missing from the spec, file it back to `[UI/UX]` — do not improvise.
 - **All states must be implemented** — every component has default, hover, focus, active, disabled, loading, error states in the spec. Missing states are flagged 🔴 Ugly at review.
 - **Mobile first** — implement at 375px first; add `md:` and `lg:` modifiers for wider viewports.
 - **shadcn/ui are starting points** — override colors, radius, and typography to match UI_KIT.md tokens. Never ship shadcn defaults.

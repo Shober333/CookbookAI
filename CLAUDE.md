@@ -46,7 +46,7 @@ A feature is "done" only when:
 3. **E2E passes** — Playwright green when UI changed
 4. **No regressions** — existing features still work
 5. **Reviewed** — CTO Good/Bad/Ugly review completed (see `AGENTS.md`).
-   For UI changes: Alice's design review is a second gate.
+   For UI changes: `[UI/UX]` design review is a second gate.
 6. **Screenshots** — captured for any GUI change (`tests/screenshots/`)
 7. **UI compliance** (for UI changes) — tokens used, no hardcoded
    values, all states (empty/loading/error) implemented, mobile (375px)
@@ -63,17 +63,17 @@ Role definitions live in `AGENTS.md`. Short index:
 | Tag | Role | Activate |
 |---|---|---|
 | `[CTO]` | Architecture, planning, reviews; owns PRD/ARCHITECTURE/DECISIONS | `/project:cto` or Claude Code subagent `cto` |
-| `[UI/UX]` | Alice — design language, kit, component specs, page layouts, states. Portfolio-wide role. | Founder addresses Alice directly via Claude Desktop |
+| `[UI/UX]` | Design language, kit, component specs, page layouts, states. | `/project:uiux` or Claude Code subagent `uiux` |
 | `[DEV-LEAD]` | Coordinates dev body; writes dev reports | ad-hoc (multi-dev sprints) |
-| `[DEV:frontend]` | Frontend implementation; implements Alice's specs | `/project:dev` |
+| `[DEV:frontend]` | Frontend implementation; implements `[UI/UX]` specs | `/project:dev` |
 | `[DEV:backend]` | Backend: recipe import, storage, AI provider integration | `/project:dev` |
 | `[DEV-QA]` | Tests, regressions, screenshots | `/project:qa` |
 | `[FOUNDER]` | Human — final decision maker | always |
 
 **Governance:** `[CTO]` reviewable by Meta-CTO at
-`~/Projects/agents/claude/CLAUDE.md`. UI/UX is owned directly by
-Alice (`~/Projects/agents/alice/ALICE.md`) — no project-level UI/UX
-sub-agent.
+`~/Projects/agents/claude/CLAUDE.md`. UI/UX has a project-level agent
+(`[UI/UX]`, subagent `uiux`) that owns the project design system in
+`docs/ui/` with Founder approval.
 
 **Reading order in a turn:** domain `AGENTS.md` (e.g.
 `frontend/AGENTS.md`) → root `AGENTS.md` → this file → `docs/PRD.md`.
@@ -94,6 +94,7 @@ CookbookAI/
 │
 ├── .claude/
 │   ├── agents/cto.md        # Claude Code CTO subagent
+│   ├── agents/uiux.md       # Claude Code UI/UX subagent
 │   ├── commands/            # Slash commands
 │   └── settings.local.json  # Tool permissions
 ├── .codex/
@@ -122,7 +123,7 @@ CookbookAI/
     ├── ARCHITECTURE.md      # Technical design (CTO-owned)
     ├── DECISIONS.md         # Decision log (CTO-owned)
     ├── knowledge/           # Domain research and references
-    ├── ui/                  # Design system (Alice-owned)
+    ├── ui/                  # Design system ([UI/UX]-owned)
     │   ├── REGISTER.md      # Design language: the why
     │   ├── UI_KIT.md        # Tokens: colors, type, spacing, motion
     │   ├── COMPONENT_SPECS.md  # The 8 components
@@ -162,14 +163,16 @@ ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=false
 | `/project:qa` | Testing, quality gates |
 | `/project:plan` | Force planning before complex work |
 | `/project:test` | Run test suite |
+| `/project:uiux` | Design review, token compliance, component spec |
 | `/project:e2e` | Run Playwright E2E tests |
 
 Codex equivalents live in `.codex/prompts/`, with role-specific
 instructions in `.codex/roles/`. Those files mirror the corresponding
 Claude command and agent files while deferring to `AGENTS.md`.
 
-UI/UX is not a slash command — Alice operates portfolio-wide through
-Claude Desktop, not as a project-level Claude Code subagent.
+`/project:uiux` activates the project-level UI/UX agent. Register
+changes, new token categories, and design-language shifts require
+Founder approval.
 
 ---
 
@@ -194,5 +197,5 @@ Claude Desktop, not as a project-level Claude Code subagent.
 - Don't import across modules — use the module's public `index.*` exports
 - Don't hardcode hex colors, fonts, or spacing in TSX — every value
   traces to `docs/ui/UI_KIT.md`
-- Don't invent UI copy, error messages, or design tokens — ask Alice
+- Don't invent UI copy, error messages, or design tokens — ask `[UI/UX]`
 - Don't change external API integrations without an irreversibility-flag escalation

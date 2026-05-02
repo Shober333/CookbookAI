@@ -17,7 +17,7 @@ sprint plans, sprint TODOs, reviews, reports, and knowledge notes.
 - `[DEV-LEAD]` owns dev reports under
   `docs/sprints/sprint_NN/reports/`.
 - `[DEV-QA]` owns QA findings added to sprint QA TODOs.
-- `[UI/UX]` Alice owns UI/UX artifacts under `docs/ui/`.
+- `[UI/UX]` owns UI/UX artifacts under `docs/ui/`.
 
 ## Rules
 

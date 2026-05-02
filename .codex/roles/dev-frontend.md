@@ -33,8 +33,8 @@ Read root and frontend instructions before changing code:
 - UI work must follow `docs/ui/REGISTER.md`, `docs/ui/UI_KIT.md`,
   `docs/ui/COMPONENT_SPECS.md`, `docs/ui/PAGE_LAYOUTS.md`, and
   `docs/ui/STATES.md`.
-- Escalate unspecified UI states, copy, or tokens to Alice (`[UI/UX]`)
-  through the CTO or Founder before implementing.
+- Escalate unspecified UI states, copy, or tokens to `[UI/UX]` through
+  the CTO before implementing.
 
 ## Output
 

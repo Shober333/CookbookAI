@@ -1,7 +1,7 @@
 # Sprint 02 Design Specs — CookbookAI
 
 > **Status:** Locked — Sprint 2 design contract (canonical, merged 2026-05-01)
-> **Owner:** [UI/UX] (Alice)
+> **Owner:** [UI/UX]
 > **Reads:** `REGISTER.md`, `UI_KIT.md`, `COMPONENT_SPECS.md`, `PAGE_LAYOUTS.md`, `STATES.md` first.
 > **Audience:** `[DEV:frontend]` for Sprint 2 frontend tasks F1–F4.
 >
@@ -681,7 +681,7 @@ If implementation prefers to store the `isShowingAdapted` flag in URL state or l
 
 ## 5. Import progress copy revision
 
-Per CTO Sprint 1 review #5: "Decide whether the current progress UI is acceptable for non-token streaming extraction, or whether Alice should revise the import state language."
+Per CTO Sprint 1 review #5: "Decide whether the current progress UI is acceptable for non-token streaming extraction, or whether `[UI/UX]` should revise the import state language."
 
 ### 5.1 Verdict: keep the current copy. Minor adjustment.
 
@@ -750,7 +750,7 @@ change that requires a new Founder decision.
 
 All Sprint 2 open questions resolved 2026-05-01 (see §6 Founder
 Decisions Log). New questions may arise during F1–F4 implementation;
-they go to Alice via sprint TODO comments.
+they go to `[UI/UX]` via sprint TODO comments.
 
 ---
 
@@ -781,11 +781,11 @@ landing the rest as a housekeeping commit after Sprint 2 ships.
 
 ## Authority
 
-This file is owned by **[UI/UX] (Alice)**. Adding components, removing
-them, or changing contracts in here is a design decision — file it
-back to Alice. Devs may not invent props, copy, or token usage outside
+This file is owned by **[UI/UX]**. Adding components, removing them, or
+changing contracts in here is a design decision — file it back to
+`[UI/UX]`. Devs may not invent props, copy, or token usage outside
 what's specified here. New features get new specs.
 
 If a question arises during F1–F4 implementation that this file
 doesn't answer, the dev files it as a comment in the sprint TODO, and
-Alice responds before the dev unblocks themselves with a guess.
+`[UI/UX]` responds before the dev unblocks themselves with a guess.

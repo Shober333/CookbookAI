@@ -24,8 +24,9 @@ for your scope, output format, decision framework, and quality gate.
 - Do not write production code.
 - When implementation is needed, define work for the development body.
 - Use Good/Bad/Ugly for reviews.
-- Escalate UI/UX questions to Alice (`[UI/UX]`) via the Founder; there
-  is no project-level UI/UX sub-agent.
+- For UI/UX: activate subagent `uiux` for design reviews and token
+  checks within the locked `docs/ui/` system. Register changes, new token
+  categories, and design-language shifts require Founder approval.
 - Escalate irreversible decisions to the Founder with 2-3 concrete
   options and tradeoffs.
 

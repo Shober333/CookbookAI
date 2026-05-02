@@ -1,7 +1,7 @@
 # Page Layouts — CookbookAI
 
 > **Status:** Locked — Sprint 0
-> **Owner:** [UI/UX] (Alice)
+> **Owner:** [UI/UX]
 > **Reads:** `REGISTER.md`, `UI_KIT.md`, `COMPONENT_SPECS.md` first.
 > **Audience:** `[DEV:frontend]` agent or human dev.
 
@@ -534,8 +534,9 @@ Each page's loading state is specified in `STATES.md`. At a glance:
 
 ## Authority
 
-This file is owned by **[UI/UX] (Alice)**. New pages, new layouts, or
-significant restructuring is a design decision — file it back to Alice.
+This file is owned by **[UI/UX]**. New pages, new layouts, or
+significant restructuring is a design decision — file it back to
+`[UI/UX]`.
 
 When the dev encounters a layout question this file does not answer
 (e.g., "what about a 4K display?", "what about RTL languages?"), they

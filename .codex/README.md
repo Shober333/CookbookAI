@@ -30,6 +30,7 @@ omitting Claude-only frontmatter such as model and tool declarations.
 | Project role | Codex file | Use for |
 |---|---|---|
 | `[CTO]` | `.codex/roles/cto.md` | Architecture, sprint planning, decisions, Good/Bad/Ugly review |
+| `[UI/UX]` | `.codex/roles/uiux.md` | Design review, token compliance, component specs, visual quality gate |
 | `[DEV-LEAD]` | `.codex/roles/dev-lead.md` | Coordinating multi-agent sprint implementation and reports |
 | `[DEV:frontend]` | `.codex/roles/dev-frontend.md` | Next.js UI, pages, components, hooks, client state |
 | `[DEV:backend]` | `.codex/roles/dev-backend.md` | API routes, Prisma, Auth.js, Claude integration |
@@ -38,6 +39,7 @@ omitting Claude-only frontmatter such as model and tool declarations.
 | Claude source | Codex mirror |
 |---|---|
 | `.claude/agents/cto.md` | `.codex/roles/cto.md` |
+| `.claude/agents/uiux.md` | `.codex/roles/uiux.md` |
 | `.claude/agents/dev-lead.md` | `.codex/roles/dev-lead.md` |
 | `.claude/agents/dev-frontend.md` | `.codex/roles/dev-frontend.md` |
 | `.claude/agents/dev-backend.md` | `.codex/roles/dev-backend.md` |
@@ -52,6 +54,7 @@ workflows.
 | Prompt | Use for |
 |---|---|
 | `.codex/prompts/cto.md` | Activate CTO mode |
+| `.codex/prompts/uiux.md` | Activate UI/UX mode |
 | `.codex/prompts/dev.md` | Activate generic dev mode |
 | `.codex/prompts/qa.md` | Activate QA mode |
 | `.codex/prompts/plan.md` | Force planning before implementation |
@@ -61,6 +64,7 @@ workflows.
 | Claude command | Codex prompt |
 |---|---|
 | `.claude/commands/cto.md` | `.codex/prompts/cto.md` |
+| `.claude/commands/uiux.md` | `.codex/prompts/uiux.md` |
 | `.claude/commands/dev.md` | `.codex/prompts/dev.md` |
 | `.claude/commands/qa.md` | `.codex/prompts/qa.md` |
 | `.claude/commands/plan.md` | `.codex/prompts/plan.md` |
@@ -75,8 +79,9 @@ workflows.
 - Do not edit production code while acting as `[CTO]`; write plans,
   specs, decisions, and reviews instead.
 - Do not add dependencies without flagging the decision to the CTO.
-- UI/UX work is owned directly by Alice (`[UI/UX]`), not by a
-  project-level UI sub-agent.
+- UI/UX work is owned by the project-level `[UI/UX]` role. For visual
+  reviews or design-doc questions, activate `.codex/roles/uiux.md` or
+  `.codex/prompts/uiux.md`.
 - Keep changes scoped to the current task and preserve user edits.
 - Use `rg` for search, read before writing, and run the relevant tests
   before calling work done.
