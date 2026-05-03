@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { generateRecipeObject } from "./ai-provider";
+import { generateRecipeObject, toGeminiSchema } from "./ai-provider";
 import { recipeJsonSchema } from "./recipe-ai-extractor";
 import { recipePayloadSchema } from "./recipe-schema";
 
@@ -11,6 +11,58 @@ vi.mock("@/lib/anthropic", () => ({
   ollamaModel: "test-model",
   recipeExtractionProviderOptions: undefined,
 }));
+
+describe("toGeminiSchema", () => {
+  it("strips additionalProperties and minItems from nested schema", () => {
+    const input = {
+      type: "object",
+      additionalProperties: false,
+      required: ["title"],
+      properties: {
+        title: { type: "string" },
+        items: {
+          type: "array",
+          minItems: 1,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["name"],
+            properties: { name: { type: "string" } },
+          },
+        },
+      },
+    };
+    const result = toGeminiSchema(input) as Record<string, unknown>;
+    expect(result).not.toHaveProperty("additionalProperties");
+    expect(result).not.toHaveProperty("minItems");
+    const items = (result.properties as Record<string, unknown>)
+      .items as Record<string, unknown>;
+    expect(items).not.toHaveProperty("minItems");
+    const itemsItems = items.items as Record<string, unknown>;
+    expect(itemsItems).not.toHaveProperty("additionalProperties");
+  });
+
+  it("converts anyOf nullable to {type, nullable: true}", () => {
+    const input = {
+      type: "object",
+      properties: {
+        description: { anyOf: [{ type: "string" }, { type: "null" }] },
+        count: { anyOf: [{ type: "number" }, { type: "null" }] },
+      },
+    };
+    const result = toGeminiSchema(input) as Record<string, unknown>;
+    const props = result.properties as Record<string, unknown>;
+    expect(props.description).toEqual({ type: "string", nullable: true });
+    expect(props.count).toEqual({ type: "number", nullable: true });
+  });
+
+  it("leaves non-nullable fields unchanged", () => {
+    const input = { type: "object", properties: { name: { type: "string" } } };
+    const result = toGeminiSchema(input) as Record<string, unknown>;
+    const props = result.properties as Record<string, unknown>;
+    expect(props.name).toEqual({ type: "string" });
+  });
+});
 
 describe("generateRecipeObject with Gemini", () => {
   const originalApiKey = process.env.GEMINI_API_KEY;

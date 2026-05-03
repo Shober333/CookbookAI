@@ -7,6 +7,26 @@ import {
   parseYouTubeVideoId,
 } from "./youtube-import";
 
+vi.mock("youtube-transcript", () => {
+  class YoutubeTranscriptTooManyRequestError extends Error {
+    constructor() {
+      super("YouTube is receiving too many requests");
+      this.name = "YoutubeTranscriptTooManyRequestError";
+    }
+  }
+  class YoutubeTranscriptDisabledError extends Error {
+    constructor(videoId: string) {
+      super(`Transcript is disabled on this video (${videoId})`);
+      this.name = "YoutubeTranscriptDisabledError";
+    }
+  }
+  return {
+    YoutubeTranscript: { fetchTranscript: vi.fn() },
+    YoutubeTranscriptTooManyRequestError,
+    YoutubeTranscriptDisabledError,
+  };
+});
+
 describe("parseYouTubeVideoId", () => {
   it("supports watch, short, and youtu.be URLs", () => {
     expect(
@@ -99,48 +119,45 @@ describe("fetchYouTubeDescriptionMetadata", () => {
 });
 
 describe("fetchYouTubeTranscript", () => {
-  beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn());
+  let mockFetchTranscript: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    const mod = await import("youtube-transcript");
+    mockFetchTranscript = vi.mocked(mod.YoutubeTranscript.fetchTranscript);
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.clearAllMocks();
   });
 
-  it("fetches the preferred English transcript track", async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(
-        new Response(
-          '<transcript_list><track id="0" name="" lang_code="es"/><track id="1" name="English" lang_code="en"/></transcript_list>',
-        ),
-      )
-      .mockResolvedValueOnce(
-        Response.json({
-          events: [
-            { segs: [{ utf8: "Ingredients: tomatoes and oil." }] },
-            { segs: [{ utf8: "Instructions: simmer until thick." }] },
-          ],
-        }),
-      );
+  it("joins segments into a single transcript string", async () => {
+    mockFetchTranscript.mockResolvedValue([
+      { text: "Ingredients: tomatoes and oil.", duration: 3000, offset: 0 },
+      { text: "Instructions: simmer until thick.", duration: 4000, offset: 3000 },
+    ]);
 
-    await expect(fetchYouTubeTranscript("https://youtu.be/abc_123-xyz")).resolves.toBe(
-      "Ingredients: tomatoes and oil. Instructions: simmer until thick.",
-    );
-
-    expect(fetch).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        searchParams: expect.any(URLSearchParams),
-      }),
-      expect.any(Object),
-    );
+    await expect(
+      fetchYouTubeTranscript("https://youtu.be/abc_123-xyz"),
+    ).resolves.toBe("Ingredients: tomatoes and oil. Instructions: simmer until thick.");
   });
 
-  it("returns a typed error when no transcript tracks are available", async () => {
-    vi.mocked(fetch).mockResolvedValue(new Response("<transcript_list />"));
+  it("returns a 404 error when transcript is disabled or unavailable", async () => {
+    const { YoutubeTranscriptDisabledError } = await import("youtube-transcript");
+    mockFetchTranscript.mockRejectedValue(
+      new YoutubeTranscriptDisabledError("abc_123-xyz"),
+    );
 
     await expect(
       fetchYouTubeTranscript("https://youtu.be/abc_123-xyz"),
     ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("returns a 503 error when YouTube is rate-limiting", async () => {
+    const { YoutubeTranscriptTooManyRequestError } = await import("youtube-transcript");
+    mockFetchTranscript.mockRejectedValue(new YoutubeTranscriptTooManyRequestError());
+
+    await expect(
+      fetchYouTubeTranscript("https://youtu.be/abc_123-xyz"),
+    ).rejects.toMatchObject({ status: 503 });
   });
 });

@@ -125,6 +125,57 @@ async function generateWithOllama(
   return parseJsonObjectFromText(content);
 }
 
+export function toGeminiSchema(schema: object): object {
+  return transformGeminiNode(schema as Record<string, unknown>);
+}
+
+function transformGeminiNode(
+  node: Record<string, unknown>,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "additionalProperties" || key === "minItems" || key === "minimum") {
+      continue;
+    }
+
+    if (key === "anyOf" && Array.isArray(value) && value.length === 2) {
+      const nullItem = value.find(
+        (v) => (v as Record<string, unknown>).type === "null",
+      );
+      const nonNullItem = value.find(
+        (v) => (v as Record<string, unknown>).type !== "null",
+      );
+      if (nullItem && nonNullItem) {
+        Object.assign(result, {
+          ...transformGeminiNode(nonNullItem as Record<string, unknown>),
+          nullable: true,
+        });
+        continue;
+      }
+    }
+
+    if (key === "properties" && value && typeof value === "object") {
+      result[key] = Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([k, v]) => [
+          k,
+          transformGeminiNode(v as Record<string, unknown>),
+        ]),
+      );
+      continue;
+    }
+
+    if (key === "items" && value && typeof value === "object" && !Array.isArray(value)) {
+      result[key] = transformGeminiNode(value as Record<string, unknown>);
+      continue;
+    }
+
+    result[key] = value;
+  }
+
+  return result;
+}
+
 async function generateWithGemini(
   params: GenerateRecipeObjectParams,
 ): Promise<Record<string, unknown>> {
@@ -163,7 +214,7 @@ async function generateWithGemini(
         generationConfig: {
           temperature: 0,
           responseMimeType: "application/json",
-          responseSchema: params.schema,
+          responseSchema: toGeminiSchema(params.schema),
         },
       }),
       signal: controller.signal,

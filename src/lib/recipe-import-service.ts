@@ -34,6 +34,9 @@ const RECIPE_KEYWORDS = [
   "cook time",
 ];
 
+// Matches quantity + unit patterns like "3/4 cup", "1 tablespoon", "200g" — strong recipe signal
+const MEASUREMENT_PATTERN = /\d\s*(cup|tbsp|tablespoon|teaspoon|tsp|oz|g|kg|ml)\b/i;
+
 export type RecipeImportSource =
   | { kind: "url"; url: string }
   | { kind: "text"; text: string; sourceUrl?: string | null };
@@ -179,7 +182,7 @@ export async function extractRecipePayload(
 
 export function looksLikeRecipeSource(text: string): boolean {
   const lower = text.toLowerCase();
-  return RECIPE_KEYWORDS.some((kw) => lower.includes(kw));
+  return RECIPE_KEYWORDS.some((kw) => lower.includes(kw)) || MEASUREMENT_PATTERN.test(text);
 }
 
 export function stripHtml(html: string): string {
