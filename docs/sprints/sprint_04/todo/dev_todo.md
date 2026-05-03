@@ -2,7 +2,7 @@
 
 > **Owner:** [DEV-LEAD]
 > **Sprint goal:** Production import hardening.
-> **Status:** Planning started 2026-05-03.
+> **Status:** Founder scope accepted 2026-05-03; ready for implementation.
 
 ---
 
@@ -20,9 +20,9 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|-------|--------|---------------------|
-| 4.1 | Confirm Sprint 04 scope with Founder | `[CTO]` | `[~]` | Founder decides whether transcript fallback and provider work are Sprint 04 implementation tasks or planning-only |
-| 4.2 | Record transcript fallback decision | `[CTO]` | `[ ]` | `docs/DECISIONS.md` states defer/spike/implement with rationale |
-| 4.3 | Record provider/cost decision | `[CTO]` | `[ ]` | `docs/DECISIONS.md` states keep Claude, add adapter, or migrate provider with tradeoffs |
+| 4.1 | Confirm Sprint 04 scope with Founder | `[CTO]` | `[x]` | Founder approved transcript fallback and Gemini 2.5 Flash provider work for Sprint 04 |
+| 4.2 | Record transcript fallback decision | `[CTO]` | `[x]` | `docs/DECISIONS.md` states transcript fallback belongs to Sprint 04 |
+| 4.3 | Record provider/cost decision | `[CTO]` | `[x]` | `docs/DECISIONS.md` states Gemini 2.5 Flash replaces Claude as Sprint 04 production provider target |
 
 ---
 
@@ -36,23 +36,23 @@
 
 ---
 
-## Phase 2 — Transcript Fallback, If Approved
+## Phase 2 — Transcript Fallback
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|-------|--------|---------------------|
-| 4.7 | Transcript feasibility spike | `[DEV:backend]` | `[~]` | Identify library/API approach, legal/terms risk, reliability, and test strategy before production code |
-| 4.8 | Implement transcript fallback | `[DEV:backend]` | `[~]` | Only if approved: description-first remains primary; transcript runs only after no recipe link/text is found |
-| 4.9 | Add transcript fallback tests | `[DEV:backend]` | `[~]` | Unit tests cover available transcript, unavailable transcript, and non-recipe transcript fast failure |
+| 4.7 | Transcript feasibility spike | `[DEV:backend]` | `[ ]` | Identify library/API approach, legal/terms risk, reliability, and test strategy before production code |
+| 4.8 | Implement transcript fallback | `[DEV:backend]` | `[ ]` | Description-first remains primary; transcript runs only after no recipe link/text is found |
+| 4.9 | Add transcript fallback tests | `[DEV:backend]` | `[ ]` | Unit tests cover available transcript, unavailable transcript, and non-recipe transcript fast failure |
 
 ---
 
-## Phase 3 — Provider/Cost Path, If Approved
+## Phase 3 — Gemini 2.5 Flash Provider Path
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|-------|--------|---------------------|
-| 4.10 | Provider abstraction design | `[CTO]` | `[~]` | Small contract documented before code; no provider dependency added without approval |
-| 4.11 | Implement provider adapter boundary | `[DEV:backend]` | `[~]` | Existing Claude path still passes all tests; adapter can be selected by env/config if approved |
-| 4.12 | Provider smoke test | `[DEV-QA]` | `[~]` | Approved provider path successfully extracts one real or mocked recipe payload |
+| 4.10 | Provider abstraction design | `[CTO]` | `[ ]` | Small contract documented before code; Gemini 2.5 Flash is the Sprint 04 production target |
+| 4.11 | Implement Gemini provider adapter boundary | `[DEV:backend]` | `[ ]` | Existing tests pass; `AI_PROVIDER=gemini`, `GEMINI_API_KEY`, and `GEMINI_MODEL` select Gemini 2.5 Flash |
+| 4.12 | Gemini provider smoke test | `[DEV-QA]` | `[ ]` | Gemini path successfully extracts one real or mocked recipe payload |
 
 ---
 
@@ -68,6 +68,8 @@
 
 ## Notes
 
-- Tasks 4.7 through 4.12 are intentionally gated. They become implementation
-  work only after Founder approval.
+- Transcript fallback and Gemini 2.5 Flash are approved Sprint 04
+  implementation scope.
+- Direct Gemini video processing remains out of scope unless the Founder
+  separately promotes it.
 - Sprint 04 should prefer evidence and hardening over broad new UI surface area.

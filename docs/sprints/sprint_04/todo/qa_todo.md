@@ -46,12 +46,22 @@
 
 ---
 
-## Optional Transcript Fallback
+## Transcript Fallback
 
 | # | Scenario | Expected | Status |
 |---|----------|----------|--------|
-| Q4.11 | Transcript available | If approved and implemented, transcript is used only after description-first fails | `[-]` |
-| Q4.12 | Transcript unavailable | If approved and implemented, unavailable transcript produces stable fallback/no-recipe state | `[-]` |
+| Q4.11 | Transcript available | Transcript is used only after description-first fails | `[ ]` |
+| Q4.12 | Transcript unavailable | Unavailable transcript produces stable fallback/no-recipe state | `[ ]` |
+
+---
+
+## Gemini 2.5 Flash Provider
+
+| # | Scenario | Expected | Status |
+|---|----------|----------|--------|
+| Q4.13 | Mocked Gemini extraction | `AI_PROVIDER=gemini` routes through the Gemini adapter and returns a validated recipe payload | `[ ]` |
+| Q4.14 | Missing Gemini key | Missing `GEMINI_API_KEY` returns a stable configuration error without crashing startup | `[ ]` |
+| Q4.15 | Live Gemini smoke test | If a real key is available, Gemini 2.5 Flash extracts one real recipe payload | `[ ]` |
 
 ---
 
@@ -59,6 +69,6 @@
 
 | # | Scenario | Steps | Expected | Status |
 |---|----------|-------|----------|--------|
-| Q4.13 | Desktop demo pass | Visit login, import, library, and recipe detail on desktop viewport | No layout overlap; screenshots captured if UI changed | `[ ]` |
-| Q4.14 | Mobile smoke pass | Repeat core import/library flow at mobile viewport | Layout remains usable and readable | `[ ]` |
-| Q4.15 | Test suite regression | Run typecheck, unit tests, build, and Playwright | All checks pass or failures are documented with owner | `[ ]` |
+| Q4.16 | Desktop demo pass | Visit login, import, library, and recipe detail on desktop viewport | No layout overlap; screenshots captured if UI changed | `[ ]` |
+| Q4.17 | Mobile smoke pass | Repeat core import/library flow at mobile viewport | Layout remains usable and readable | `[ ]` |
+| Q4.18 | Test suite regression | Run typecheck, unit tests, build, and Playwright | All checks pass or failures are documented with owner | `[ ]` |

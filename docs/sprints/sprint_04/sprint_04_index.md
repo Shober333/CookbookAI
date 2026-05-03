@@ -3,8 +3,8 @@
 | Field | Value |
 |-------|-------|
 | **Sprint** | 04 |
-| **Goal** | Validate real provider behavior and harden the import path for demo/production use |
-| **Status** | Planning started |
+| **Goal** | Move production extraction to Gemini 2.5 Flash, add YouTube transcript fallback, and harden the import path for demo/production use |
+| **Status** | Founder scope accepted; implementation ready |
 | **Start** | 2026-05-03 |
 | **End** | TBD |
 
@@ -14,10 +14,10 @@
 
 1. **Live YouTube validation** — test the Sprint 03 YouTube description-first
    path with a real `YOUTUBE_API_KEY` and at least one real video.
-2. **YouTube transcript fallback decision** — decide whether transcript fallback
-   belongs in Sprint 04; implement only if the Founder approves the scope.
-3. **AI provider/cost decision** — choose whether to keep Claude for Sprint 04
-   or introduce a provider abstraction/migration plan to reduce cost.
+2. **YouTube transcript fallback** — add transcript fallback after
+   description-first YouTube import fails.
+3. **Gemini 2.5 Flash provider path** — move Sprint 04 production extraction
+   from Claude to Gemini 2.5 Flash behind a neutral provider boundary.
 4. **Production/demo hardening** — reduce demo risk around environment setup,
    auth/session behavior, import failures, and stale local server issues.
 
@@ -26,6 +26,7 @@
 ## Not In Scope Unless Promoted
 
 - Direct video understanding.
+- Claude as the Sprint 04 production default.
 - Guest mode persistence.
 - Full deployment automation.
 - Recipe organization features such as tags management, folders, or full-text
@@ -34,12 +35,12 @@
 
 ---
 
-## Founder Decisions Needed
+## Founder Decisions Resolved
 
 | Decision | Options | Recommendation |
 |----------|---------|----------------|
-| Transcript fallback | Defer / spike / implement | Spike first, then decide from evidence |
-| Provider migration | Keep Claude / add provider adapter / migrate provider | Add a provider decision doc before code changes |
+| Transcript fallback | Defer / spike / implement | **Implement in Sprint 04** |
+| Provider migration | Keep Claude / add provider adapter / migrate provider | **Use Gemini 2.5 Flash for Sprint 04** |
 | Demo target | Local demo / hosted demo | Local demo unless hosting is explicitly needed |
 
 ---
@@ -47,8 +48,8 @@
 ## Exit Criteria
 
 - [ ] Live YouTube validation completed or explicitly blocked by missing key.
-- [ ] Transcript fallback decision recorded in `docs/DECISIONS.md`.
-- [ ] Provider/cost decision recorded in `docs/DECISIONS.md`.
+- [x] Transcript fallback decision recorded in `docs/DECISIONS.md`.
+- [x] Provider/cost decision recorded in `docs/DECISIONS.md`.
 - [ ] Production/demo checklist passes on a clean checkout.
 - [ ] All Sprint 04 dev tasks are completed or explicitly deferred.
 - [ ] All Sprint 04 QA scenarios pass.
