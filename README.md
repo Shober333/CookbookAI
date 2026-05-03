@@ -1,357 +1,108 @@
-# AIcademy Scaffold — AI Vibe Coding Project Template
+# CookbookAI
 
-> Build software with AI as your coding partner.
-> This template gives your team a structured starting point.
+CookbookAI is a Next.js app for importing recipes from the web, saving them
+to a private library, and adapting them with AI for serving size, units, and
+available kitchen equipment.
 
----
+## What It Does
 
-## What is Vibe Coding?
+- Import recipes from normal recipe URLs.
+- Paste raw recipe text or HTML when a site blocks scraping.
+- Import YouTube recipes description-first:
+  - follow recipe links found in the description
+  - extract recipe-like description text
+  - fall back to public transcripts when needed
+- Reuse prior URL extractions to avoid repeat AI calls.
+- Save recipes per user with private library isolation.
+- Scale servings, convert units, and adapt cooking steps with AI.
 
-**Vibe Coding** is a development approach where AI does most of the coding, while humans make the decisions.
+## Stack
 
-Instead of writing every line yourself, you:
-1. **Describe** what you want to build
-2. **Guide** the AI with clear roles and instructions
-3. **Review** what it produces
-4. **Iterate** until it's right
+- Next.js 15, React 19, TypeScript
+- Tailwind CSS
+- Prisma with SQLite for local development
+- NextAuth/Auth.js with Prisma adapter
+- Vitest unit tests
+- Playwright E2E tests and screenshots
+- AI providers: Ollama, Gemini, Anthropic fallback
 
-The key insight: **structure beats talent**. A well-organized prompt system with clear roles produces better code than unstructured back-and-forth with AI.
-
----
-
-## Quick Start (5 minutes)
-
-### Prerequisites
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed
-- [Ollama](https://ollama.com/) installed for Sprint 1 local AI extraction
-- Optional: an Anthropic API key (`ANTHROPIC_API_KEY`) if `AI_PROVIDER=anthropic`
-- Git + Node.js (for Playwright E2E tests)
-
-### Setup
+## Quick Start
 
 ```bash
-# 1. Copy the scaffold into your new project
-cp -r AIcademy-scaffold my-project
-cd my-project
-
-# 2. Initialize git
-git init
-
-# 3. Set up your environment
+npm install
 cp .env.example .env
-# Sprint 1 defaults to local Ollama:
-#   ollama serve
-#   ollama pull gemma4:e4b
-
-# 4. Fill in your project details
-# Open CLAUDE.md and replace all {{PLACEHOLDERS}} with your project info
-
-# 5. Install Playwright for E2E tests
-npm init -y
-npm install -D @playwright/test
-npx playwright install chromium
-
-# 6. Launch Claude Code
-claude
-
-# 7. Activate CTO mode to plan your architecture
-/project:cto
+npm run db:migrate
+npm run dev
 ```
 
----
+Open `http://localhost:3000`.
 
-## How This Template Works
-
-### The 3 Files That Matter
-
-| File | What It Does |
-|---|---|
-| **`CLAUDE.md`** | Tells Claude about YOUR project — stack, commands, structure. Auto-loaded on every conversation. |
-| **`AGENTS.md`** | Defines 3 roles Claude can adopt: CTO, DEV, QA. Each has clear responsibilities. |
-| **`docs/PRD.md`** | Your product requirements. What are you building and why? |
-
-### The 3 Roles
-
-| Role | Slash Command | When to Use |
-|---|---|---|
-| **CTO** | `/project:cto` | Planning architecture, making tech decisions, code review |
-| **DEV** | `/project:dev` | Writing code, implementing features, fixing bugs |
-| **QA** | `/project:qa` | Testing, finding bugs, verifying quality |
-
-### The Workflow
-
-```
-1. PLAN    ->  /project:cto   ->  Design the system, break into tasks
-2. BUILD   ->  /project:dev   ->  Implement features one by one
-3. VERIFY  ->  /project:qa    ->  Test, find bugs, verify quality
-4. REPEAT  ->  Back to step 1 for the next feature
-```
-
----
-
-## Project Structure
-
-```
-my-project/
-├── CLAUDE.md                  # Project context (EDIT THIS FIRST)
-├── AGENTS.md                  # Role definitions (CTO, DEV, QA)
-├── README.md                  # This file
-├── .env.example               # Environment variables template
-├── playwright.config.ts       # E2E test configuration
-│
-├── .claude/
-│   ├── settings.local.json    # Tool permissions for Claude
-│   └── commands/
-│       ├── cto.md             # /project:cto — architecture & planning
-│       ├── dev.md             # /project:dev — implementation
-│       ├── qa.md              # /project:qa — testing & quality
-│       ├── plan.md            # /project:plan — force planning mode
-│       ├── test.md            # /project:test — run tests
-│       └── e2e.md             # /project:e2e — Playwright browser tests
-│
-├── .codex/
-│   ├── README.md              # Codex entrypoint and read order
-│   ├── roles/                 # Codex role prompts mapped to .claude/agents
-│   └── prompts/               # Codex workflow prompts mapped to .claude/commands
-│
-├── backend/
-│   ├── AGENTS.md              # Backend domain rules
-│   └── modules/
-│       └── _example/          # Copy this to create a new module
-│           ├── README.md
-│           ├── src/            # models, services, api routes
-│           └── tests/
-│               ├── unit/
-│               └── integration/
-│
-├── frontend/
-│   ├── AGENTS.md              # Frontend domain rules
-│   └── modules/
-│       └── _example/          # Copy this to create a new module
-│           ├── README.md
-│           ├── src/
-│           │   └── components/
-│           └── tests/
-│               ├── unit/
-│               └── integration/
-│
-├── tests/
-│   ├── AGENTS.md              # Test domain rules
-│   ├── e2e/                   # Playwright E2E tests
-│   │   └── example.spec.ts    # Starter test file
-│   └── screenshots/           # GUI screenshots from tests
-│
-└── docs/
-    ├── AGENTS.md              # Documentation domain rules
-    ├── PRD.md                 # Product requirements (FILL THIS IN)
-    ├── ARCHITECTURE.md        # Technical architecture
-    ├── DECISIONS.md           # Decision log
-    ├── knowledge/             # Research, references, domain docs
-    ├── ui/
-    │   └── UI_KIT.md          # Design system (colors, fonts, spacing)
-    └── sprints/
-        ├── README.md          # Sprint process guide
-        └── sprint_01/
-            ├── sprint_01_index.md
-            ├── todo/
-            ├── reports/
-            └── reviews/
-```
-
----
-
-## Step-by-Step Guide
-
-### Step 1: Define Your Project (10 min)
-
-Open `CLAUDE.md` and replace all `{{PLACEHOLDERS}}`:
-- `{{PROJECT_NAME}}` -- Your project name
-- `{{PROJECT_DESCRIPTION}}` -- One-line description
-- `{{TECH_STACK}}` -- e.g., "Next.js + TypeScript + Tailwind"
-- `{{DEV_COMMAND}}` -- e.g., `npm run dev`
-- `{{DEV_PORT}}` -- e.g., `3000`
-
-### Step 2: Write Your PRD (15 min)
-
-Open `docs/PRD.md` and fill in:
-- What are you building?
-- Who is it for?
-- What are the core features? (keep it to 3-5)
-- What does "done" look like?
-
-### Step 3: Plan with CTO (15 min)
-
-```bash
-claude
-/project:cto
-```
-
-Tell Claude:
-> "Read the PRD and design the architecture. Break it into tasks for Sprint 1."
-
-Claude will:
-- Propose a technical architecture
-- Create a task list in `docs/sprints/sprint_01/todo/`
-- Identify risks and decisions needed
-
-Review the plan. Ask questions. Approve or adjust.
-
-### Step 4: Build with DEV (the main work)
-
-```bash
-/project:dev
-```
-
-Work through the task list one feature at a time:
-> "Implement task 1: [description from the plan]"
-
-Claude will write the code. You review it, test it, iterate.
-
-**Create modules** by copying the `_example` template:
-```bash
-cp -r backend/modules/_example backend/modules/my-feature
-cp -r frontend/modules/_example frontend/modules/my-feature
-```
-
-### Step 5: Verify with QA
-
-```bash
-/project:qa
-```
-
-Tell Claude:
-> "Test the features we just built. Run E2E tests and check for bugs."
-
-Claude will:
-- Run existing tests
-- Write new test scenarios
-- Run Playwright E2E tests
-- Report any bugs found
-
----
-
-## Testing
-
-### Unit Tests
-Each module has its own `tests/` folder. Write unit tests alongside your code.
-
-### E2E Tests (Playwright)
-Browser tests live in `tests/e2e/`. Run them:
-
-```bash
-npx playwright test                # Run all E2E tests
-npx playwright test --ui           # Interactive mode
-npx playwright test --debug        # Step-through debugging
-npx playwright show-report         # View HTML report
-```
-
-Configuration: `playwright.config.ts`
-
-### Screenshots
-Playwright captures screenshots in `tests/screenshots/` for visual verification.
-
----
-
-## Tips for the Hackathon
-
-### Do
-- **Fill in CLAUDE.md first** -- it's the foundation of everything
-- **Write a clear PRD** -- the better your requirements, the better the code
-- **Use roles** -- CTO for planning, DEV for coding, QA for testing
-- **Review code** -- don't blindly accept everything Claude writes
-- **Commit often** -- small, frequent commits are better than one big one
-- **Document decisions** -- use `docs/DECISIONS.md` for "why did we do X?"
-- **Use the module structure** -- keep backend and frontend code organized
-
-### Don't
-- Don't skip the PRD -- "just start coding" leads to chaos
-- Don't try to build everything at once -- pick 1-2 core features
-- Don't ignore errors -- fix them before moving on
-- Don't forget to test -- "it works on my machine" isn't enough
-- Don't import directly across modules -- use shared interfaces
-
-### Team Workflow
-
-If you're working as a team:
-1. **One person** sets up the repo and fills in `CLAUDE.md` + `docs/PRD.md`
-2. **Divide by domain** -- one person on backend, one on frontend
-3. **Use the roles** -- one person can focus on CTO/planning while others DEV
-4. **Merge often** -- don't let branches diverge too far
-5. **QA together** -- test each other's features before merging
-
----
-
-## Available Slash Commands
-
-| Command | What It Does |
-|---|---|
-| `/project:cto` | Switch Claude to CTO mode (architecture, planning, review) |
-| `/project:dev` | Switch Claude to DEV mode (implementation, coding) |
-| `/project:qa` | Switch Claude to QA mode (testing, bug finding) |
-| `/project:plan` | Force Claude to plan before coding (prevents rushing) |
-| `/project:test` | Run the project's test suite |
-| `/project:e2e` | Run Playwright E2E browser tests |
-
----
-
-## AI Provider Integration
-
-Sprint 1 uses local Ollama models by default:
+For local no-bill AI, keep:
 
 ```bash
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=gemma4:e4b
-OLLAMA_EXTRACTION_TIMEOUT_MS=120000
 ```
 
-Start Ollama locally:
-
-```bash
-ollama serve
-ollama pull gemma4:e4b
-```
-
-Sprint 4 production extraction targets Gemini 2.5 Flash:
+For Sprint 04 production-provider testing:
 
 ```bash
 AI_PROVIDER=gemini
-GEMINI_API_KEY=your-gemini-api-key
+GEMINI_API_KEY=your-key
 GEMINI_MODEL=gemini-2.5-flash
-AI_EXTRACTION_TIMEOUT_MS=120000
 ```
 
-Anthropic remains available as a legacy fallback by setting
-`AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`.
-
-YouTube description-first import requires a YouTube Data API key. Sprint 4
-transcript fallback runs after description links/text fail and uses public
-caption tracks when available:
+For YouTube import:
 
 ```bash
-YOUTUBE_API_KEY=your-google-cloud-youtube-data-api-key
+YOUTUBE_API_KEY=your-google-cloud-youtube-key
 ```
 
-Expected import failure modes:
+Required app/database values:
 
-- Missing `YOUTUBE_API_KEY` returns a controlled YouTube configuration error.
-- Invalid/quota-limited YouTube keys return a controlled "can't read YouTube"
-  error without saving a recipe.
-- Missing `GEMINI_API_KEY` returns a provider configuration error when
-  `AI_PROVIDER=gemini`; app startup still works.
-- Videos with no recipe link, no recipe-like description, and no usable
-  recipe transcript return the "No recipe in this video" recovery state.
+```bash
+AUTH_SECRET=replace-with-openssl-rand-base64-32
+NEXTAUTH_URL=http://localhost:3000
+DATABASE_URL=file:./dev.db
+```
 
----
+## Useful Commands
 
-## Resources
+```bash
+npm run dev          # start local app
+npm run dev:kill     # stop process on PORT, default 3000
+npm run db:migrate   # create/update local SQLite DB
+npm run typecheck    # TypeScript check
+npm test             # Vitest unit tests
+npm run build        # production build
+npx playwright test  # E2E tests
+```
 
-- [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
-- [Anthropic API Reference](https://docs.anthropic.com/en/api)
-- [Playwright Documentation](https://playwright.dev/docs/intro)
+## Project Map
 
----
+- `src/app/` - Next.js routes and API endpoints
+- `src/components/` - UI components
+- `src/lib/` - import pipeline, AI providers, recipe services
+- `prisma/` - database schema and migrations
+- `tests/e2e/` - Playwright flows
+- `tests/screenshots/` - visual QA evidence
+- `docs/PRD.md` - product requirements
+- `docs/ARCHITECTURE.md` - architecture notes
+- `docs/DECISIONS.md` - decision log
+- `docs/sprints/` - sprint plans, reports, reviews
+- `docs/ui/` - UI register, kit, component specs, states
 
-## License
+## Current Focus
 
-MIT -- use this template freely for your projects.
+Sprint 03 delivered import resilience: text import, URL dedupe, YouTube
+description-first import, and import UI states.
+
+Sprint 04 focuses on production import hardening: live YouTube validation,
+transcript fallback, Gemini 2.5 Flash provider support, and demo readiness.
+
+## Notes
+
+- Keep API keys server-side only. Do not expose them in client env vars.
+- `AI_PROVIDER=ollama` is the safest local default.
+- `AI_PROVIDER=gemini` is the current production-provider target.
+- Anthropic support remains as a fallback path, not the preferred default.

@@ -33,7 +33,8 @@ Read it before doing anything substantive.
 - Read existing code before writing new code — match patterns already in the codebase
 - All pages under `(app)/` are protected — middleware handles the redirect; don't re-implement auth checks in components
 - Client Components (`"use client"`) only when needed (event handlers, browser APIs, hooks) — prefer Server Components
-- Never import directly across modules — use the module's public `index.*` or top-level exports
+- Keep business logic out of components; put reusable logic in hooks,
+  utilities, or `src/lib/` service boundaries as appropriate.
 - Every new component or hook needs at least one unit test
 - If a requirement is unclear, ask the CTO before guessing
 - Commit after each completed frontend sprint task or tight UI cluster

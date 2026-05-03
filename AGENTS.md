@@ -3,8 +3,10 @@
 > Role definitions for this project. The Founder is the human; the agents
 > are operating modes that Claude (Code or Desktop) or Codex can adopt.
 >
-> **Reading order when entering a turn:** domain `AGENTS.md` (e.g.
-> `frontend/AGENTS.md`) → this file → `CLAUDE.md` → `docs/PRD.md`.
+> **Reading order when entering a turn:** this file → `CLAUDE.md` →
+> `docs/PRD.md` → relevant sprint/design docs. This is a single
+> full-stack Next.js app; backend/frontend are role ownership areas,
+> not separate app roots.
 > Codex-specific role and prompt adapters live under `.codex/`, mirroring
 > the Claude files under `.claude/`; this file remains the authority.
 >
@@ -182,26 +184,39 @@ Founder if it's a structural design call.
 
 ### The Team This CTO Assembles
 
-CookbookAI has both a frontend (recipe browse/edit UI) and a backend
-(web recipe import, storage, Claude API integration). The team reflects
-this full-stack scope.
+CookbookAI is one full-stack Next.js app. The team splits ownership by
+surface area, not by separate `backend/` or `frontend/` app roots.
 
 | Role | Tag | Activated when | Owned by | Notes |
 |---|---|---|---|---|
 | Dev Lead | `[DEV-LEAD]` | Sprint 1 onwards (multi-dev) | Project CTO | Manages dev agents; produces dev reports |
-| Frontend Dev | `[DEV:frontend]` | Sprint 1 onwards | Project CTO | UI components, hooks, client-side state — implements `[UI/UX]` specs |
-| Backend Dev | `[DEV:backend]` | Sprint 1 onwards | Project CTO | Recipe import API, Claude integration, storage, routes |
+| Frontend Dev | `[DEV:frontend]` | Sprint 1 onwards | Project CTO | `src/app/`, `src/components/`, UI states, client-side behavior — implements `[UI/UX]` specs |
+| Backend Dev | `[DEV:backend]` | Sprint 1 onwards | Project CTO | `src/app/api/`, `src/lib/`, `prisma/`, AI provider integration, storage, routes |
 | Dev-QA | `[DEV-QA]` | Sprint 1 onwards | Project CTO | E2E tests (Playwright), screenshots, regression checks |
 
 **Roles deliberately omitted:**
 
-- `[DEV:algo]` — no standalone algorithm layer; AI logic delegated to Claude API
+- `[DEV:algo]` — no standalone algorithm layer; AI logic delegated to the
+  configured AI provider
 - `[DEV:data]` — data management is part of the backend service layer, not a separate specialization
 - `[DEV:devops]` — MVP; minimal infrastructure, not actively operated
 
 UI/UX has a project-level agent (`[UI/UX]`, subagent `uiux`) that
 enforces and evolves the locked `docs/ui/` system with Founder approval.
 See above.
+
+#### Full-stack Next.js ownership map
+
+Agents run from the repository root. File ownership is by path:
+
+- `[DEV:backend]` owns server/API work in `src/app/api/`, service and AI
+  logic in `src/lib/`, Prisma schema/migrations in `prisma/`, backend env
+  docs in `.env.example`, and backend-focused tests.
+- `[DEV:frontend]` owns pages and layouts in `src/app/`, UI components in
+  `src/components/`, styling in `src/app/globals.css` and
+  `tailwind.config.ts`, browser behavior, and UI/E2E tests.
+- Shared contracts, types, and route/service boundaries are coordinated
+  through sprint docs and reviewed by `[CTO]`.
 
 If a future sprint changes scope (e.g., offline-first storage, mobile
 app, user accounts/auth, multi-user), the CTO **proposes** role changes
@@ -244,7 +259,7 @@ reports for the CTO's Good/Bad/Ugly review; surfacing blockers early.
 **Subroles:**
 - `[DEV:frontend]` — UI components, hooks, client-side state. Implements
   `[UI/UX]` specs from `docs/ui/`. Does not invent design.
-- `[DEV:backend]` — API routes, services, Claude API integration, data
+- `[DEV:backend]` — API routes, services, AI provider integration, data
   storage
 
 **Rules:**

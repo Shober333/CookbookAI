@@ -16,7 +16,7 @@
 | **Name** | CookbookAI |
 | **Repo name** | `CookbookAI` |
 | **Purpose** | Import recipes from the web; adjust them with AI assistance |
-| **Stage** | Sprint 1 — scaffold and MVP implementation |
+| **Stage** | Sprint 4 — production import hardening |
 | **Dev port** | 3000 |
 
 ---
@@ -75,8 +75,8 @@ Role definitions live in `AGENTS.md`. Short index:
 (`[UI/UX]`, subagent `uiux`) that owns the project design system in
 `docs/ui/` with Founder approval.
 
-**Reading order in a turn:** domain `AGENTS.md` (e.g.
-`frontend/AGENTS.md`) → root `AGENTS.md` → this file → `docs/PRD.md`.
+**Reading order in a turn:** root `AGENTS.md` → this file →
+`docs/PRD.md` → active sprint docs.
 For UI tasks, additionally read `docs/ui/REGISTER.md`, `UI_KIT.md`,
 `COMPONENT_SPECS.md`, `PAGE_LAYOUTS.md`, `STATES.md`.
 
@@ -102,15 +102,12 @@ CookbookAI/
 │   ├── roles/               # Codex role prompts mapped to .claude/agents
 │   └── prompts/             # Codex workflow prompts mapped to .claude/commands
 │
-├── frontend/
-│   ├── AGENTS.md            # Frontend domain rules
-│   └── modules/
-│       └── _example/        # Reference module
-│
-├── backend/
-│   ├── AGENTS.md            # Backend domain rules
-│   └── modules/
-│       └── _example/        # Reference module
+├── src/
+│   ├── app/                 # Next.js routes, layouts, pages, API routes
+│   ├── components/          # UI components
+│   ├── lib/                 # Services, AI providers, import pipeline
+│   └── types/               # Shared TypeScript types
+├── prisma/                  # Prisma schema and migrations
 │
 ├── tests/
 │   ├── AGENTS.md            # Test domain rules
@@ -189,8 +186,8 @@ Founder approval.
 
 | Level | Location | Tool | When |
 |---|---|---|---|
-| Unit | `*/modules/*/tests/unit/` | TBD (stack-dependent) | Every feature |
-| Integration | `*/modules/*/tests/integration/` | TBD | Cross-module features |
+| Unit | `src/lib/*.test.ts`, component-adjacent tests as needed | Vitest | Every feature |
+| Integration | `src/lib/*.test.ts`, `tests/e2e/` when browser/API flow matters | Vitest / Playwright | Cross-module features |
 | E2E | `tests/e2e/` | Playwright | Every UI-affecting change |
 | Screenshots | `tests/screenshots/` | Playwright | Every UI-affecting change |
 

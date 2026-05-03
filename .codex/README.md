@@ -9,9 +9,7 @@
 
 For every meaningful task, read:
 
-1. Domain `AGENTS.md` when working under a domain:
-   - `frontend/AGENTS.md`
-   - `backend/AGENTS.md`
+1. Local `AGENTS.md` when working under a directory that has one:
    - `docs/AGENTS.md`
    - `tests/AGENTS.md`
 2. Root `AGENTS.md`
@@ -33,7 +31,7 @@ omitting Claude-only frontmatter such as model and tool declarations.
 | `[UI/UX]` | `.codex/roles/uiux.md` | Design review, token compliance, component specs, visual quality gate |
 | `[DEV-LEAD]` | `.codex/roles/dev-lead.md` | Coordinating multi-agent sprint implementation and reports |
 | `[DEV:frontend]` | `.codex/roles/dev-frontend.md` | Next.js UI, pages, components, hooks, client state |
-| `[DEV:backend]` | `.codex/roles/dev-backend.md` | API routes, Prisma, Auth.js, Claude integration |
+| `[DEV:backend]` | `.codex/roles/dev-backend.md` | API routes, Prisma, Auth.js, AI provider integration |
 | `[DEV-QA]` | `.codex/roles/qa.md` | Playwright E2E, screenshots, regression checks |
 
 | Claude source | Codex mirror |

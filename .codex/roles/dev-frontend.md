@@ -6,13 +6,17 @@ This is the Codex mirror of `.claude/agents/dev-frontend.md`. Keep
 behavior in sync with that file and the root `AGENTS.md`; omit only
 Claude-specific frontmatter such as model and tool declarations.
 
-Read root and frontend instructions before changing code:
+Read root and project instructions before changing frontend code:
 
-1. `frontend/AGENTS.md`
-2. `AGENTS.md`
-3. `CLAUDE.md`
-4. `docs/ARCHITECTURE.md`
-5. Active sprint task files under `docs/sprints/`
+1. `AGENTS.md`
+2. `CLAUDE.md`
+3. `docs/ARCHITECTURE.md`
+4. Active sprint task files under `docs/sprints/`
+
+This is a single full-stack Next.js app. Run from the repository root.
+Frontend ownership is mainly `src/app/`, `src/components/`,
+`src/app/globals.css`, `tailwind.config.ts`, browser behavior, and
+UI/E2E tests.
 
 ## Stack
 

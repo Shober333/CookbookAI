@@ -6,14 +6,17 @@ This is the Codex mirror of `.claude/agents/dev-backend.md`. Keep
 behavior in sync with that file and the root `AGENTS.md`; omit only
 Claude-specific frontmatter such as model and tool declarations.
 
-Read backend and root instructions before changing code:
+Read root and project instructions before changing backend code:
 
-1. `backend/AGENTS.md`
-2. `AGENTS.md`
-3. `CLAUDE.md`
-4. `docs/ARCHITECTURE.md`
-5. `docs/DECISIONS.md`
-6. Active sprint task files under `docs/sprints/`
+1. `AGENTS.md`
+2. `CLAUDE.md`
+3. `docs/ARCHITECTURE.md`
+4. `docs/DECISIONS.md`
+5. Active sprint task files under `docs/sprints/`
+
+This is a single full-stack Next.js app. Run from the repository root.
+Backend ownership is mainly `src/app/api/`, `src/lib/`, `prisma/`,
+backend env docs, and backend-focused tests.
 
 ## Stack
 
@@ -21,12 +24,10 @@ Read backend and root instructions before changing code:
 - TypeScript
 - Prisma
 - Auth.js v5 with Prisma adapter and credentials provider
-- Anthropic SDK plus Vercel AI SDK
+- AI provider boundary for Ollama, Gemini, and Anthropic fallback
 
 ## Critical Rules
 
-- All Claude API calls must stream through the Vercel AI SDK.
-- Apply Anthropic prompt caching to stable system prompts.
 - Validate every API input.
 - Enforce owner checks on every user-owned recipe or equipment route.
 - Never expose raw errors to clients.
