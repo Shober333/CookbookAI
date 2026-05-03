@@ -150,6 +150,9 @@ OLLAMA_EXTRACTION_TIMEOUT_MS=120000
 # ANTHROPIC_API_KEY=sk-ant-...
 
 ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=false
+
+# Required only for Sprint 3 YouTube description import
+# YOUTUBE_API_KEY=your-google-cloud-youtube-data-api-key
 ```
 
 ---

@@ -139,6 +139,30 @@ describe("normalizeExtractedRecipe", () => {
     ).toEqual({ error: "No recipe found." });
   });
 
+  it("supports pasted-text extraction without a source URL", () => {
+    expect(
+      normalizeExtractedRecipe(
+        {
+          title: "No-Link Soup",
+          description: null,
+          servings: 4,
+          ingredients: [{ amount: 1, unit: "cup", name: "lentils" }],
+          steps: ["Simmer until tender."],
+          tags: ["soup"],
+        },
+        null,
+      ),
+    ).toEqual({
+      title: "No-Link Soup",
+      description: null,
+      sourceUrl: null,
+      servings: 4,
+      ingredients: [{ amount: 1, unit: "cup", name: "lentils" }],
+      steps: ["Simmer until tender."],
+      tags: ["soup"],
+    });
+  });
+
   it("returns an error payload when required recipe fields are missing", () => {
     expect(
       normalizeExtractedRecipe(

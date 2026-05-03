@@ -37,3 +37,15 @@ export const recipePatchSchema = recipePayloadSchema
 export const importRecipeSchema = z.object({
   url: z.string().url(),
 });
+
+export const importRecipeRequestSchema = z.discriminatedUnion("mode", [
+  z.object({
+    mode: z.literal("url"),
+    url: z.string().url(),
+  }),
+  z.object({
+    mode: z.literal("text"),
+    text: z.string(),
+    sourceUrl: z.string().url().nullable().optional(),
+  }),
+]);

@@ -89,6 +89,36 @@ export async function createRecipeForUser(
   return toRecipeResponse(recipe);
 }
 
+export async function findRecipeByNormalizedSourceUrl(
+  sourceUrl: string,
+): Promise<Recipe | null> {
+  return prisma.recipe.findFirst({
+    where: { sourceUrl },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export async function copyRecipeForUser(
+  userId: string,
+  source: Recipe,
+): Promise<RecipeResponse> {
+  const recipe = await prisma.recipe.create({
+    data: {
+      userId,
+      title: source.title,
+      description: source.description,
+      sourceUrl: source.sourceUrl,
+      servings: source.servings,
+      ingredients: source.ingredients,
+      steps: source.steps,
+      adaptedSteps: null,
+      tags: source.tags,
+    },
+  });
+
+  return toRecipeResponse(recipe);
+}
+
 export async function findRecipeById(id: string): Promise<Recipe | null> {
   return prisma.recipe.findUnique({
     where: { id },

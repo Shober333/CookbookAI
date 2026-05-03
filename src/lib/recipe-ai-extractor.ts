@@ -144,7 +144,7 @@ export function prepareRecipeSourceForAi(
 
 export async function extractRecipeWithAi(
   sourceText: string,
-  sourceUrl: string,
+  sourceUrl: string | null,
 ): Promise<Record<string, unknown>> {
   const recipe =
     aiProvider === "ollama"
@@ -156,7 +156,7 @@ export async function extractRecipeWithAi(
 
 export function normalizeExtractedRecipe(
   value: Record<string, unknown>,
-  sourceUrl: string,
+  sourceUrl: string | null,
 ): Record<string, unknown> {
   if (typeof value.error === "string") {
     return { error: value.error };
@@ -190,7 +190,7 @@ export function normalizeExtractedRecipe(
 
 async function extractRecipeWithModel(
   sourceText: string,
-  sourceUrl: string,
+  sourceUrl: string | null,
 ): Promise<Record<string, unknown>> {
   const result = await generateObject({
     model: claudeModel,
@@ -215,7 +215,7 @@ async function extractRecipeWithModel(
 
 async function extractRecipeWithOllama(
   sourceText: string,
-  sourceUrl: string,
+  sourceUrl: string | null,
 ): Promise<Record<string, unknown>> {
   const controller = new AbortController();
   const timeoutId = setTimeout(
@@ -273,8 +273,8 @@ function getOllamaExtractionTimeoutMs(): number {
   return Number.isInteger(timeout) && timeout > 0 ? timeout : 120_000;
 }
 
-function buildRecipePrompt(sourceText: string, sourceUrl: string): string {
-  return `Source URL: ${sourceUrl}
+function buildRecipePrompt(sourceText: string, sourceUrl: string | null): string {
+  return `Source URL: ${sourceUrl ?? "none (pasted text)"}
 
 Extract the cooking recipe from this source text.
 
