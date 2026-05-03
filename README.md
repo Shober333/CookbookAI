@@ -315,6 +315,12 @@ ollama pull gemma4:e4b
 Anthropic remains available for later cloud/provider validation by
 setting `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`.
 
+YouTube description-first import requires a YouTube Data API key:
+
+```bash
+YOUTUBE_API_KEY=your-google-cloud-youtube-data-api-key
+```
+
 ---
 
 ## Resources
