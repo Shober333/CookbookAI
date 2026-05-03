@@ -52,6 +52,8 @@ async function register(page: Page, email: string, password = PASSWORD) {
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page.getByRole("button", { name: "+ Import" })).toBeVisible();
+  await page.goto("/library");
   await expect(page).toHaveURL(/\/library$/);
 }
 
@@ -101,6 +103,7 @@ test.describe("Sprint 3 import modes", () => {
     await expect(
       page.getByText("Already in our library — adding it to yours."),
     ).toBeVisible();
+    await expect(page.getByRole("tab", { name: "text" })).toBeDisabled();
     await expect(page).toHaveURL(/\/recipes\/.+/);
   });
 
@@ -145,7 +148,9 @@ test.describe("Sprint 3 import modes", () => {
     await page.getByPlaceholder(/Paste the recipe/).fill(pastedRecipe);
     await page.getByRole("button", { name: "Bring it in" }).click();
 
-    await expect(page.getByText("Reading what you pasted…")).toBeVisible();
+    await expect(
+      page.getByRole("listitem").filter({ hasText: "Reading what you pasted…" }),
+    ).toBeVisible();
     await expect(page.getByRole("status").getByText("Done")).toBeVisible();
     await expect(page).toHaveURL(/\/recipes\/.+/);
     await expect(page.getByRole("heading", { name: "S3 Pasted Soup" })).toBeVisible();
@@ -170,6 +175,41 @@ test.describe("Sprint 3 import modes", () => {
       page.getByText("Paste a bit more — we need ingredients and steps to work with."),
     ).toBeVisible();
     expect(importRequests).toBe(0);
+  });
+
+  test("import mode controls fit mobile and keep 44px tap targets", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await register(page, uniqueEmail("mobile"));
+
+    await page.goto("/import");
+    await expect(page.getByRole("tab", { name: "link" })).toBeVisible();
+
+    async function expectMinHeight(
+      locator: ReturnType<Page["locator"]>,
+      min: number,
+    ) {
+      const box = await locator.boundingBox();
+      if (!box) throw new Error("Expected visible tap target");
+      expect(box.height).toBeGreaterThanOrEqual(min);
+    }
+
+    await expectMinHeight(page.getByRole("tab", { name: "link" }), 44);
+    await expectMinHeight(page.getByRole("tab", { name: "text" }), 44);
+    await expectMinHeight(
+      page.getByPlaceholder("Paste a recipe URL or a YouTube link"),
+      44,
+    );
+    await expectMinHeight(page.getByRole("button", { name: "Bring it in" }), 44);
+
+    await page.getByRole("tab", { name: "text" }).click();
+    await expectMinHeight(page.getByPlaceholder(/Paste the recipe/), 200);
+
+    const hasHorizontalScroll = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    );
+    expect(hasHorizontalScroll).toBe(false);
   });
 
   test("YouTube external-link imports show the candidate domain when present", async ({
@@ -270,5 +310,46 @@ test.describe("Sprint 3 import modes", () => {
       page.getByText("Following the link in the description…"),
     ).toBeVisible();
     await expect(page.getByText(/\([^)]+\.com\)/)).toHaveCount(0);
+  });
+
+  test("YouTube no-recipe errors use the designed recovery path", async ({
+    page,
+  }) => {
+    await register(page, uniqueEmail("youtube-error"));
+
+    await page.route("**/api/ai/import", async (route) => {
+      await route.fulfill({
+        status: 422,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error:
+            "We couldn't find a recipe in that YouTube description. Paste the recipe text directly if the creator included it elsewhere.",
+        }),
+      });
+    });
+
+    await page.goto("/import");
+    await page.getByPlaceholder("Paste a recipe URL or a YouTube link").fill(
+      "https://www.youtube.com/watch?v=no-recipe",
+    );
+    await page.getByRole("button", { name: "Bring it in" }).click();
+
+    await expect(
+      page.getByRole("status").getByText("No recipe in this video"),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "We couldn't find a recipe link or recipe text in the description. Try the recipe page directly, or paste the recipe text.",
+      ),
+    ).toBeVisible();
+
+    await page
+      .getByRole("button", { name: "Paste recipe text instead →" })
+      .click();
+    await expect(page.getByRole("tab", { name: "text" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByPlaceholder(/Paste the recipe/)).toBeFocused();
   });
 });

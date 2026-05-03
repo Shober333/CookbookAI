@@ -15,6 +15,11 @@ type ImportResponse = {
   sourceDomain?: string | null;
 };
 
+type ImportErrorView = {
+  title: string;
+  message: string;
+};
+
 type StatusLine = {
   text: string;
   domain?: string | null;
@@ -102,16 +107,82 @@ function looksLikeYouTubeUrl(value: string): boolean {
   }
 }
 
-function mapApiError(status: number, body: { error?: string }): string {
+function mapApiError(status: number, body: { error?: string }): ImportErrorView {
+  const error = body.error ?? "";
+  const lower = error.toLowerCase();
+
   if (status === 400) {
-    if (body.error?.toLowerCase().includes("text")) {
-      return "Paste a bit more — we need ingredients and steps to work with.";
+    if (lower.includes("youtube")) {
+      return {
+        title: "Can't read this video",
+        message: "We can't reach YouTube right now. Try the recipe page directly.",
+      };
     }
 
-    return "That doesn't look like a URL. Try something starting with https://.";
+    if (lower.includes("text") || lower.includes("paste")) {
+      return {
+        title: "No recipe here",
+        message: "Paste a bit more — we need ingredients and steps to work with.",
+      };
+    }
+
+    return {
+      title: "Something went wrong",
+      message: "That doesn't look like a URL. Try something starting with https://.",
+    };
   }
 
-  return body.error ?? "Something went wrong. Try again in a moment.";
+  if (lower.includes("youtube")) {
+    if (status === 503 || lower.includes("api key") || lower.includes("right now")) {
+      return {
+        title: "Can't read this video",
+        message: "We can't reach YouTube right now. Try the recipe page directly.",
+      };
+    }
+
+    return {
+      title: "No recipe in this video",
+      message:
+        "We couldn't find a recipe link or recipe text in the description. Try the recipe page directly, or paste the recipe text.",
+    };
+  }
+
+  if (lower.includes("in that text") || lower.includes("from that text")) {
+    return {
+      title: "No recipe here",
+      message:
+        "We didn't find a recipe in that text. Make sure it has ingredients and steps.",
+    };
+  }
+
+  if (lower.includes("at that link")) {
+    return {
+      title: "No recipe here",
+      message:
+        "We couldn't find a recipe at that link. Make sure it's a page with ingredients and steps.",
+    };
+  }
+
+  if (lower.includes("subscription") || lower.includes("paywall")) {
+    return {
+      title: "Couldn't read the page",
+      message:
+        "Looks like this site requires a subscription. Try pasting the recipe text directly, or use a different source.",
+    };
+  }
+
+  if (lower.includes("reach that page") || lower.includes("fetch that page")) {
+    return {
+      title: "Connection trouble",
+      message:
+        "We can't reach our recipe service right now. Try again in a moment.",
+    };
+  }
+
+  return {
+    title: "Something went wrong",
+    message: error || "Something went wrong. Try again in a moment.",
+  };
 }
 
 function validateUrl(value: string): string {
@@ -154,16 +225,20 @@ export function ImportForm() {
   const [statusLabel, setStatusLabel] = useState("Reading the page…");
   const [lines, setLines] = useState<StatusLine[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
+  const [errorTitle, setErrorTitle] = useState("Something went wrong");
 
   function resetToIdle() {
     setStatus("idle");
     setStatusLabel("Reading the page…");
     setLines([]);
     setErrorMsg("");
+    setErrorTitle("Something went wrong");
   }
 
   function selectMode(nextMode: ImportMode) {
-    if (status === "streaming" || nextMode === mode) return;
+    if (status === "streaming" || status === "done" || nextMode === mode) {
+      return;
+    }
     setMode(nextMode);
     setUrlError("");
     setTextError("");
@@ -182,6 +257,7 @@ export function ImportForm() {
     setStatusLabel(responseHeaderForStreaming(firstLine.text));
     setLines([firstLine]);
     setErrorMsg("");
+    setErrorTitle("Something went wrong");
 
     try {
       const res = await fetch("/api/ai/import", {
@@ -196,7 +272,9 @@ export function ImportForm() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        setErrorMsg(mapApiError(res.status, body));
+        const errorView = mapApiError(res.status, body);
+        setErrorTitle(errorView.title);
+        setErrorMsg(errorView.message);
         setStatus("error");
         return;
       }
@@ -213,6 +291,7 @@ export function ImportForm() {
         router.push(`/recipes/${recipeId}`);
       }, 1500);
     } catch {
+      setErrorTitle("Something went wrong");
       setErrorMsg("Something went wrong. Try again in a moment.");
       setStatus("error");
     }
@@ -288,9 +367,10 @@ export function ImportForm() {
   }
 
   const isSubmitting = status === "streaming";
+  const controlsDisabled = status === "streaming" || status === "done";
   const showStreamingBox = status !== "idle";
   const canSubmit =
-    !isSubmitting &&
+    !controlsDisabled &&
     (mode === "url" ? !!url.trim() : !!text.replace(/\s/g, ""));
   const activePanelId = mode === "url" ? "import-url-panel" : "import-text-panel";
 
@@ -316,8 +396,8 @@ export function ImportForm() {
                 aria-controls={
                   option === "url" ? "import-url-panel" : "import-text-panel"
                 }
-                aria-disabled={isSubmitting}
-                disabled={isSubmitting}
+                aria-disabled={controlsDisabled}
+                disabled={controlsDisabled}
                 onClick={() => selectMode(option)}
                 onKeyDown={handleModeKeyDown}
                 className={`min-h-[44px] px-[18px] py-3 font-ui text-ui lowercase transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
@@ -348,7 +428,7 @@ export function ImportForm() {
               }}
               placeholder="Paste a recipe URL or a YouTube link"
               required={mode === "url"}
-              disabled={isSubmitting}
+              disabled={controlsDisabled}
               aria-invalid={!!urlError}
               aria-describedby={urlError ? "url-error" : undefined}
               className="min-h-[44px] w-full rounded-sm border-[0.5px] border-border bg-paper px-3 font-ui text-body text-ink placeholder:text-ink-ghost transition-colors focus-visible:border-accent focus-visible:outline-none disabled:opacity-50 md:h-[38px] md:min-h-0"
@@ -384,7 +464,7 @@ export function ImportForm() {
               }}
               placeholder="Paste the recipe — ingredients, steps, and any notes."
               required={mode === "text"}
-              disabled={isSubmitting}
+              disabled={controlsDisabled}
               aria-invalid={!!textError}
               aria-describedby={textError ? "text-error" : undefined}
               className="max-h-[min(50vh,400px)] min-h-[200px] w-full resize-y rounded-sm border-[0.5px] border-border-strong bg-paper px-[14px] py-3 font-ui text-body text-ink placeholder:text-ink-ghost transition-colors focus-visible:border-accent focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:max-h-[480px]"
@@ -434,8 +514,13 @@ export function ImportForm() {
                 aria-hidden="true"
               />
             )}
-            <span className="font-ui text-eyebrow uppercase tracking-[0.16em] text-accent">
-              {status === "error" ? "Something went wrong" : statusLabel}
+            <span
+              className={[
+                "font-ui text-eyebrow uppercase tracking-[0.16em]",
+                status === "error" ? "text-accent-strong" : "text-accent",
+              ].join(" ")}
+            >
+              {status === "error" ? errorTitle : statusLabel}
             </span>
           </div>
 
