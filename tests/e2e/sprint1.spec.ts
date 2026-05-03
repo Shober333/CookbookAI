@@ -221,11 +221,20 @@ test.describe("Sprint 1 import", () => {
     await expect(page.getByText("Could not fetch page.")).toBeVisible();
     await page.unroute("**/api/ai/import");
 
+    const importedCake = await createRecipe(
+      page,
+      sampleRecipe({ title: "QA Imported Cake" }),
+    );
+
     await page.route("**/api/ai/import", async (route) => {
+      expect(route.request().postDataJSON()).toEqual({
+        mode: "url",
+        url: "https://example.com/imported-cake",
+      });
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify(sampleRecipe({ title: "QA Imported Cake" })),
+        body: JSON.stringify({ recipe: importedCake, sourceKind: "url" }),
       });
     });
 
@@ -277,11 +286,16 @@ test.describe("Sprint 1 screenshots", () => {
     await expect(page.getByRole("button", { name: "metric" })).toHaveCSS("border-bottom-color", "rgba(0, 0, 0, 0)");
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, "recipe-unit-toggled.png"), fullPage: true });
 
+    const screenshotImport = await createRecipe(
+      page,
+      sampleRecipe({ title: "QA Screenshot Import" }),
+    );
+
     await page.route("**/api/ai/import", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify(sampleRecipe({ title: "QA Screenshot Import" })),
+        body: JSON.stringify({ recipe: screenshotImport, sourceKind: "url" }),
       });
     });
     await page.goto("/import");
