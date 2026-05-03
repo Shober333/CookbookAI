@@ -1,8 +1,9 @@
-import { aiProvider, isOllamaCloudModel } from "@/lib/anthropic";
 import {
   extractRecipeWithAi,
+  getRecipeSourceLimit,
   prepareRecipeSourceForAi,
 } from "@/lib/recipe-ai-extractor";
+import { selectedAiProvider } from "@/lib/ai-provider";
 import { extractRecipeFromJsonLd } from "@/lib/recipe-jsonld";
 import {
   copyRecipeForUser,
@@ -12,14 +13,14 @@ import {
 import { recipePayloadSchema } from "@/lib/recipe-schema";
 import {
   fetchYouTubeDescriptionMetadata,
+  fetchYouTubeTranscript,
   isYouTubeUrl,
   normalizeBareHost,
   YouTubeImportError,
 } from "@/lib/youtube-import";
 import type { RecipePayload, RecipeResponse } from "@/types/recipe";
 
-export const maxRecipeSourceChars =
-  aiProvider !== "ollama" ? 60_000 : isOllamaCloudModel ? 15_000 : 3_500;
+export const maxRecipeSourceChars = getRecipeSourceLimit();
 
 const ENABLE_STRUCTURED_DATA_IMPORT =
   process.env.ENABLE_RECIPE_STRUCTURED_DATA_IMPORT === "true";
@@ -40,7 +41,12 @@ export type RecipeImportSource =
 export type RecipeImportResult = {
   recipe: RecipeResponse;
   reused?: boolean;
-  sourceKind?: "url" | "text" | "youtube-link" | "youtube-description";
+  sourceKind?:
+    | "url"
+    | "text"
+    | "youtube-link"
+    | "youtube-description"
+    | "youtube-transcript";
   sourceUrl?: string | null;
   sourceDomain?: string | null;
 };
@@ -131,30 +137,34 @@ async function importRecipeFromYouTube(
     }
   }
 
-  try {
-    const payload = await extractRecipePayload({
-      kind: "text",
-      text: metadata.description,
-      sourceUrl: url,
-    });
-    const recipe = await createRecipeForUser(userId, payload);
+  const descriptionResult = await tryImportYouTubeText(userId, {
+    text: metadata.description,
+    sourceUrl: url,
+    sourceKind: "youtube-description",
+  });
 
-    return {
-      recipe,
-      reused: false,
-      sourceKind: "youtube-description",
-      sourceUrl: payload.sourceUrl ?? normalizeImportableUrl(url),
-    };
-  } catch (error) {
-    if (error instanceof RecipeImportError) {
-      throw new RecipeImportError(
-        "We couldn't find a recipe in that YouTube description. Paste the recipe text directly if the creator included it elsewhere.",
-        422,
-      );
-    }
-
-    throw error;
+  if (descriptionResult) {
+    return descriptionResult;
   }
+
+  const transcript = await tryFetchYouTubeTranscript(url);
+
+  if (transcript) {
+    const transcriptResult = await tryImportYouTubeText(userId, {
+      text: transcript,
+      sourceUrl: url,
+      sourceKind: "youtube-transcript",
+    });
+
+    if (transcriptResult) {
+      return transcriptResult;
+    }
+  }
+
+  throw new RecipeImportError(
+    "We couldn't find a recipe in that YouTube video. Paste the recipe text directly if the creator included it elsewhere.",
+    422,
+  );
 }
 
 export async function extractRecipePayload(
@@ -201,7 +211,7 @@ export function normalizeImportableUrl(value: string): string {
 }
 
 function clipSourceForAi(sourceText: string): string {
-  return aiProvider === "ollama"
+  return selectedAiProvider === "ollama"
     ? prepareRecipeSourceForAi(sourceText, maxRecipeSourceChars)
     : sourceText.slice(0, maxRecipeSourceChars);
 }
@@ -308,7 +318,6 @@ async function extractPayloadWithAi(
     recipe = await extractRecipeWithAi(sourceText, sourceUrl);
   } catch (error) {
     console.error("[recipe-import] AI extraction failed", {
-      provider: aiProvider,
       host: sourceUrl ? new URL(sourceUrl).hostname : null,
       sourceChars: sourceText.length,
       error: error instanceof Error ? error.name : "UnknownError",
@@ -335,4 +344,47 @@ async function extractPayloadWithAi(
   }
 
   return parsed.data;
+}
+
+async function tryImportYouTubeText(
+  userId: string,
+  params: {
+    text: string;
+    sourceUrl: string;
+    sourceKind: "youtube-description" | "youtube-transcript";
+  },
+): Promise<RecipeImportResult | null> {
+  try {
+    const payload = await extractRecipePayload({
+      kind: "text",
+      text: params.text,
+      sourceUrl: params.sourceUrl,
+    });
+    const recipe = await createRecipeForUser(userId, payload);
+
+    return {
+      recipe,
+      reused: false,
+      sourceKind: params.sourceKind,
+      sourceUrl: payload.sourceUrl ?? normalizeImportableUrl(params.sourceUrl),
+    };
+  } catch (error) {
+    if (error instanceof RecipeImportError) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function tryFetchYouTubeTranscript(url: string): Promise<string | null> {
+  try {
+    return await fetchYouTubeTranscript(url);
+  } catch (error) {
+    if (error instanceof YouTubeImportError) {
+      return null;
+    }
+
+    throw error;
+  }
 }

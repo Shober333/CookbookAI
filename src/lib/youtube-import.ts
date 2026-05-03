@@ -19,6 +19,9 @@ const NON_RECIPE_DOMAINS = new Set([
   "beacons.ai",
   "bio.site",
   "stan.store",
+  "amazon.com",
+  "amzn.to",
+  "a.co",
   "shopify.com",
   "teespring.com",
   "spring.com",
@@ -29,6 +32,12 @@ export type YouTubeDescriptionMetadata = {
   title: string;
   description: string;
   candidateUrls: string[];
+};
+
+type TranscriptTrack = {
+  languageCode: string;
+  name: string;
+  isAutomatic: boolean;
 };
 
 export class YouTubeImportError extends Error {
@@ -133,6 +142,93 @@ export async function fetchYouTubeDescriptionMetadata(
   };
 }
 
+export async function fetchYouTubeTranscript(value: string): Promise<string> {
+  const videoId = parseYouTubeVideoId(value);
+
+  if (!videoId) {
+    throw new YouTubeImportError("That YouTube URL is not supported.", 400);
+  }
+
+  let listResponse: Response;
+
+  try {
+    listResponse = await fetch(
+      `https://video.google.com/timedtext?type=list&v=${encodeURIComponent(videoId)}`,
+      { signal: AbortSignal.timeout(10_000) },
+    );
+  } catch {
+    throw new YouTubeImportError(
+      "We couldn't read captions for that YouTube video right now.",
+      502,
+    );
+  }
+
+  if (!listResponse.ok) {
+    throw new YouTubeImportError(
+      "We couldn't read captions for that YouTube video right now.",
+      502,
+    );
+  }
+
+  const trackXml = await listResponse.text();
+  const track = chooseTranscriptTrack(parseTranscriptTracks(trackXml));
+
+  if (!track) {
+    throw new YouTubeImportError(
+      "No transcript is available for that YouTube video.",
+      404,
+    );
+  }
+
+  let transcriptResponse: Response;
+
+  try {
+    const url = new URL("https://video.google.com/timedtext");
+    url.searchParams.set("v", videoId);
+    url.searchParams.set("lang", track.languageCode);
+    url.searchParams.set("fmt", "json3");
+    if (track.name) url.searchParams.set("name", track.name);
+    if (track.isAutomatic) url.searchParams.set("kind", "asr");
+
+    transcriptResponse = await fetch(url, {
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    throw new YouTubeImportError(
+      "We couldn't read captions for that YouTube video right now.",
+      502,
+    );
+  }
+
+  if (!transcriptResponse.ok) {
+    throw new YouTubeImportError(
+      "We couldn't read captions for that YouTube video right now.",
+      502,
+    );
+  }
+
+  const transcriptBody = (await transcriptResponse.json()) as {
+    events?: Array<{
+      segs?: Array<{ utf8?: string }>;
+    }>;
+  };
+  const transcript = (transcriptBody.events ?? [])
+    .flatMap((event) => event.segs ?? [])
+    .map((seg) => seg.utf8 ?? "")
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!transcript) {
+    throw new YouTubeImportError(
+      "No transcript is available for that YouTube video.",
+      404,
+    );
+  }
+
+  return transcript;
+}
+
 export function extractCandidateRecipeUrls(description: string): string[] {
   const urls = description.match(/https?:\/\/[^\s<>"']+/gi) ?? [];
   const seen = new Set<string>();
@@ -169,4 +265,43 @@ function isBlockedDomain(host: string): boolean {
   return [...NON_RECIPE_DOMAINS].some(
     (domain) => host === domain || host.endsWith(`.${domain}`),
   );
+}
+
+function parseTranscriptTracks(xml: string): TranscriptTrack[] {
+  const trackMatches = xml.match(/<track\b[^>]*>/gi) ?? [];
+
+  return trackMatches
+    .map((tag) => ({
+      languageCode: decodeXmlAttribute(
+        readXmlAttribute(tag, "lang_code") ?? "",
+      ),
+      name: decodeXmlAttribute(readXmlAttribute(tag, "name") ?? ""),
+      isAutomatic: readXmlAttribute(tag, "kind") === "asr",
+    }))
+    .filter((track) => track.languageCode.length > 0);
+}
+
+function chooseTranscriptTrack(
+  tracks: TranscriptTrack[],
+): TranscriptTrack | null {
+  return (
+    tracks.find((track) => track.languageCode === "en" && !track.isAutomatic) ??
+    tracks.find((track) => track.languageCode.startsWith("en")) ??
+    tracks[0] ??
+    null
+  );
+}
+
+function readXmlAttribute(tag: string, name: string): string | null {
+  const match = tag.match(new RegExp(`${name}="([^"]*)"`));
+  return match?.[1] ?? null;
+}
+
+function decodeXmlAttribute(value: string): string {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
 }

@@ -136,22 +136,28 @@ CookbookAI/
 
 ## 6. Environment Variables
 
-Copy `.env.example` → `.env`. Sprint 1 uses local Ollama models by
-default; Anthropic remains a configurable provider for later cloud /
-production validation.
+Copy `.env.example` → `.env`. Local development can use Ollama.
+Sprint 4 production extraction targets Gemini 2.5 Flash through
+`AI_PROVIDER=gemini`; Anthropic remains a legacy fallback.
 
 ```
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=gemma4:e4b
 OLLAMA_EXTRACTION_TIMEOUT_MS=120000
+# AI_EXTRACTION_TIMEOUT_MS=120000
+
+# Required only if AI_PROVIDER=gemini
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
 
 # Required only if AI_PROVIDER=anthropic
 # ANTHROPIC_API_KEY=sk-ant-...
 
 ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=false
 
-# Required only for Sprint 3 YouTube description import
+# Required for YouTube description import. Transcript fallback uses public
+# caption tracks after description-first paths fail.
 # YOUTUBE_API_KEY=your-google-cloud-youtube-data-api-key
 ```
 

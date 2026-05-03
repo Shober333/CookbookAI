@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation";
 type Status = "idle" | "streaming" | "done" | "error";
 
 type ImportMode = "url" | "text";
-type SourceKind = "url" | "text" | "youtube-link" | "youtube-description";
+type SourceKind =
+  | "url"
+  | "text"
+  | "youtube-link"
+  | "youtube-description"
+  | "youtube-transcript";
 
 type ImportResponse = {
   recipe?: { id?: string };
@@ -61,6 +66,15 @@ const YOUTUBE_DESCRIPTION_PHASE_LINES: StatusLine[] = [
   { text: "Done", strong: true },
 ];
 
+const YOUTUBE_TRANSCRIPT_PHASE_LINES: StatusLine[] = [
+  { text: "Looking up the video…" },
+  { text: "Reading the captions…" },
+  { text: "Finding the recipe…" },
+  { text: "Reading ingredients…" },
+  { text: "Reading the method…" },
+  { text: "Done", strong: true },
+];
+
 function initialLineFor(mode: ImportMode, value: string): StatusLine {
   if (mode === "url" && looksLikeYouTubeUrl(value)) {
     return { text: "Looking up the video…" };
@@ -88,6 +102,8 @@ function doneLinesFor(
       return YOUTUBE_LINK_PHASE_LINES(response.sourceDomain);
     case "youtube-description":
       return YOUTUBE_DESCRIPTION_PHASE_LINES;
+    case "youtube-transcript":
+      return YOUTUBE_TRANSCRIPT_PHASE_LINES;
     case "url":
     default:
       return URL_PHASE_LINES;

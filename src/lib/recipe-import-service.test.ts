@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   extractRecipeFromJsonLd: vi.fn(),
   extractRecipeWithAi: vi.fn(),
   fetchYouTubeDescriptionMetadata: vi.fn(),
+  fetchYouTubeTranscript: vi.fn(),
   findRecipeByNormalizedSourceUrl: vi.fn(),
   isYouTubeUrl: vi.fn((_url: string) => false),
   normalizeBareHost: vi.fn((hostname: string) =>
@@ -31,8 +32,13 @@ vi.mock("@/lib/anthropic", () => ({
   isOllamaCloudModel: false,
 }));
 
+vi.mock("@/lib/ai-provider", () => ({
+  selectedAiProvider: "anthropic",
+}));
+
 vi.mock("@/lib/recipe-ai-extractor", () => ({
   extractRecipeWithAi: mocks.extractRecipeWithAi,
+  getRecipeSourceLimit: vi.fn(() => 60_000),
   prepareRecipeSourceForAi: mocks.prepareRecipeSourceForAi,
 }));
 
@@ -48,6 +54,7 @@ vi.mock("@/lib/recipe-service", () => ({
 
 vi.mock("@/lib/youtube-import", () => ({
   fetchYouTubeDescriptionMetadata: mocks.fetchYouTubeDescriptionMetadata,
+  fetchYouTubeTranscript: mocks.fetchYouTubeTranscript,
   isYouTubeUrl: mocks.isYouTubeUrl,
   normalizeBareHost: mocks.normalizeBareHost,
   YouTubeImportError: mocks.YouTubeImportError,
@@ -80,6 +87,7 @@ describe("importRecipeForUser", () => {
     vi.clearAllMocks();
     mocks.createRecipeForUser.mockResolvedValue(recipeResponse);
     mocks.extractRecipeWithAi.mockResolvedValue(recipePayload);
+    mocks.fetchYouTubeTranscript.mockResolvedValue(recipeText);
     mocks.findRecipeByNormalizedSourceUrl.mockResolvedValue(null);
     mocks.isYouTubeUrl.mockReturnValue(false);
     vi.stubGlobal("fetch", vi.fn());
@@ -295,6 +303,9 @@ describe("importRecipeForUser", () => {
       description: "Subscribe for more dinner ideas and behind-the-scenes notes.",
       candidateUrls: [],
     });
+    mocks.fetchYouTubeTranscript.mockRejectedValue(
+      new mocks.YouTubeImportError("No transcript.", 404),
+    );
 
     await expect(
       importRecipeForUser("user-1", {
@@ -304,8 +315,63 @@ describe("importRecipeForUser", () => {
     ).rejects.toMatchObject({
       status: 422,
       message:
-        "We couldn't find a recipe in that YouTube description. Paste the recipe text directly if the creator included it elsewhere.",
+        "We couldn't find a recipe in that YouTube video. Paste the recipe text directly if the creator included it elsewhere.",
     });
+
+    expect(mocks.extractRecipeWithAi).not.toHaveBeenCalled();
+    expect(mocks.createRecipeForUser).not.toHaveBeenCalled();
+  });
+
+  it("falls back to a YouTube transcript after description-first finds no recipe", async () => {
+    mocks.isYouTubeUrl.mockReturnValue(true);
+    mocks.fetchYouTubeDescriptionMetadata.mockResolvedValue({
+      videoId: "abc1234",
+      title: "Pasta video",
+      description: "Subscribe for more dinner ideas and behind-the-scenes notes.",
+      candidateUrls: [],
+    });
+    mocks.fetchYouTubeTranscript.mockResolvedValue(recipeText);
+    mocks.extractRecipeWithAi.mockResolvedValue({
+      ...recipePayload,
+      sourceUrl: "https://www.youtube.com/watch?v=abc1234",
+    });
+
+    const result = await importRecipeForUser("user-1", {
+      kind: "url",
+      url: "https://www.youtube.com/watch?v=abc1234",
+    });
+
+    expect(mocks.fetchYouTubeTranscript).toHaveBeenCalledWith(
+      "https://www.youtube.com/watch?v=abc1234",
+    );
+    expect(mocks.extractRecipeWithAi).toHaveBeenCalledWith(
+      recipeText,
+      "https://www.youtube.com/watch?v=abc1234",
+    );
+    expect(result).toMatchObject({
+      sourceKind: "youtube-transcript",
+      sourceUrl: "https://www.youtube.com/watch?v=abc1234",
+    });
+  });
+
+  it("does not create a recipe when the transcript is also not recipe-like", async () => {
+    mocks.isYouTubeUrl.mockReturnValue(true);
+    mocks.fetchYouTubeDescriptionMetadata.mockResolvedValue({
+      videoId: "abc1234",
+      title: "Pasta video",
+      description: "Subscribe for more dinner ideas and behind-the-scenes notes.",
+      candidateUrls: [],
+    });
+    mocks.fetchYouTubeTranscript.mockResolvedValue(
+      "Welcome back to the channel. Today we are chatting about dinner memories.",
+    );
+
+    await expect(
+      importRecipeForUser("user-1", {
+        kind: "url",
+        url: "https://www.youtube.com/watch?v=abc1234",
+      }),
+    ).rejects.toMatchObject({ status: 422 });
 
     expect(mocks.extractRecipeWithAi).not.toHaveBeenCalled();
     expect(mocks.createRecipeForUser).not.toHaveBeenCalled();

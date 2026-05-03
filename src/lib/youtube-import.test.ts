@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   extractCandidateRecipeUrls,
   fetchYouTubeDescriptionMetadata,
+  fetchYouTubeTranscript,
   normalizeBareHost,
   parseYouTubeVideoId,
 } from "./youtube-import";
@@ -33,6 +34,7 @@ describe("extractCandidateRecipeUrls", () => {
         Again: https://www.example.com/cacio
         Instagram: https://instagram.com/cook
         Link in bio: https://linktr.ee/cook
+        Affiliate: https://amzn.to/pan
         Video: https://youtu.be/abc1234
       `),
     ).toEqual(["https://www.example.com/cacio"]);
@@ -93,5 +95,52 @@ describe("fetchYouTubeDescriptionMetadata", () => {
       description: "Ingredients and instructions are in the video.",
       candidateUrls: [],
     });
+  });
+});
+
+describe("fetchYouTubeTranscript", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("fetches the preferred English transcript track", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          '<transcript_list><track id="0" name="" lang_code="es"/><track id="1" name="English" lang_code="en"/></transcript_list>',
+        ),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          events: [
+            { segs: [{ utf8: "Ingredients: tomatoes and oil." }] },
+            { segs: [{ utf8: "Instructions: simmer until thick." }] },
+          ],
+        }),
+      );
+
+    await expect(fetchYouTubeTranscript("https://youtu.be/abc_123-xyz")).resolves.toBe(
+      "Ingredients: tomatoes and oil. Instructions: simmer until thick.",
+    );
+
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        searchParams: expect.any(URLSearchParams),
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it("returns a typed error when no transcript tracks are available", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response("<transcript_list />"));
+
+    await expect(
+      fetchYouTubeTranscript("https://youtu.be/abc_123-xyz"),
+    ).rejects.toMatchObject({ status: 404 });
   });
 });

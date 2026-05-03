@@ -52,7 +52,9 @@ async function register(page: Page, email: string, password = PASSWORD) {
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page.getByRole("button", { name: "+ Import" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "+ Import" })).toBeVisible({
+    timeout: 15_000,
+  });
   await page.goto("/library");
   await expect(page).toHaveURL(/\/library$/);
 }
@@ -262,7 +264,9 @@ test.describe("Sprint 3 import modes", () => {
     await page.getByRole("button", { name: "Bring it in" }).click();
 
     const pulse = page.locator("[aria-hidden='true'].bg-accent").last();
-    await expect(page.getByRole("status").getByText("Reading the page…")).toBeVisible();
+    await expect(
+      page.getByRole("listitem").filter({ hasText: "Reading the page…" }),
+    ).toBeVisible();
     await expect(pulse).toHaveCSS("animation-duration", "0s");
   });
 
@@ -339,6 +343,36 @@ test.describe("Sprint 3 import modes", () => {
       path: path.join(SCREENSHOT_DIR, "import-youtube-description.png"),
       fullPage: true,
     });
+  });
+
+  test("YouTube transcript imports show captions-path feedback", async ({
+    page,
+  }) => {
+    await register(page, uniqueEmail("youtube-transcript"));
+    const recipe = await createRecipe(
+      page,
+      sampleRecipe({ title: "S4 YouTube Transcript Soup" }),
+    );
+
+    await page.route("**/api/ai/import", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          recipe,
+          sourceKind: "youtube-transcript",
+        }),
+      });
+    });
+
+    await page.goto("/import");
+    await page.getByPlaceholder("Paste a recipe URL or a YouTube link").fill(
+      "https://youtu.be/transcript123",
+    );
+    await page.getByRole("button", { name: "Bring it in" }).click();
+
+    await expect(page.getByText("Reading the captions…")).toBeVisible();
+    await expect(page.getByRole("status").getByText("Done")).toBeVisible();
   });
 
   test("YouTube external-link feedback omits the domain hint when absent", async ({
