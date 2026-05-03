@@ -109,6 +109,19 @@ describe("importRecipeForUser", () => {
     });
   });
 
+  it("accepts recipe-like pasted HTML by stripping tags before AI extraction", async () => {
+    await importRecipeForUser("user-1", {
+      kind: "text",
+      text: `<article><h1>Cacio</h1><p>${recipeText}</p></article>`,
+    });
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(mocks.extractRecipeWithAi).toHaveBeenCalledWith(
+      `Cacio ${recipeText}`,
+      null,
+    );
+  });
+
   it("rejects short pasted text before calling AI", async () => {
     await expect(
       importRecipeForUser("user-1", { kind: "text", text: "Ingredients" }),

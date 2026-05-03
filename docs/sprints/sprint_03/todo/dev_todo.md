@@ -2,8 +2,8 @@
 
 > **Owner:** [DEV-LEAD]
 > **Sprint goal:** Import resilience + cost control.
-> **Status:** Founder approved 2026-05-02. `[UI/UX]` U1 is locked;
-> implementation may start against `sprint_03_design_brief.md`.
+> **Status:** Implemented and verified 2026-05-03. `[UI/UX]` U1 is locked;
+> final review accepted after the focus-ring and CTA fix pass.
 
 ---
 

@@ -65,6 +65,17 @@ async function createRecipe(page: Page, recipe: RecipePayload) {
 }
 
 test.describe("Sprint 3 import modes", () => {
+  test("text import API requires authentication", async ({ request }) => {
+    const response = await request.post("/api/ai/import", {
+      data: {
+        mode: "text",
+        text: "Ingredients: tomatoes and salt. Instructions: simmer the tomatoes with salt until thick.",
+      },
+    });
+
+    expect(response.status()).toBe(401);
+  });
+
   test("URL mode remains default and reused imports show quiet feedback", async ({
     page,
   }) => {
@@ -95,6 +106,10 @@ test.describe("Sprint 3 import modes", () => {
       "aria-selected",
       "true",
     );
+    await page.screenshot({
+      path: path.join(SCREENSHOT_DIR, "import-url-mode.png"),
+      fullPage: true,
+    });
     await page.getByPlaceholder("Paste a recipe URL or a YouTube link").fill(
       "https://example.com/reused-soup",
     );
@@ -103,6 +118,10 @@ test.describe("Sprint 3 import modes", () => {
     await expect(
       page.getByText("Already in our library — adding it to yours."),
     ).toBeVisible();
+    await page.screenshot({
+      path: path.join(SCREENSHOT_DIR, "import-reused-url.png"),
+      fullPage: true,
+    });
     await expect(page.getByRole("tab", { name: "text" })).toBeDisabled();
     await expect(page).toHaveURL(/\/recipes\/.+/);
   });
@@ -168,6 +187,7 @@ test.describe("Sprint 3 import modes", () => {
 
     await page.goto("/import");
     await page.getByRole("tab", { name: "text" }).click();
+    await expect(page.getByRole("button", { name: "Bring it in" })).toBeDisabled();
     await page.getByPlaceholder(/Paste the recipe/).fill("Ingredients only");
     await page.getByRole("button", { name: "Bring it in" }).click();
 
@@ -206,10 +226,44 @@ test.describe("Sprint 3 import modes", () => {
     await page.getByRole("tab", { name: "text" }).click();
     await expectMinHeight(page.getByPlaceholder(/Paste the recipe/), 200);
 
+    await expect(page.getByRole("tab", { name: "text" })).toHaveClass(
+      /focus-visible:ring-\[var\(--color-focus-ring\)\]/,
+    );
+    await expect(page.getByPlaceholder(/Paste the recipe/)).toHaveClass(
+      /focus-visible:ring-\[var\(--color-focus-ring\)\]/,
+    );
+    await page.getByRole("tab", { name: "link" }).click();
+    await expect(
+      page.getByPlaceholder("Paste a recipe URL or a YouTube link"),
+    ).toHaveClass(/focus-visible:ring-\[var\(--color-focus-ring\)\]/);
+
     const hasHorizontalScroll = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth,
     );
     expect(hasHorizontalScroll).toBe(false);
+  });
+
+  test("import progress respects reduced motion preference", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await register(page, uniqueEmail("reduced-motion"));
+
+    await page.route("**/api/ai/import", async (route) => {
+      await route.fulfill({
+        status: 502,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Could not fetch page." }),
+      });
+    });
+
+    await page.goto("/import");
+    await page.getByPlaceholder("Paste a recipe URL or a YouTube link").fill(
+      "https://example.invalid/reduced-motion",
+    );
+    await page.getByRole("button", { name: "Bring it in" }).click();
+
+    const pulse = page.locator("[aria-hidden='true'].bg-accent").last();
+    await expect(page.getByRole("status").getByText("Reading the page…")).toBeVisible();
+    await expect(pulse).toHaveCSS("animation-duration", "0s");
   });
 
   test("YouTube external-link imports show the candidate domain when present", async ({
@@ -247,6 +301,10 @@ test.describe("Sprint 3 import modes", () => {
       page.getByText("Following the link in the description…"),
     ).toBeVisible();
     await expect(page.getByText("(smittenkitchen.com)")).toBeVisible();
+    await page.screenshot({
+      path: path.join(SCREENSHOT_DIR, "import-youtube-link.png"),
+      fullPage: true,
+    });
   });
 
   test("YouTube description imports show description-path feedback", async ({
@@ -277,6 +335,10 @@ test.describe("Sprint 3 import modes", () => {
 
     await expect(page.getByText("Reading the description…")).toBeVisible();
     await expect(page.getByRole("status").getByText("Done")).toBeVisible();
+    await page.screenshot({
+      path: path.join(SCREENSHOT_DIR, "import-youtube-description.png"),
+      fullPage: true,
+    });
   });
 
   test("YouTube external-link feedback omits the domain hint when absent", async ({
@@ -342,6 +404,8 @@ test.describe("Sprint 3 import modes", () => {
         "We couldn't find a recipe link or recipe text in the description. Try the recipe page directly, or paste the recipe text.",
       ),
     ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Try again" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Try another link" })).toBeVisible();
 
     await page
       .getByRole("button", { name: "Paste recipe text instead →" })

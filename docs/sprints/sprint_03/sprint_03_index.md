@@ -4,7 +4,7 @@
 |-------|-------|
 | **Sprint** | 03 |
 | **Goal** | Make importing more reliable and cheaper before production-provider work |
-| **Status** | Founder approved — ready for sprint kickoff |
+| **Status** | CTO accepted for Founder review |
 | **Start** | 2026-05-02 |
 | **End** | TBD |
 
@@ -35,12 +35,12 @@
 ## Exit Criteria
 
 - [x] Founder approves Sprint 03 scope.
-- [ ] All tasks in `todo/dev_todo.md` completed or explicitly deferred.
-- [ ] All scenarios in `todo/qa_todo.md` pass.
-- [ ] No critical bugs open.
-- [ ] CTO Good/Bad/Ugly review completed.
-- [ ] `[UI/UX]` review completed for import-form changes.
-- [ ] Screenshots captured for UI changes: text/paste import, URL duplicate reuse feedback, YouTube description import states.
+- [x] All tasks in `todo/dev_todo.md` completed or explicitly deferred.
+- [x] All scenarios in `todo/qa_todo.md` pass.
+- [x] No critical bugs open.
+- [x] CTO Good/Bad/Ugly review completed.
+- [x] `[UI/UX]` review completed for import-form changes.
+- [x] Screenshots captured for UI changes: text/paste import, URL duplicate reuse feedback, YouTube description import states.
 
 ---
 
