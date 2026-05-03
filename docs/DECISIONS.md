@@ -148,7 +148,7 @@ Implement YouTube import as a four-tier waterfall. Tiers 1a and 1b both operate 
 
 2. **Tier 1b — Description contains recipe text (Sprint 3):** If no external URL found (or the linked site blocks the agent), run `looksLikeRecipePage()` on the description text. If it passes, send the description text directly to the AI extraction pipeline (same path as the text/paste import). If successful, done.
 
-3. **Tier 2 — Transcript fallback (Sprint 3):** If description has no URL and no recipe-like text, fetch the video's caption track via YouTube Data API and pass the transcript to the AI extraction pipeline.
+3. **Tier 2 — Transcript fallback (Sprint 4+):** If description has no URL and no recipe-like text, fetch the video's caption track via YouTube Data API and pass the transcript to the AI extraction pipeline.
 
 4. **Tier 3 — Gemini direct (Sprint 4+):** If no captions available, pass the YouTube URL as `fileData` to the Gemini API for audio+frame processing. Requires adding `AI_PROVIDER=gemini` branch.
 
@@ -209,7 +209,7 @@ to a second control.
 ## Decision: YouTube Video Import Strategy
 
 **Date:** 2026-05-01
-**Status:** Accepted — transcript path in Sprint 3; Gemini direct in Sprint 4+
+**Status:** Superseded for Sprint 3 by description-first scope; transcript path deferred to Sprint 4+
 **Decided by:** [CTO] + Founder
 
 **Context:**
@@ -218,7 +218,7 @@ path cannot handle video content. Two implementation paths were evaluated.
 
 **Options Considered:**
 
-*Option A — YouTube transcript + existing AI (chosen for Sprint 3)*
+*Option A — YouTube transcript + existing AI (deferred to Sprint 4+)*
 - Detect YouTube URL pattern (`youtube.com/watch`, `youtu.be/`)
 - Fetch caption track via YouTube Data API (free; ~50–100 units per fetch,
   10,000 units/day free tier)
@@ -233,8 +233,11 @@ path cannot handle video content. Two implementation paths were evaluated.
 - Requires adding `AI_PROVIDER=gemini` branch; `src/lib/anthropic.ts` should
   be renamed `src/lib/ai-provider.ts` when this lands
 
-**Decision:** Option A for Sprint 3. Option B as enhancement in Sprint 4+ for
-caption-less videos or where visual cues are critical.
+**Decision:** Superseded by the later description-first Sprint 3 decision
+above. Sprint 3 implements description external-link and description-text
+paths only. Transcript fallback is deferred to Sprint 4+; Gemini direct video
+processing remains a later enhancement for caption-less videos or where visual
+cues are critical.
 
 **Watch-history clarification:**
 Watch history was added during Founder testing because **Google AI Studio**
@@ -242,8 +245,9 @@ Watch history was added during Founder testing because **Google AI Studio**
 The **Gemini Developer API** (API key auth) is billed to the Cloud project and
 does not interact with or modify the user's personal Google account.
 
-**Action required for Sprint 3:** Obtain a YouTube Data API key (Google Cloud
-console, free tier sufficient). Add `YOUTUBE_API_KEY` to `.env.example`.
+**Action required before live YouTube validation:** Obtain a YouTube Data API
+key (Google Cloud console, free tier sufficient). `YOUTUBE_API_KEY` is
+documented in `.env.example`.
 
 ---
 

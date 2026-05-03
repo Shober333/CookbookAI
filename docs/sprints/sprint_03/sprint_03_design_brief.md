@@ -173,7 +173,7 @@ the mode switch above the input.
 | Placeholder | "Paste a recipe URL or a YouTube link" (existing — keep) |
 | Validation | Existing — `URL` constructor; reject non-`http(s)` |
 | Error copy | Existing — see `STATES.md` §4a |
-| Submit payload | `{ mode: "link", url: string }` (note `mode` field is new) |
+| Submit payload | `{ mode: "url", url: string }` (note `mode` field is new; the visible tab label remains "link") |
 
 The placeholder still mentions "YouTube link" because YouTube is a
 valid `link` input — the routing happens on the server side, the user

@@ -312,7 +312,8 @@ URL or text paste + progressive AI extraction. The progressive phase
 indicators are the warmest moment in the import flow — see
 `REGISTER.md` Rule 2.
 
-**Sprint 03 update:** the form now supports two modes (`link`, `text`)
+**Sprint 03 update:** the form now supports two visible modes (`link`, `text`)
+while the API payload uses `{ mode: "url", url }` for link mode.
 selected via a switch above the input area. URL mode also routes
 YouTube URLs through a description-first waterfall. The full Sprint 03
 spec — mode switch, textarea, phase copy per mode, dedupe feedback,
@@ -454,12 +455,12 @@ external-link path). `sourceDomain` is normalized backend-side (strip
 ### Props
 
 ```
-- onSubmit: (payload: { mode: 'link' | 'text'; url?: string; text?: string }) => Promise<StreamingResponse>
+- onSubmit: (payload: { mode: 'url' | 'text'; url?: string; text?: string }) => Promise<StreamingResponse>
 - onSuccess: (recipe: Recipe) => void
 ```
 
 The `mode` field on the payload is new in Sprint 03. URL mode sends
-`{ mode: 'link', url }`; text mode sends `{ mode: 'text', text }`.
+`{ mode: 'url', url }`; text mode sends `{ mode: 'text', text }`.
 
 ### Accessibility
 
@@ -933,5 +934,5 @@ here. New features get new specs.
 | 2026-05-01 | §7 AdaptDiff: marked deprecated; spec retained for post-MVP | Sprint 2 inline adapt flow + Founder confirmation |
 | 2026-05-01 | §8 Topbar: nav label "Equipment" → "Kitchen" (route stays `/equipment`); added Sign-out link; resolved mobile collapse (Option 3); deferred topbar search to post-MVP | Sprint 1 dev addition + Founder decisions |
 | 2026-05-01 | §9 AdaptPanel: new component spec | Sprint 2 task F2 |
-| 2026-05-02 | §5 ImportForm: added mode switch (`link` \| `text`), textarea sub-component, mode-aware phase copy (URL/text/YouTube), backend response contract (`reused`, `sourceKind`), updated props. Detail in `docs/sprints/sprint_03/sprint_03_design_brief.md`. | Sprint 3 task U1 |
+| 2026-05-02 | §5 ImportForm: added mode switch (`link` \| `text` labels; `url` \| `text` API payload), textarea sub-component, mode-aware phase copy (URL/text/YouTube), backend response contract (`reused`, `sourceKind`), updated props. Detail in `docs/sprints/sprint_03/sprint_03_design_brief.md`. | Sprint 3 task U1 |
 | 2026-05-02 | §5 ImportForm: contract gains `sourceUrl` and `sourceDomain` fields (CTO fix pass). URL input + submit button get mobile `min-h-[44px]` floor with `md:h-[38px]` desktop override — required by project DoD. | Sprint 3 U1 fix pass |

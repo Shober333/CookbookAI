@@ -76,7 +76,7 @@ For F1 the frontend sends:
 
 ```ts
 // link mode
-{ mode: "link", url: string }
+{ mode: "url", url: string }
 
 // text mode
 { mode: "text", text: string }

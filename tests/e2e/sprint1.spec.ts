@@ -238,7 +238,7 @@ test.describe("Sprint 1 import", () => {
       });
     });
 
-    await page.getByRole("button", { name: "Try another link" }).click();
+    await page.goto("/import");
     await page.getByPlaceholder("Paste a recipe URL or a YouTube link").fill("https://example.com/imported-cake");
     await page.getByRole("button", { name: "Bring it in" }).click();
     await expect(page.getByRole("status").getByText("Done")).toBeVisible();

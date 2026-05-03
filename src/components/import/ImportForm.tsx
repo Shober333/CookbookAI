@@ -354,16 +354,30 @@ export function ImportForm() {
     focusTextArea();
   }
 
-  function isPasteTextHelpful() {
+  function shouldShowPasteTextInstead() {
     const lower = errorMsg.toLowerCase();
     return (
       mode === "url" &&
-      (lower.includes("subscription") ||
+      (errorTitle === "Couldn't read the page" ||
+        errorTitle === "No recipe in this video" ||
+        lower.includes("subscription") ||
         lower.includes("paywall") ||
-        lower.includes("youtube") ||
-        lower.includes("paste the recipe text") ||
-        lower.includes("couldn't find a recipe"))
+        lower.includes("paste the recipe text"))
     );
+  }
+
+  function shouldShowTryAgain() {
+    if (mode === "text") return true;
+
+    return (
+      errorTitle === "Connection trouble" ||
+      errorTitle === "Can't read this video" ||
+      errorTitle === "Something went wrong"
+    );
+  }
+
+  function shouldShowTryAnotherLink() {
+    return mode === "url" && !shouldShowTryAgain();
   }
 
   const isSubmitting = status === "streaming";
@@ -400,7 +414,7 @@ export function ImportForm() {
                 disabled={controlsDisabled}
                 onClick={() => selectMode(option)}
                 onKeyDown={handleModeKeyDown}
-                className={`min-h-[44px] px-[18px] py-3 font-ui text-ui lowercase transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+                className={`min-h-[44px] px-[18px] py-3 font-ui text-ui lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50 ${
                   active
                     ? "border-b border-accent font-medium text-ink"
                     : "border-b border-transparent text-ink-faint hover:text-ink"
@@ -431,7 +445,7 @@ export function ImportForm() {
               disabled={controlsDisabled}
               aria-invalid={!!urlError}
               aria-describedby={urlError ? "url-error" : undefined}
-              className="min-h-[44px] w-full rounded-sm border-[0.5px] border-border bg-paper px-3 font-ui text-body text-ink placeholder:text-ink-ghost transition-colors focus-visible:border-accent focus-visible:outline-none disabled:opacity-50 md:h-[38px] md:min-h-0"
+              className="min-h-[44px] w-full rounded-sm border-[0.5px] border-border bg-paper px-3 font-ui text-body text-ink placeholder:text-ink-ghost transition-colors focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:opacity-50 md:h-[38px] md:min-h-0"
               style={
                 urlError
                   ? { borderColor: "var(--color-accent-strong)" }
@@ -467,7 +481,7 @@ export function ImportForm() {
               disabled={controlsDisabled}
               aria-invalid={!!textError}
               aria-describedby={textError ? "text-error" : undefined}
-              className="max-h-[min(50vh,400px)] min-h-[200px] w-full resize-y rounded-sm border-[0.5px] border-border-strong bg-paper px-[14px] py-3 font-ui text-body text-ink placeholder:text-ink-ghost transition-colors focus-visible:border-accent focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 md:max-h-[480px]"
+              className="max-h-[min(50vh,400px)] min-h-[200px] w-full resize-y rounded-sm border-[0.5px] border-border-strong bg-paper px-[14px] py-3 font-ui text-body text-ink placeholder:text-ink-ghost transition-colors focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50 md:max-h-[480px]"
               style={
                 textError
                   ? {
@@ -555,24 +569,16 @@ export function ImportForm() {
                 {errorMsg}
               </p>
               <div className="mt-3 flex flex-wrap gap-3">
-                {mode === "text" ? (
+                {shouldShowTryAgain() && (
                   <button
                     type="button"
-                    onClick={handleTryAgainText}
-                    className="font-ui text-ui-sm text-ink underline-offset-2 hover:underline"
-                  >
-                    Try again
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleRetry}
+                    onClick={mode === "text" ? handleTryAgainText : handleRetry}
                     className="font-ui text-ui-sm text-ink underline-offset-2 hover:underline"
                   >
                     Try again
                   </button>
                 )}
-                {isPasteTextHelpful() && (
+                {shouldShowPasteTextInstead() && (
                   <button
                     type="button"
                     onClick={handlePasteTextInstead}
@@ -581,7 +587,7 @@ export function ImportForm() {
                     Paste recipe text instead →
                   </button>
                 )}
-                {mode === "url" && (
+                {shouldShowTryAnotherLink() && (
                   <button
                     type="button"
                     onClick={handleTryAnotherLink}
