@@ -2,9 +2,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   extractCandidateRecipeUrls,
   fetchYouTubeDescriptionMetadata,
+  fetchYouTubeTranscript,
   normalizeBareHost,
   parseYouTubeVideoId,
 } from "./youtube-import";
+
+vi.mock("youtube-transcript", () => {
+  class YoutubeTranscriptTooManyRequestError extends Error {
+    constructor() {
+      super("YouTube is receiving too many requests");
+      this.name = "YoutubeTranscriptTooManyRequestError";
+    }
+  }
+  class YoutubeTranscriptDisabledError extends Error {
+    constructor(videoId: string) {
+      super(`Transcript is disabled on this video (${videoId})`);
+      this.name = "YoutubeTranscriptDisabledError";
+    }
+  }
+  return {
+    YoutubeTranscript: { fetchTranscript: vi.fn() },
+    YoutubeTranscriptTooManyRequestError,
+    YoutubeTranscriptDisabledError,
+  };
+});
 
 describe("parseYouTubeVideoId", () => {
   it("supports watch, short, and youtu.be URLs", () => {
@@ -33,6 +54,7 @@ describe("extractCandidateRecipeUrls", () => {
         Again: https://www.example.com/cacio
         Instagram: https://instagram.com/cook
         Link in bio: https://linktr.ee/cook
+        Affiliate: https://amzn.to/pan
         Video: https://youtu.be/abc1234
       `),
     ).toEqual(["https://www.example.com/cacio"]);
@@ -93,5 +115,49 @@ describe("fetchYouTubeDescriptionMetadata", () => {
       description: "Ingredients and instructions are in the video.",
       candidateUrls: [],
     });
+  });
+});
+
+describe("fetchYouTubeTranscript", () => {
+  let mockFetchTranscript: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    const mod = await import("youtube-transcript");
+    mockFetchTranscript = vi.mocked(mod.YoutubeTranscript.fetchTranscript);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("joins segments into a single transcript string", async () => {
+    mockFetchTranscript.mockResolvedValue([
+      { text: "Ingredients: tomatoes and oil.", duration: 3000, offset: 0 },
+      { text: "Instructions: simmer until thick.", duration: 4000, offset: 3000 },
+    ]);
+
+    await expect(
+      fetchYouTubeTranscript("https://youtu.be/abc_123-xyz"),
+    ).resolves.toBe("Ingredients: tomatoes and oil. Instructions: simmer until thick.");
+  });
+
+  it("returns a 404 error when transcript is disabled or unavailable", async () => {
+    const { YoutubeTranscriptDisabledError } = await import("youtube-transcript");
+    mockFetchTranscript.mockRejectedValue(
+      new YoutubeTranscriptDisabledError("abc_123-xyz"),
+    );
+
+    await expect(
+      fetchYouTubeTranscript("https://youtu.be/abc_123-xyz"),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("returns a 503 error when YouTube is rate-limiting", async () => {
+    const { YoutubeTranscriptTooManyRequestError } = await import("youtube-transcript");
+    mockFetchTranscript.mockRejectedValue(new YoutubeTranscriptTooManyRequestError());
+
+    await expect(
+      fetchYouTubeTranscript("https://youtu.be/abc_123-xyz"),
+    ).rejects.toMatchObject({ status: 503 });
   });
 });

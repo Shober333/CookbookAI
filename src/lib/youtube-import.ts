@@ -1,3 +1,8 @@
+import {
+  YoutubeTranscript,
+  YoutubeTranscriptTooManyRequestError,
+} from "youtube-transcript";
+
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -19,6 +24,9 @@ const NON_RECIPE_DOMAINS = new Set([
   "beacons.ai",
   "bio.site",
   "stan.store",
+  "amazon.com",
+  "amzn.to",
+  "a.co",
   "shopify.com",
   "teespring.com",
   "spring.com",
@@ -131,6 +139,46 @@ export async function fetchYouTubeDescriptionMetadata(
     description,
     candidateUrls: extractCandidateRecipeUrls(description),
   };
+}
+
+export async function fetchYouTubeTranscript(value: string): Promise<string> {
+  const videoId = parseYouTubeVideoId(value);
+
+  if (!videoId) {
+    throw new YouTubeImportError("That YouTube URL is not supported.", 400);
+  }
+
+  let segments: Awaited<ReturnType<typeof YoutubeTranscript.fetchTranscript>>;
+
+  try {
+    segments = await YoutubeTranscript.fetchTranscript(videoId);
+  } catch (error) {
+    if (error instanceof YoutubeTranscriptTooManyRequestError) {
+      throw new YouTubeImportError(
+        "YouTube is rate-limiting transcript requests. Try again in a moment.",
+        503,
+      );
+    }
+    throw new YouTubeImportError(
+      "No transcript is available for that YouTube video.",
+      404,
+    );
+  }
+
+  const transcript = segments
+    .map((seg) => seg.text)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!transcript) {
+    throw new YouTubeImportError(
+      "No transcript is available for that YouTube video.",
+      404,
+    );
+  }
+
+  return transcript;
 }
 
 export function extractCandidateRecipeUrls(description: string): string[] {

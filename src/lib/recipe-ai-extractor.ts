@@ -1,17 +1,11 @@
-import { generateObject } from "ai";
 import {
-  aiProvider,
-  claudeModel,
-  isOllamaCloudModel,
-  ollamaBaseUrl,
-  ollamaModel,
-  recipeExtractionProviderOptions,
-  recipeExtractionSystemPrompt,
-} from "@/lib/anthropic";
+  generateRecipeObject,
+  getRecipeSourceLimit,
+} from "@/lib/ai-provider";
+import { recipeExtractionSystemPrompt } from "@/lib/anthropic";
 import { recipePayloadSchema } from "@/lib/recipe-schema";
-import { parseJsonObjectFromText } from "@/lib/recipe-utils";
 
-const recipeJsonSchema = {
+export const recipeJsonSchema = {
   type: "object",
   additionalProperties: false,
   required: [
@@ -146,10 +140,14 @@ export async function extractRecipeWithAi(
   sourceText: string,
   sourceUrl: string | null,
 ): Promise<Record<string, unknown>> {
-  const recipe =
-    aiProvider === "ollama"
-      ? await extractRecipeWithOllama(sourceText, sourceUrl)
-      : await extractRecipeWithModel(sourceText, sourceUrl);
+  const recipe = await generateRecipeObject({
+    schema: recipeJsonSchema,
+    zodSchema: recipePayloadSchema,
+    schemaName: "Recipe",
+    schemaDescription: "A complete structured cooking recipe.",
+    system: recipeExtractionSystemPrompt,
+    prompt: buildRecipePrompt(sourceText, sourceUrl),
+  });
 
   return normalizeExtractedRecipe(recipe, sourceUrl);
 }
@@ -188,91 +186,6 @@ export function normalizeExtractedRecipe(
   return parsed.data;
 }
 
-async function extractRecipeWithModel(
-  sourceText: string,
-  sourceUrl: string | null,
-): Promise<Record<string, unknown>> {
-  const result = await generateObject({
-    model: claudeModel,
-    schema: recipePayloadSchema,
-    schemaName: "Recipe",
-    schemaDescription: "A complete structured cooking recipe.",
-    system: recipeExtractionSystemPrompt,
-    prompt: buildRecipePrompt(sourceText, sourceUrl),
-    temperature: 0,
-    providerOptions: recipeExtractionProviderOptions,
-    experimental_repairText: async ({ text }) => {
-      try {
-        return JSON.stringify(parseJsonObjectFromText(text));
-      } catch {
-        return null;
-      }
-    },
-  });
-
-  return result.object as Record<string, unknown>;
-}
-
-async function extractRecipeWithOllama(
-  sourceText: string,
-  sourceUrl: string | null,
-): Promise<Record<string, unknown>> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(
-    () => controller.abort(),
-    getOllamaExtractionTimeoutMs(),
-  );
-
-  let response: Response;
-  try {
-    response = await fetch(`${ollamaBaseUrl}/api/chat`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        model: ollamaModel,
-        stream: false,
-        format: recipeJsonSchema,
-        options: { temperature: 0, num_ctx: isOllamaCloudModel ? 32_768 : 4096 },
-        messages: [
-          {
-            role: "system",
-            content:
-              `${recipeExtractionSystemPrompt}\n\n` +
-              "Return a JSON object matching the provided schema. " +
-              "Use an empty string for unknown ingredient units.",
-          },
-          {
-            role: "user",
-            content: buildRecipePrompt(sourceText, sourceUrl),
-          },
-        ],
-      }),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeoutId);
-  }
-
-  if (!response.ok) {
-    throw new Error("Ollama recipe extraction failed.");
-  }
-
-  const body = (await response.json()) as { message?: { content?: string } };
-  const content = body.message?.content;
-
-  if (!content) {
-    throw new Error("Ollama recipe extraction returned no content.");
-  }
-
-  return parseJsonObjectFromText(content);
-}
-
-function getOllamaExtractionTimeoutMs(): number {
-  const timeout = Number(process.env.OLLAMA_EXTRACTION_TIMEOUT_MS);
-
-  return Number.isInteger(timeout) && timeout > 0 ? timeout : 120_000;
-}
-
 function buildRecipePrompt(sourceText: string, sourceUrl: string | null): string {
   return `Source URL: ${sourceUrl ?? "none (pasted text)"}
 
@@ -290,6 +203,8 @@ Rules:
 
 ${sourceText}`;
 }
+
+export { getRecipeSourceLimit };
 
 function normalizeIngredients(value: unknown): unknown[] {
   if (!Array.isArray(value)) return [];

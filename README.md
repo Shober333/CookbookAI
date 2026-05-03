@@ -312,14 +312,35 @@ ollama serve
 ollama pull gemma4:e4b
 ```
 
-Anthropic remains available for later cloud/provider validation by
-setting `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`.
+Sprint 4 production extraction targets Gemini 2.5 Flash:
 
-YouTube description-first import requires a YouTube Data API key:
+```bash
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-2.5-flash
+AI_EXTRACTION_TIMEOUT_MS=120000
+```
+
+Anthropic remains available as a legacy fallback by setting
+`AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`.
+
+YouTube description-first import requires a YouTube Data API key. Sprint 4
+transcript fallback runs after description links/text fail and uses public
+caption tracks when available:
 
 ```bash
 YOUTUBE_API_KEY=your-google-cloud-youtube-data-api-key
 ```
+
+Expected import failure modes:
+
+- Missing `YOUTUBE_API_KEY` returns a controlled YouTube configuration error.
+- Invalid/quota-limited YouTube keys return a controlled "can't read YouTube"
+  error without saving a recipe.
+- Missing `GEMINI_API_KEY` returns a provider configuration error when
+  `AI_PROVIDER=gemini`; app startup still works.
+- Videos with no recipe link, no recipe-like description, and no usable
+  recipe transcript return the "No recipe in this video" recovery state.
 
 ---
 

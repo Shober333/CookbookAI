@@ -201,6 +201,9 @@ Implement YouTube import as a four-tier waterfall. Tiers 1a and 1b both operate 
 - YouTube Data API key: add `YOUTUBE_API_KEY` to `.env.example` (free tier: 10,000 units/day)
 - Description URL extraction: simple regex for `https?://` links; exclude known social/non-recipe domains
 - Description text import uses the existing text/paste extraction path, not the HTML fetch path
+- Sprint 4 added the `AI_PROVIDER=gemini` extraction path for structured text
+  extraction. Direct video understanding is still separate and remains
+  post-Sprint 4 unless promoted.
 - The Gemini Developer API (API key auth) does NOT interact with the user's personal Google account or watch history — confirmed; that concern only applies to Google AI Studio (OAuth web UI)
 
 ---
@@ -258,8 +261,7 @@ path cannot handle video content. Two implementation paths were evaluated.
 
 *Option A — YouTube transcript + extraction AI (Sprint 4)*
 - Detect YouTube URL pattern (`youtube.com/watch`, `youtu.be/`)
-- Fetch caption track via YouTube Data API (free; ~50–100 units per fetch,
-  10,000 units/day free tier)
+- Fetch public caption track after description-first paths fail
 - Send transcript text to the existing Ollama/Anthropic extraction pipeline
 - No new AI provider needed; cost is effectively $0 for the transcript fetch
 - Covers ~90%+ of cooking videos — recipe creators narrate what they do
