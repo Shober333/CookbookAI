@@ -8,7 +8,7 @@
 ## Decision: Production AI Provider — Anthropic on Vercel
 
 **Date:** 2026-05-01
-**Status:** Accepted
+**Status:** Superseded 2026-05-03 by "Sprint 04 AI Provider — Gemini 2.5 Flash"
 **Decided by:** Founder
 
 **Context:**
@@ -29,11 +29,49 @@ Sprint 1 validated AI extraction locally using Ollama. For production deployment
 
 ---
 
+## Decision: Sprint 04 AI Provider — Gemini 2.5 Flash
+
+**Date:** 2026-05-03
+**Status:** Accepted — Sprint 04 implementation
+**Decided by:** Founder
+
+**Context:**
+Sprint 03 reduced avoidable AI calls through text import, URL deduplication,
+and YouTube description-first routing. Sprint 04 now needs a lower-cost
+production provider path before demo/production hardening continues. The
+2026-05-02 provider comparison identified Gemini 2.5 Flash as the recommended
+production candidate.
+
+**Decision:**
+Use **Gemini 2.5 Flash** instead of Claude as the Sprint 04 production AI
+provider target.
+
+**Rationale:**
+- Lower expected per-extraction cost than Claude Sonnet while still being a
+  strong structured-output model.
+- Aligns with the future YouTube/video roadmap better than an Anthropic-only
+  path.
+- Keeps the project moving toward a provider abstraction without making Groq,
+  OpenAI, or direct video processing part of this sprint by default.
+
+**Consequences:**
+- Supersedes the 2026-05-01 Anthropic production-provider decision.
+- Add `AI_PROVIDER=gemini`, `GEMINI_API_KEY`, and `GEMINI_MODEL` environment
+  support.
+- Rename or wrap the current Anthropic-specific provider module behind a
+  neutral AI provider boundary before adding Gemini code.
+- Keep Claude available only as a fallback or legacy provider unless the
+  Founder changes direction.
+- QA must smoke-test Gemini extraction with mocked and, if a real key is
+  available, live provider calls.
+
+---
+
 ## Decision Note: Paid AI Provider Cost Comparison
 
 **Date:** 2026-05-02
-**Status:** CTO recommendation — Founder decision pending
-**Decided by:** [CTO] recommendation; Founder to accept/supersede production provider
+**Status:** Superseded by accepted Gemini 2.5 Flash decision on 2026-05-03
+**Decided by:** [CTO] recommendation; Founder accepted Gemini 2.5 Flash
 
 **Context:**
 During real Ollama testing, the Founder hit paid-tier limitations on Ollama
@@ -63,7 +101,7 @@ Estimated cost assumes one recipe extraction/adaptation call uses roughly
 | Claude Sonnet 4.6 | $3.00 | $15.00 | $45.00 | Current implemented Anthropic target; expensive for this use case. |
 
 **Recommendation:**
-1. **Primary production candidate:** Gemini 2.5 Flash. It has structured
+1. **Accepted production target:** Gemini 2.5 Flash. It has structured
    output support, low cost, long context, and aligns with the already planned
    Gemini path for future YouTube/video import.
 2. **Cheap experiment:** Groq GPT-OSS 120B. Cost is excellent and structured
@@ -75,7 +113,7 @@ Estimated cost assumes one recipe extraction/adaptation call uses roughly
 4. **Budget models:** Gemini Flash-Lite, OpenAI nano, and Groq 20B should only
    become defaults if QA proves they handle noisy recipe pages cleanly.
 
-**Consequences if Founder accepts the recommendation:**
+**Consequences now that Founder accepted Gemini 2.5 Flash:**
 - Supersede the 2026-05-01 "Production AI Provider — Anthropic on Vercel"
   decision.
 - Rename `src/lib/anthropic.ts` to `src/lib/ai-provider.ts` before adding
@@ -148,7 +186,7 @@ Implement YouTube import as a four-tier waterfall. Tiers 1a and 1b both operate 
 
 2. **Tier 1b — Description contains recipe text (Sprint 3):** If no external URL found (or the linked site blocks the agent), run `looksLikeRecipePage()` on the description text. If it passes, send the description text directly to the AI extraction pipeline (same path as the text/paste import). If successful, done.
 
-3. **Tier 2 — Transcript fallback (Sprint 4+):** If description has no URL and no recipe-like text, fetch the video's caption track via YouTube Data API and pass the transcript to the AI extraction pipeline.
+3. **Tier 2 — Transcript fallback (Sprint 4):** If description has no URL and no recipe-like text, fetch the video's caption track and pass the transcript to the AI extraction pipeline.
 
 4. **Tier 3 — Gemini direct (Sprint 4+):** If no captions available, pass the YouTube URL as `fileData` to the Gemini API for audio+frame processing. Requires adding `AI_PROVIDER=gemini` branch.
 
@@ -209,7 +247,7 @@ to a second control.
 ## Decision: YouTube Video Import Strategy
 
 **Date:** 2026-05-01
-**Status:** Superseded for Sprint 3 by description-first scope; transcript path deferred to Sprint 4+
+**Status:** Superseded for Sprint 3 by description-first scope; transcript fallback promoted to Sprint 4 on 2026-05-03
 **Decided by:** [CTO] + Founder
 
 **Context:**
@@ -218,7 +256,7 @@ path cannot handle video content. Two implementation paths were evaluated.
 
 **Options Considered:**
 
-*Option A — YouTube transcript + existing AI (deferred to Sprint 4+)*
+*Option A — YouTube transcript + extraction AI (Sprint 4)*
 - Detect YouTube URL pattern (`youtube.com/watch`, `youtu.be/`)
 - Fetch caption track via YouTube Data API (free; ~50–100 units per fetch,
   10,000 units/day free tier)
@@ -226,7 +264,7 @@ path cannot handle video content. Two implementation paths were evaluated.
 - No new AI provider needed; cost is effectively $0 for the transcript fetch
 - Covers ~90%+ of cooking videos — recipe creators narrate what they do
 
-*Option B — Gemini direct video processing (Sprint 4+)*
+*Option B — Gemini direct video processing (post-Sprint 4 unless separately approved)*
 - Pass YouTube URL as `fileData` to Gemini API; model processes audio + frames
 - Handles videos without captions and reads on-screen quantities
 - Cost: ~$0.02–0.025 per 10-min video at Gemini 2.0 Flash pricing
@@ -235,9 +273,9 @@ path cannot handle video content. Two implementation paths were evaluated.
 
 **Decision:** Superseded by the later description-first Sprint 3 decision
 above. Sprint 3 implements description external-link and description-text
-paths only. Transcript fallback is deferred to Sprint 4+; Gemini direct video
-processing remains a later enhancement for caption-less videos or where visual
-cues are critical.
+paths only. On 2026-05-03 the Founder promoted transcript fallback into
+Sprint 4. Gemini direct video processing remains a later enhancement for
+caption-less videos or where visual cues are critical.
 
 **Watch-history clarification:**
 Watch history was added during Founder testing because **Google AI Studio**
