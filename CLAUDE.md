@@ -16,7 +16,7 @@
 | **Name** | CookbookAI |
 | **Repo name** | `CookbookAI` |
 | **Purpose** | Import recipes from the web; adjust them with AI assistance |
-| **Stage** | Sprint 4 — production import hardening |
+| **Stage** | Sprint 5 — Vercel demo deployment readiness |
 | **Dev port** | 3000 |
 
 ---
