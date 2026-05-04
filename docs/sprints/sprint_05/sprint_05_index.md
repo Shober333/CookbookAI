@@ -4,7 +4,7 @@
 |-------|-------|
 | **Sprint** | 05 |
 | **Goal** | Make CookbookAI deployable and demoable on Vercel with documented production environment setup, smoke checks, and rollback notes |
-| **Status** | Independent local deployment preflight passed; deployed smoke pending Vercel/Neon handoff |
+| **Status** | Local preflight and deployed core smoke passed; CTO review pending |
 | **Start** | 2026-05-04 |
 | **End** | TBD |
 
@@ -54,10 +54,10 @@
 - [x] Production env var checklist is documented.
 - [x] Database target and migration workflow are documented.
 - [x] Vercel build succeeds locally with production-like env assumptions.
-- [~] Deployed auth flow works.
-- [~] Deployed Gemini text import works.
-- [~] Deployed YouTube link/description/no-recipe paths are smoke-tested or
-      explicitly blocked by provider quota/key limits.
+- [x] Deployed auth flow works.
+- [x] Deployed Gemini text import works.
+- [-] Deployed YouTube link/description/no-recipe paths are deferred pending
+      demo key/video selection.
 - [x] Rollback/demo recovery notes are written.
 - [x] QA report completed.
 - [ ] CTO Good/Bad/Ugly review completed.

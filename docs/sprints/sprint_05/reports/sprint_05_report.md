@@ -46,7 +46,7 @@ client, and safer provider-error handling for deployed Gemini failures.
 Independent `[DEV-QA]` Sprint 05 deployment preflight is green:
 
 - `npm run typecheck` passed.
-- `npm test` passed: 9 files / 113 tests.
+- `npm test` passed: 9 files / 114 tests.
 - `npm run build` passed.
 - `DATABASE_URL="postgresql://cookbook:password@localhost:5432/cookbook?sslmode=require" npm run build:vercel` passed.
 - `npm run db:generate` was rerun after `build:vercel` to restore the local

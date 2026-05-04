@@ -15,7 +15,7 @@ and stable video set.
 ## Passed
 
 - `npm run typecheck`
-- `npm test` — 9 files / 113 tests
+- `npm test` — 9 files / 114 tests
 - `npm run build`
 - `DATABASE_URL="postgresql://cookbook:password@localhost:5432/cookbook?sslmode=require" npm run build:vercel`
 - `npm run db:generate` after the Vercel build to restore local SQLite client

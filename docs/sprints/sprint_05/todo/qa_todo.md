@@ -73,7 +73,7 @@ Temporary Gemini high-demand responses were observed during deployed AI smoke.
 ## Independent QA Evidence — 2026-05-04
 
 - `npm run typecheck` — passed.
-- `npm test` — passed, 9 files / 113 tests.
+- `npm test` — passed, 9 files / 114 tests.
 - `npm run build` — passed, Next.js built 15 routes.
 - `DATABASE_URL="postgresql://cookbook:password@localhost:5432/cookbook?sslmode=require" npm run build:vercel` — passed; Postgres Prisma Client generated and Next.js built 15 routes.
 - `npm run db:generate` — rerun after the Vercel build to restore the local SQLite Prisma Client before local E2E.
