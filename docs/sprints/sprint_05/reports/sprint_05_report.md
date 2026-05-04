@@ -41,10 +41,27 @@ client, and safer provider-error handling for deployed Gemini failures.
 - `npm run build`
 - `npx playwright test --project=chromium --workers=1`
 
+## QA Update — 2026-05-04
+
+Local Sprint 05 deployment preflight is green:
+
+- `npm run typecheck` passed.
+- `npm test` passed: 9 files / 113 tests.
+- `npm run build` passed.
+- `DATABASE_URL="postgresql://cookbook:password@localhost:5432/cookbook?sslmode=require" npm run build:vercel` passed.
+- `npm run db:generate` was rerun after `build:vercel` to restore the local
+  SQLite Prisma Client.
+- `npx playwright test --project=chromium` passed: 27/27 tests.
+
+Deployed smoke remains pending because there is no Vercel project URL or Neon
+database connection string available in this turn.
+
 ## Known Issues
 
 - Production migrations have not been executed against a real Neon database in
   this turn. QA should run `npm run db:migrate:prod` against the target Neon
   database before deployed smoke.
+- Deployed auth/import smoke has not run. It needs a Vercel preview URL with
+  the documented environment variables set.
 - Local and production Prisma schemas must stay in sync until the project
   standardizes on one database provider.
