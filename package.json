@@ -7,10 +7,13 @@
     "dev:open": "next dev & until nc -z localhost ${PORT:-3000} 2>/dev/null; do sleep 0.5; done && open http://localhost:${PORT:-3000}",
     "dev:kill": "kill $(lsof -ti:${PORT:-3000}) 2>/dev/null || true",
     "build": "next build",
+    "build:vercel": "prisma generate --schema prisma-postgres/schema.prisma && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
+    "db:generate:prod": "prisma generate --schema prisma-postgres/schema.prisma",
     "db:migrate": "node scripts/ensure-sqlite-db.mjs && prisma migrate dev",
+    "db:migrate:prod": "prisma migrate deploy --schema prisma-postgres/schema.prisma",
     "test": "vitest run",
     "test:watch": "vitest"
   },

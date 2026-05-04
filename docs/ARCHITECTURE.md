@@ -14,7 +14,7 @@
 | **Backend** | Next.js API Routes (Vercel Serverless Functions) | No separate server; co-located with frontend; zero deploy config |
 | **AI** | Local dev: Ollama where available. Production (Vercel): Gemini 2.5 Flash by default; Anthropic remains optional fallback only | Local validation is free; production follows the project preference for Gemini while preserving provider abstraction |
 | **Auth** | Auth.js v5 (NextAuth) + Prisma adapter | De-facto standard for Next.js; credentials provider for email/password; extensible to OAuth later |
-| **ORM** | Prisma | Type-safe queries; handles SQLite ↔ Postgres swap via single env var |
+| **ORM** | Prisma | Type-safe queries; local and production schemas keep the same models while targeting SQLite and Postgres respectively |
 | **Database** | SQLite (local dev) → Neon serverless Postgres (production) | Zero-setup locally; Neon is Vercel's recommended Postgres partner with a free tier |
 | **Hosting** | Vercel (Hobby tier) | Targets hundreds of users within free tier limits |
 
@@ -135,10 +135,14 @@ model Session { ... }
 model VerificationToken { ... }
 ```
 
-SQLite stores recipe `ingredients` and `steps` as JSON-serialized
-strings. App/service code parses them into typed arrays at module
-boundaries and serializes them before persistence. This keeps local
-SQLite and production Postgres migration-compatible for the MVP.
+SQLite and Postgres store recipe `ingredients` and `steps` as JSON-serialized
+strings. App/service code parses them into typed arrays at module boundaries
+and serializes them before persistence.
+
+Local development uses `prisma/schema.prisma` with SQLite and
+`npm run db:migrate`. Production uses `prisma-postgres/schema.prisma` with
+Neon Postgres and `npm run db:migrate:prod`. The model definitions must remain
+in lockstep until the project chooses a single production-only database path.
 
 ---
 
@@ -249,12 +253,13 @@ ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=false
 AUTH_SECRET=...                      # openssl rand -base64 32
 
 # Database
-DATABASE_URL=file:./dev.db           # SQLite (local)
-# DATABASE_URL=postgres://...        # Neon (production)
+DATABASE_URL=file:./dev.db           # SQLite (local, prisma/schema.prisma)
+# DATABASE_URL=postgresql://...      # Neon production, prisma-postgres/schema.prisma
 
 # Auth.js
 NEXTAUTH_URL=http://localhost:3000   # local
 # NEXTAUTH_URL=https://your-app.vercel.app  # production
+# AUTH_URL=https://your-app.vercel.app       # production, same origin as NEXTAUTH_URL
 
 # YouTube import (Sprint 3+) — free tier: 10,000 units/day
 # YOUTUBE_API_KEY=...

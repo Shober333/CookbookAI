@@ -66,6 +66,40 @@ NEXTAUTH_URL=http://localhost:3000
 DATABASE_URL=file:./dev.db
 ```
 
+## Vercel Demo Deployment
+
+Sprint 05 production deploys use Vercel plus Neon Postgres. Local development
+continues to use SQLite through `prisma/schema.prisma`; Vercel uses
+`prisma-postgres/schema.prisma`.
+
+Set these Vercel environment variables for Preview and Production:
+
+```bash
+AUTH_SECRET=replace-with-openssl-rand-base64-32
+NEXTAUTH_URL=https://your-app.vercel.app
+AUTH_URL=https://your-app.vercel.app
+DATABASE_URL=postgresql://...sslmode=require
+AI_PROVIDER=gemini
+GEMINI_API_KEY=your-key
+GEMINI_MODEL=gemini-2.5-flash
+YOUTUBE_API_KEY=your-google-cloud-youtube-key
+ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=false
+AI_EXTRACTION_TIMEOUT_MS=120000
+```
+
+Before the first Vercel smoke test, run production migrations against the Neon
+database:
+
+```bash
+DATABASE_URL="postgresql://...sslmode=require" npm run db:migrate:prod
+```
+
+Vercel builds with `npm run build:vercel` via `vercel.json`, which generates
+Prisma Client from the Postgres schema before `next build`.
+
+Full deployment notes and rollback steps live in
+`docs/deployment/VERCEL.md`.
+
 ## Useful Commands
 
 ```bash
@@ -94,11 +128,9 @@ npx playwright test  # E2E tests
 
 ## Current Focus
 
-Sprint 03 delivered import resilience: text import, URL dedupe, YouTube
-description-first import, and import UI states.
-
-Sprint 04 focuses on production import hardening: live YouTube validation,
-transcript fallback, Gemini 2.5 Flash provider support, and demo readiness.
+Sprint 05 focuses on Vercel demo deployment readiness: production env vars,
+Neon Postgres migration flow, Vercel build setup, deployed smoke checks, and
+rollback notes.
 
 ## Notes
 

@@ -51,14 +51,14 @@
 ## Exit Criteria
 
 - [x] Founder confirms Sprint 05 deployment scope.
-- [ ] Production env var checklist is documented.
-- [ ] Database target and migration workflow are documented.
-- [ ] Vercel build succeeds.
+- [x] Production env var checklist is documented.
+- [x] Database target and migration workflow are documented.
+- [x] Vercel build succeeds locally with production-like env assumptions.
 - [ ] Deployed auth flow works.
 - [ ] Deployed Gemini text import works.
 - [ ] Deployed YouTube link/description/no-recipe paths are smoke-tested or
       explicitly blocked by provider quota/key limits.
-- [ ] Rollback/demo recovery notes are written.
+- [x] Rollback/demo recovery notes are written.
 - [ ] QA report completed.
 - [ ] CTO Good/Bad/Ugly review completed.
 

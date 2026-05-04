@@ -228,6 +228,25 @@ describe("importRecipeForUser", () => {
     });
   });
 
+  it("returns a controlled provider-unavailable error when Gemini config is invalid", async () => {
+    mocks.extractRecipeWithAi.mockRejectedValue(
+      new Error("Gemini generation failed: missing GEMINI_API_KEY."),
+    );
+
+    await expect(
+      importRecipeForUser("user-1", {
+        kind: "text",
+        text: recipeText,
+      }),
+    ).rejects.toMatchObject({
+      status: 503,
+      message:
+        "The configured AI provider is unavailable. Check the Gemini key and model settings.",
+    });
+
+    expect(mocks.createRecipeForUser).not.toHaveBeenCalled();
+  });
+
   it("imports the first recipe candidate from a YouTube description", async () => {
     mocks.isYouTubeUrl.mockImplementation((url: string) =>
       url.includes("youtube.com"),

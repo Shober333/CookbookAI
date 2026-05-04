@@ -320,6 +320,13 @@ async function extractPayloadWithAi(
   try {
     recipe = await extractRecipeWithAi(sourceText, sourceUrl);
   } catch (error) {
+    if (isProviderConfigurationError(error)) {
+      throw new RecipeImportError(
+        "The configured AI provider is unavailable. Check the Gemini key and model settings.",
+        503,
+      );
+    }
+
     console.error("[recipe-import] AI extraction failed", {
       host: sourceUrl ? new URL(sourceUrl).hostname : null,
       sourceChars: sourceText.length,
@@ -347,6 +354,18 @@ async function extractPayloadWithAi(
   }
 
   return parsed.data;
+}
+
+function isProviderConfigurationError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+
+  return (
+    error.message.includes("missing GEMINI_API_KEY") ||
+    error.message.includes("Gemini generation failed") ||
+    error.message.includes("Gemini generation returned no content") ||
+    error.message.includes("401") ||
+    error.message.includes("403")
+  );
 }
 
 async function tryImportYouTubeText(

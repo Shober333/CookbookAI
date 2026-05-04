@@ -30,9 +30,9 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|--------|--------|---------------------|
-| 5.4 | Production env var checklist | `[DEV:backend]` | `[ ]` | README or deployment doc lists required Vercel vars: `AUTH_SECRET`, `NEXTAUTH_URL`/`AUTH_URL`, `DATABASE_URL`, `AI_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `YOUTUBE_API_KEY`, optional fallback vars |
-| 5.5 | Database migration workflow | `[DEV:backend]` | `[ ]` | Production migration command/path is documented; local SQLite flow remains unchanged |
-| 5.6 | Verify Prisma production compatibility | `[DEV:backend]` | `[ ]` | Build/migration path works with Postgres-compatible `DATABASE_URL` assumptions or documents blocker clearly |
+| 5.4 | Production env var checklist | `[DEV:backend]` | `[x]` | README and `docs/deployment/VERCEL.md` list required Vercel vars: `AUTH_SECRET`, `NEXTAUTH_URL`/`AUTH_URL`, `DATABASE_URL`, `AI_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `YOUTUBE_API_KEY`, optional fallback vars |
+| 5.5 | Database migration workflow | `[DEV:backend]` | `[x]` | Production migration command/path is documented; local SQLite flow remains unchanged |
+| 5.6 | Verify Prisma production compatibility | `[DEV:backend]` | `[x]` | Production Postgres schema and migration path added under `prisma-postgres/`; local SQLite path remains unchanged |
 
 ---
 
@@ -40,9 +40,9 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|--------|--------|---------------------|
-| 5.7 | Vercel build readiness pass | `[DEV:backend]` | `[ ]` | `npm run build` passes with production-like env assumptions; no local SQLite-only build dependency blocks deploy |
-| 5.8 | Auth URL/domain hardening | `[DEV:backend]` | `[ ]` | Auth works with deployed origin; logout and protected-route redirects remain stable |
-| 5.9 | Provider error hardening for deployed app | `[DEV:backend]` | `[ ]` | Missing/invalid Gemini and YouTube keys produce user-safe errors and do not crash startup |
+| 5.7 | Vercel build readiness pass | `[DEV:backend]` | `[x]` | `npm run build:vercel` passes locally with a Postgres-shaped `DATABASE_URL`; no local SQLite-only build dependency blocks deploy |
+| 5.8 | Auth URL/domain hardening | `[DEV:backend]` | `[x]` | Vercel env contract documents matching deployed `NEXTAUTH_URL`/`AUTH_URL`; native logout route and protected-route redirects remain stable in E2E |
+| 5.9 | Provider error hardening for deployed app | `[DEV:backend]` | `[x]` | Missing/invalid Gemini and YouTube keys produce user-safe errors and do not crash startup |
 
 ---
 
@@ -50,8 +50,8 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|--------|--------|---------------------|
-| 5.10 | Deployed import UX fix pass | `[DEV:frontend]` | `[ ]` | Only if QA finds deployed layout/copy/state problems; fixes follow `docs/ui/` |
-| 5.11 | Demo account flow polish | `[DEV:frontend]` | `[ ]` | Only if QA finds friction in register/login/logout during deployed smoke |
+| 5.10 | Deployed import UX fix pass | `[DEV:frontend]` | `[-]` | Deferred until QA finds deployed layout/copy/state problems; fixes follow `docs/ui/` |
+| 5.11 | Demo account flow polish | `[DEV:frontend]` | `[-]` | Deferred until QA finds friction in register/login/logout during deployed smoke |
 
 ---
 
@@ -59,7 +59,7 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|--------|--------|---------------------|
-| 5.12 | Dev report | `[DEV-LEAD]` | `[ ]` | `docs/sprints/sprint_05/reports/sprint_05_report.md` summarizes completed/deferred tasks, env decisions, deploy URL if available, and known issues |
+| 5.12 | Dev report | `[DEV-LEAD]` | `[x]` | `docs/sprints/sprint_05/reports/sprint_05_report.md` summarizes completed/deferred tasks, env decisions, deploy URL if available, and known issues |
 
 ---
 

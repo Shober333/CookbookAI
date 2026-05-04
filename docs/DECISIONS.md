@@ -70,6 +70,40 @@ provider target.
 
 ---
 
+## Decision: Sprint 05 Production Database Schema Path
+
+**Date:** 2026-05-04
+**Status:** Accepted — Sprint 05 implementation
+**Decided by:** [CTO] production DB direction; `[DEV:backend]` implementation
+
+**Context:**
+CookbookAI was built locally with Prisma + SQLite, but Sprint 05 targets a
+Vercel demo backed by managed Postgres, with Neon as the documented default.
+Prisma datasource providers are schema-level, not runtime-swappable by
+`DATABASE_URL` alone, so the SQLite schema cannot safely generate the deployed
+Postgres Prisma Client.
+
+**Decision:**
+Keep `prisma/schema.prisma` as the local SQLite schema and add
+`prisma-postgres/schema.prisma` plus a Postgres baseline migration for Vercel
+and Neon. Vercel runs `npm run build:vercel`, which generates Prisma Client
+from the Postgres schema before `next build`. Production migrations run with
+`npm run db:migrate:prod`.
+
+**Rationale:**
+- Preserves the zero-friction local SQLite flow.
+- Makes the deployed Prisma Client explicitly Postgres-compatible.
+- Avoids silently changing every developer's local database requirement during
+  deployment-readiness work.
+
+**Consequences:**
+- Local and production schema model definitions must be kept in sync.
+- Production migrations live under `prisma-postgres/migrations`.
+- Future schema changes need both a local SQLite migration and a production
+  Postgres migration until the project chooses one database path everywhere.
+
+---
+
 ## Decision Note: Paid AI Provider Cost Comparison
 
 **Date:** 2026-05-02
