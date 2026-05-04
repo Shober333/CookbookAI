@@ -67,16 +67,19 @@ describe("toGeminiSchema", () => {
 describe("generateRecipeObject with Gemini", () => {
   const originalApiKey = process.env.GEMINI_API_KEY;
   const originalModel = process.env.GEMINI_MODEL;
+  const originalFallbackModel = process.env.GEMINI_FALLBACK_MODEL;
 
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
     process.env.GEMINI_API_KEY = "test-gemini-key";
     process.env.GEMINI_MODEL = "gemini-2.5-flash";
+    process.env.GEMINI_FALLBACK_MODEL = "gemini-2.5-flash-lite";
   });
 
   afterEach(() => {
     process.env.GEMINI_API_KEY = originalApiKey;
     process.env.GEMINI_MODEL = originalModel;
+    process.env.GEMINI_FALLBACK_MODEL = originalFallbackModel;
     vi.unstubAllGlobals();
   });
 
@@ -140,5 +143,69 @@ describe("generateRecipeObject with Gemini", () => {
     ).rejects.toThrow("missing GEMINI_API_KEY");
 
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("retries with the fallback Gemini model when the primary model is overloaded", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        Response.json(
+          {
+            error: {
+              message:
+                "This model is currently experiencing high demand. Please try again later.",
+            },
+          },
+          { status: 503 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify({
+                      title: "Tomato Soup",
+                      servings: 4,
+                      ingredients: [
+                        { amount: 1, unit: "cup", name: "tomatoes" },
+                      ],
+                      steps: ["Simmer."],
+                      tags: ["soup"],
+                    }),
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+      );
+
+    const result = await generateRecipeObject({
+      schema: recipeJsonSchema,
+      zodSchema: recipePayloadSchema,
+      schemaName: "Recipe",
+      schemaDescription: "A complete structured cooking recipe.",
+      system: "Extract a recipe.",
+      prompt: "Ingredients and instructions.",
+    });
+
+    expect(result).toMatchObject({ title: "Tomato Soup" });
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        pathname: "/v1beta/models/gemini-2.5-flash:generateContent",
+      }),
+      expect.any(Object),
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        pathname: "/v1beta/models/gemini-2.5-flash-lite:generateContent",
+      }),
+      expect.any(Object),
+    );
   });
 });

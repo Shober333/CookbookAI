@@ -23,6 +23,8 @@ export type GenerateRecipeObjectParams = {
 
 export const selectedAiProvider = normalizeAiProvider(aiProvider);
 export const geminiModel = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+export const geminiFallbackModel =
+  process.env.GEMINI_FALLBACK_MODEL ?? "gemini-2.5-flash-lite";
 
 export function getRecipeSourceLimit(): number {
   if (selectedAiProvider === "ollama") {
@@ -185,8 +187,28 @@ async function generateWithGemini(
     throw new Error("Gemini generation failed: missing GEMINI_API_KEY.");
   }
 
+  try {
+    return await generateWithGeminiModel(params, apiKey, geminiModel);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      shouldRetryGeminiWithFallback(error.message) &&
+      geminiFallbackModel !== geminiModel
+    ) {
+      return generateWithGeminiModel(params, apiKey, geminiFallbackModel);
+    }
+
+    throw error;
+  }
+}
+
+async function generateWithGeminiModel(
+  params: GenerateRecipeObjectParams,
+  apiKey: string,
+  model: string,
+): Promise<Record<string, unknown>> {
   const url = new URL(
-    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
   );
   url.searchParams.set("key", apiKey);
 
@@ -244,6 +266,17 @@ async function generateWithGemini(
   }
 
   return parseJsonObjectFromText(content);
+}
+
+function shouldRetryGeminiWithFallback(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("high demand") ||
+    lower.includes("overloaded") ||
+    lower.includes("unavailable") ||
+    lower.includes("503")
+  );
 }
 
 function getAiExtractionTimeoutMs(): number {

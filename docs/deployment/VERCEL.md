@@ -18,6 +18,7 @@ Set these in Vercel for Preview and Production unless noted otherwise.
 | `AI_PROVIDER` | Yes | `gemini` | Sprint 05 production default |
 | `GEMINI_API_KEY` | Yes | `AIza...` | Google AI Studio / Gemini API key |
 | `GEMINI_MODEL` | Yes | `gemini-2.5-flash` | Keep pinned for demo repeatability |
+| `GEMINI_FALLBACK_MODEL` | Recommended | `gemini-2.5-flash-lite` | Retry target for temporary Gemini high-demand/overloaded responses |
 | `YOUTUBE_API_KEY` | Yes for YouTube smoke | `AIza...` | Google Cloud YouTube Data API v3 key |
 | `ENABLE_RECIPE_STRUCTURED_DATA_IMPORT` | Recommended | `false` | Keeps demo on validated AI extraction path |
 | `AI_EXTRACTION_TIMEOUT_MS` | Recommended | `120000` | Shared AI timeout |

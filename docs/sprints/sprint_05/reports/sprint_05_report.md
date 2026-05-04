@@ -26,8 +26,8 @@ client, and safer provider-error handling for deployed Gemini failures.
 
 ## Deferred
 
-- Deployed smoke checks are deferred to `[DEV-QA]` because no Vercel URL was
-  provided in this implementation turn.
+- Deployed smoke checks were completed by `[DEV-QA]` against
+  `https://cookbook-ai-5qdb.vercel.app`.
 - Frontend demo polish remains deferred unless deployed QA finds a user-facing
   issue.
 
@@ -54,15 +54,17 @@ Independent `[DEV-QA]` Sprint 05 deployment preflight is green:
 - `npx playwright test --project=chromium` passed: 27/27 tests after rerunning
   with local server permission for port 3100.
 
-Deployed smoke remains pending because there is no Vercel project URL or Neon
-database connection string available in this turn.
+- Deployed core smoke is green against `https://cookbook-ai-5qdb.vercel.app`:
+  registration/login, authenticated library access, Gemini text import,
+  equipment profile save, and equipment adaptation passed.
+- URL import returns controlled failure states when public recipe sites block
+  Vercel/serverless fetch traffic.
+- Temporary Gemini high-demand responses were observed during live AI smoke;
+  `[DEV:backend]` added one-shot fallback retry support to
+  `GEMINI_FALLBACK_MODEL` / `gemini-2.5-flash-lite`.
 
 ## Known Issues
 
-- Production migrations have not been executed against a real Neon database in
-  this turn. QA should run `npm run db:migrate:prod` against the target Neon
-  database before deployed smoke.
-- Deployed auth/import smoke has not run. It needs a Vercel preview URL with
-  the documented environment variables set.
 - Local and production Prisma schemas must stay in sync until the project
   standardizes on one database provider.
+- YouTube deployed smoke remains deferred pending demo key/video selection.

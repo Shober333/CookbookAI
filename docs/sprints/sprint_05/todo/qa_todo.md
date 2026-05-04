@@ -1,7 +1,7 @@
 # Sprint 05 — QA Scenarios
 
 > **Owner:** [DEV-QA]
-> **Run date:** 2026-05-04 · **Status:** Independent local preflight passed; deployed smoke blocked pending Vercel URL and Neon database.
+> **Run date:** 2026-05-04 · **Status:** Local preflight and deployed core smoke passed; YouTube smoke deferred pending demo key/video set.
 
 ---
 
@@ -40,13 +40,13 @@
 
 | # | Scenario | Steps | Expected | Status |
 |---|----------|-------|----------|--------|
-| Q5.8 | Deployed auth flow | Register/login/logout on deployed URL | User lands in library; protected pages redirect when signed out | `[-]` |
-| Q5.9 | Text import with Gemini | With deployed `AI_PROVIDER=gemini`, paste a small recipe | Recipe saves and renders detail page | `[-]` |
-| Q5.10 | URL import | Import a stable recipe URL | Recipe saves or shows a controlled site-blocked state | `[-]` |
+| Q5.8 | Deployed auth flow | Register/login/logout on deployed URL | User lands in library; protected pages redirect when signed out | `[x]` |
+| Q5.9 | Text import with Gemini | With deployed `AI_PROVIDER=gemini`, paste a small recipe | Recipe saves and renders detail page | `[x]` |
+| Q5.10 | URL import | Import a stable recipe URL | Recipe saves or shows a controlled site-blocked state | `[x]` |
 | Q5.11 | YouTube link path | Import a video whose description contains recipe URL | App follows candidate URL and records YouTube link path | `[-]` |
 | Q5.12 | YouTube description path | Import a video with recipe-like description text | App imports description and records YouTube description path | `[-]` |
 | Q5.13 | YouTube no-recipe recovery | Import a no-recipe video | User sees designed recovery state; no recipe is saved | `[-]` |
-| Q5.14 | Library/detail smoke | Open library and a saved recipe | No layout overlap; ingredients, method, scaling, unit toggle render | `[-]` |
+| Q5.14 | Library/detail smoke | Open library and a saved recipe | No layout overlap; ingredients, method, scaling, unit toggle render | `[x]` |
 
 ---
 
@@ -62,7 +62,11 @@
 
 ## Bugs Found
 
-None from local preflight.
+None blocking from local preflight or deployed core smoke.
+
+Temporary Gemini high-demand responses were observed during deployed AI smoke.
+`[DEV:backend]` added a one-shot Gemini fallback retry from `GEMINI_MODEL` to
+`GEMINI_FALLBACK_MODEL` / `gemini-2.5-flash-lite`.
 
 ---
 
@@ -82,19 +86,18 @@ None from local preflight.
 
 ## Deployment Blocker
 
-Deployed smoke cannot start until the Founder/dev operator provides or creates:
+Resolved. The live deployment at `https://cookbook-ai-5qdb.vercel.app` has
+working auth/session endpoints, Neon-backed registration/login, text import,
+equipment profile save, and equipment adaptation.
 
-- Vercel project / preview URL.
-- Neon Postgres `DATABASE_URL` or staging clone connection string.
-- Vercel environment variables from `docs/deployment/VERCEL.md`.
-
-No production migration or deployment was run in this QA pass.
+URL import was verified for controlled deployed behavior. Public recipe sites
+may still return a controlled connection-trouble state when they block Vercel
+server-side fetches.
 
 ---
 
 ## Recommendation
 
-Local QA is green. Next step is an external deployment handoff: create or
-provide the Vercel project and Neon database, run `npm run db:migrate:prod`
-against the target database, deploy the current branch, then run Q5.8-Q5.14
-against the deployed URL.
+Local QA and deployed core smoke are green. Remaining Sprint 05 closeout work is
+review only unless the Founder wants YouTube import included in the live demo
+gate.

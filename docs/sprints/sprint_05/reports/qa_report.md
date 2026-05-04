@@ -2,15 +2,15 @@
 
 > Owner: `[DEV-QA]`
 > Date: 2026-05-04
-> Status: Independent local preflight passed; deployed smoke pending Vercel/Neon handoff
+> Status: Local preflight and deployed core smoke passed; YouTube smoke deferred
 
 ## Summary
 
-Sprint 05 deployment readiness passes local QA independently of the provisional
-handoff. Typecheck, unit tests, normal production build, Vercel-style Postgres
-build, and Chromium E2E regression are green. The remaining QA work requires
-external infrastructure: a Vercel preview URL and a Neon Postgres connection
-string.
+Sprint 05 deployment readiness passes local QA and deployed core smoke against
+`https://cookbook-ai-5qdb.vercel.app`. Typecheck, unit tests, Vercel-style
+Postgres build, deployed auth/DB, deployed text import, and deployed equipment
+adaptation are green. YouTube import smoke remains deferred pending a demo key
+and stable video set.
 
 ## Passed
 
@@ -21,6 +21,13 @@ string.
 - `npm run db:generate` after the Vercel build to restore local SQLite client
 - `npx playwright test --project=chromium` — 27/27 tests after rerunning with
   permission for the local Next.js server to bind port 3100
+- Deployed auth smoke — registration API returned 201; login redirected to
+  `/library`; authenticated `/api/recipes` returned 200.
+- Deployed text import — Gemini import saved and rendered `Simple Tomato Toast`.
+- Deployed equipment smoke — Kitchen profile saved via `/api/equipment`; recipe
+  adaptation returned 200 and rendered adapted steps.
+- Deployed URL import — blocked recipe sites returned controlled
+  connection-trouble states rather than crashing the app.
 
 ## Deployment Setup Review
 
@@ -32,16 +39,15 @@ string.
 
 ## Blocked
 
-- Production migration was not run because no Neon/staging `DATABASE_URL` was
-  available.
-- Deployed smoke checks were not run because no Vercel preview URL was
-  available.
+- YouTube deployed smoke was not rerun in this closeout pass.
+- Public recipe URL import remains dependent on the target site's willingness
+  to serve Vercel/serverless fetch traffic.
+- Temporary Gemini high-demand responses were observed. `[DEV:backend]` added
+  fallback retry coverage from `GEMINI_MODEL` to `GEMINI_FALLBACK_MODEL`.
 
 ## Next QA Step
 
-After the Vercel project and Neon database are ready:
-
-1. Set the Vercel environment variables from `docs/deployment/VERCEL.md`.
-2. Run `DATABASE_URL="postgresql://...sslmode=require" npm run db:migrate:prod`.
-3. Deploy the current branch to a Vercel preview.
-4. Run Q5.8-Q5.14 from `docs/sprints/sprint_05/todo/qa_todo.md`.
+Proceed to `[DEV-LEAD]` review, then `[CTO]` Good/Bad/Ugly review. For demo,
+keep `GEMINI_FALLBACK_MODEL=gemini-2.5-flash-lite` set in Vercel and prefer
+text import or known-accessible URLs when a recipe site blocks server-side
+fetches.
