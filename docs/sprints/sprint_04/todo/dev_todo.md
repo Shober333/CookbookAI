@@ -2,7 +2,7 @@
 
 > **Owner:** [DEV-LEAD]
 > **Sprint goal:** Production import hardening.
-> **Status:** Founder scope accepted 2026-05-03; ready for implementation.
+> **Status:** Dev complete; QA verified 2026-05-04; ready for CTO review.
 
 ---
 
@@ -30,7 +30,7 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|-------|--------|---------------------|
-| 4.4 | Validate real YouTube description-first flow | `[DEV:backend]` | `[/]` | YouTube API key works for live metadata lookup; sampled live video exposed affiliate-link filtering gap and no public caption tracks. Full authenticated `/api/ai/import` live run still needs QA/demo account path |
+| 4.4 | Validate real YouTube description-first flow | `[DEV:backend]` | `[x]` | YouTube API key works for live metadata lookup; live authenticated imports passed for external recipe link, description text, and no-recipe recovery paths |
 | 4.5 | Document live-key setup and failure modes | `[DEV:backend]` | `[x]` | `README.md`, `.env.example`, and `CLAUDE.md` document YouTube, Gemini, timeout vars, and expected missing-key/no-recipe failure modes |
 | 4.6 | Harden YouTube error handling if live validation exposes gaps | `[DEV:backend]` | `[x]` | Affiliate/merch domains from live validation are filtered; missing key, unavailable transcript, and no-recipe paths are covered by tests |
 
@@ -50,9 +50,9 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|-------|--------|---------------------|
-| 4.10 | Provider abstraction design | `[CTO]` | `[ ]` | Small contract documented before code; Gemini 2.5 Flash is the Sprint 04 production target |
+| 4.10 | Provider abstraction design | `[CTO]` | `[x]` | Small neutral provider contract implemented in `src/lib/ai-provider.ts`; `docs/DECISIONS.md` records Gemini 2.5 Flash as the Sprint 04 production target |
 | 4.11 | Implement Gemini provider adapter boundary | `[DEV:backend]` | `[x]` | Existing tests pass; `AI_PROVIDER=gemini`, `GEMINI_API_KEY`, and `GEMINI_MODEL` select Gemini 2.5 Flash |
-| 4.12 | Gemini provider smoke test | `[DEV-QA]` | `[ ]` | Gemini path successfully extracts one real or mocked recipe payload |
+| 4.12 | Gemini provider smoke test | `[DEV-QA]` | `[x]` | Mocked Gemini adapter tests pass; live Gemini smoke imported `Gemini Smoke Test Lemon Rice` with `AI_PROVIDER=gemini` |
 
 ---
 
@@ -60,9 +60,9 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|-------|--------|---------------------|
-| 4.13 | Clean-checkout setup pass | `[DEV-QA]` | `[ ]` | Fresh `.env` from `.env.example`, `npm install`, `npm run db:migrate`, and `npm run dev` path is documented and works |
-| 4.14 | Demo import checklist | `[DEV-QA]` | `[ ]` | URL import, text import, YouTube import/no-recipe state, library view, and recipe detail are manually or E2E verified |
-| 4.15 | Stabilize expected auth/dev-server noise | `[DEV:backend]` | `[ ]` | Expected Auth.js/dev-server warnings are documented or reduced; no confusing startup blocker remains |
+| 4.13 | Clean-checkout setup pass | `[DEV-QA]` | `[x]` | `.env` setup, database migration, startup, and missing-key behavior verified; see `todo/qa_todo.md` Q4.1–Q4.2 |
+| 4.14 | Demo import checklist | `[DEV-QA]` | `[x]` | URL import, text import, YouTube link/description/no-recipe states, library view, and recipe detail verified by QA and E2E |
+| 4.15 | Stabilize expected auth/dev-server noise | `[DEV:backend]` | `[x]` | Registration/sign-in regression fixed; Playwright isolated on port 3100; expected Auth.js wrong-password noise documented in QA evidence |
 
 ---
 
@@ -73,3 +73,4 @@
 - Direct Gemini video processing remains out of scope unless the Founder
   separately promotes it.
 - Sprint 04 should prefer evidence and hardening over broad new UI surface area.
+- CTO review remains the only open closeout gate.

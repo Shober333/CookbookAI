@@ -4,9 +4,9 @@
 |-------|-------|
 | **Sprint** | 04 |
 | **Goal** | Move production extraction to Gemini 2.5 Flash, add YouTube transcript fallback, and harden the import path for demo/production use |
-| **Status** | Founder scope accepted; implementation ready |
+| **Status** | CTO accepted; ready for Founder closeout |
 | **Start** | 2026-05-03 |
-| **End** | TBD |
+| **End** | 2026-05-04 |
 
 ---
 
@@ -47,13 +47,13 @@
 
 ## Exit Criteria
 
-- [ ] Live YouTube validation completed or explicitly blocked by missing key.
+- [x] Live YouTube validation completed or explicitly blocked by missing key.
 - [x] Transcript fallback decision recorded in `docs/DECISIONS.md`.
 - [x] Provider/cost decision recorded in `docs/DECISIONS.md`.
-- [ ] Production/demo checklist passes on a clean checkout.
-- [ ] All Sprint 04 dev tasks are completed or explicitly deferred.
-- [ ] All Sprint 04 QA scenarios pass.
-- [ ] CTO Good/Bad/Ugly review completed.
+- [x] Production/demo checklist passes on a clean checkout.
+- [x] All Sprint 04 dev tasks are completed or explicitly deferred.
+- [x] All Sprint 04 QA scenarios pass.
+- [x] CTO Good/Bad/Ugly review completed.
 
 ---
 
@@ -63,4 +63,5 @@
 - Dev tasks: `todo/dev_todo.md`
 - QA scenarios: `todo/qa_todo.md`
 - Sprint report: `reports/sprint_04_report.md`
+- QA report: `reports/qa_report.md`
 - CTO review: `reviews/cto_sprint4_review.md`

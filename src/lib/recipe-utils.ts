@@ -73,6 +73,53 @@ export function convertUnit(
   }
 }
 
+// convertTemperatureText: converts Fahrenheit/Celsius mentions in freeform
+// method text for display. Stored recipe steps remain unchanged.
+export function convertTemperatureText(
+  text: string,
+  system: "metric" | "imperial",
+): string {
+  const withoutDualTemps = text.replace(
+    /(\d{2,3})\s*(?:°\s*)?(?:degrees?\s*)?(f|c|fahrenheit|celsius)\b\s*(?:\/|\(|,)?\s*(\d{2,3})\s*(?:°\s*)?(?:degrees?\s*)?(f|c|fahrenheit|celsius)\b\)?/gi,
+    (match, firstValue, firstUnit, secondValue, secondUnit) => {
+      const first = Number(firstValue);
+      const second = Number(secondValue);
+      const firstU = normalizeTemperatureUnit(firstUnit);
+      const secondU = normalizeTemperatureUnit(secondUnit);
+
+      if (!Number.isFinite(first) || !Number.isFinite(second) || firstU === secondU) {
+        return match;
+      }
+
+      const metricValue = firstU === "C" ? first : second;
+      const imperialValue = firstU === "F" ? first : second;
+      return system === "metric"
+        ? formatTemperature(metricValue, "C")
+        : formatTemperature(imperialValue, "F");
+    },
+  );
+
+  return withoutDualTemps.replace(
+    /(\d{2,3})\s*(?:°\s*)?(?:degrees?\s*)?(f|c|fahrenheit|celsius)\b/gi,
+    (match, value, unit) => {
+      const amount = Number(value);
+      const sourceUnit = normalizeTemperatureUnit(unit);
+
+      if (!Number.isFinite(amount)) return match;
+
+      if (system === "metric" && sourceUnit === "F") {
+        return formatTemperature(fahrenheitToCelsius(amount), "C");
+      }
+
+      if (system === "imperial" && sourceUnit === "C") {
+        return formatTemperature(celsiusToFahrenheit(amount), "F");
+      }
+
+      return formatTemperature(amount, sourceUnit);
+    },
+  );
+}
+
 // formatAmount: formats a number for display, dropping trailing .0
 export function formatAmount(amount: number | null): string {
   if (amount === null) return "";
@@ -168,6 +215,25 @@ function roundTo(n: number, decimals: number): number {
   return Math.round(n * f) / f;
 }
 
+function fahrenheitToCelsius(value: number): number {
+  return (value - 32) * (5 / 9);
+}
+
+function celsiusToFahrenheit(value: number): number {
+  return value * (9 / 5) + 32;
+}
+
+function normalizeTemperatureUnit(unit: string): "C" | "F" {
+  return unit.toLowerCase().startsWith("c") ? "C" : "F";
+}
+
+function formatTemperature(value: number, unit: "C" | "F"): string {
+  const rounded =
+    value >= 100 ? Math.round(value / 5) * 5 : Math.round(value);
+
+  return `${rounded}°${unit}`;
+}
+
 const COMBINING_MARKS_RE = /[̀-ͯ]/g;
 
 // slugify: lowercase ASCII title with hyphen-separated words.
@@ -245,7 +311,7 @@ export function recipeToMarkdown(
     lines.push("## Method");
     lines.push("");
     stepsToExport.forEach((step, i) => {
-      lines.push(`${i + 1}. ${step}`);
+      lines.push(`${i + 1}. ${convertTemperatureText(step, unitSystem)}`);
     });
     lines.push("");
   }

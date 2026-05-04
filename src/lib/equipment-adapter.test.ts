@@ -1,5 +1,17 @@
-import { describe, expect, it } from "vitest";
-import { normalizeEquipmentAdaptation } from "./equipment-adapter";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  adaptRecipeStepsWithAi,
+  equipmentAdaptationSchema,
+  normalizeEquipmentAdaptation,
+} from "./equipment-adapter";
+
+const mocks = vi.hoisted(() => ({
+  generateRecipeObject: vi.fn(),
+}));
+
+vi.mock("@/lib/ai-provider", () => ({
+  generateRecipeObject: mocks.generateRecipeObject,
+}));
 
 describe("normalizeEquipmentAdaptation", () => {
   it("accepts valid adapted steps and trims notes", () => {
@@ -43,5 +55,36 @@ describe("normalizeEquipmentAdaptation", () => {
     expect(() =>
       normalizeEquipmentAdaptation({ adaptedSteps: [], notes: "" }),
     ).toThrow("Invalid equipment adaptation response.");
+  });
+});
+
+describe("adaptRecipeStepsWithAi", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.generateRecipeObject.mockResolvedValue({
+      adaptedSteps: ["Bake the chicken at 190°C until cooked through."],
+      notes: "Replaced the stovetop.",
+    });
+  });
+
+  it("routes adaptation through the shared provider boundary", async () => {
+    await expect(
+      adaptRecipeStepsWithAi({
+        title: "Chicken Piccata",
+        steps: ["Cook chicken in a skillet."],
+        appliances: ["oven", "not_real"],
+      }),
+    ).resolves.toEqual({
+      adaptedSteps: ["Bake the chicken at 190°C until cooked through."],
+      notes: "Replaced the stovetop.",
+    });
+
+    expect(mocks.generateRecipeObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        zodSchema: equipmentAdaptationSchema,
+        schemaName: "EquipmentAdaptation",
+        prompt: expect.stringContaining("Available appliances: oven"),
+      }),
+    );
   });
 });

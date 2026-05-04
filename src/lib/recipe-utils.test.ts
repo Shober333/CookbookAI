@@ -3,6 +3,7 @@ import {
   scaleAmount,
   roundScaled,
   convertUnit,
+  convertTemperatureText,
   formatAmount,
   toRoman,
   extractDomain,
@@ -154,6 +155,41 @@ describe("convertUnit", () => {
 
   it("is case-insensitive for units", () => {
     expect(convertUnit(100, "G", "imperial")).toEqual({ amount: 3.5, unit: "oz" });
+  });
+});
+
+// ─── convertTemperatureText ────────────────────────────────────────────────
+
+describe("convertTemperatureText", () => {
+  it("converts Fahrenheit oven temperatures to Celsius in metric mode", () => {
+    expect(convertTemperatureText("Bake at 375°F until crisp.", "metric")).toBe(
+      "Bake at 190°C until crisp.",
+    );
+  });
+
+  it("converts Fahrenheit safety temperatures to Celsius without coarse rounding", () => {
+    expect(convertTemperatureText("Cook to 165 degrees F.", "metric")).toBe(
+      "Cook to 74°C.",
+    );
+  });
+
+  it("converts spelled-out Fahrenheit temperatures in metric mode", () => {
+    expect(convertTemperatureText("Roast at 350 degrees Fahrenheit.", "metric")).toBe(
+      "Roast at 175°C.",
+    );
+  });
+
+  it("converts Celsius temperatures to Fahrenheit in imperial mode", () => {
+    expect(convertTemperatureText("Bake at 190°C until crisp.", "imperial")).toBe(
+      "Bake at 375°F until crisp.",
+    );
+  });
+
+  it("chooses the selected system from dual-unit temperatures", () => {
+    const step = "Preheat to 375°F (190°C).";
+
+    expect(convertTemperatureText(step, "metric")).toBe("Preheat to 190°C.");
+    expect(convertTemperatureText(step, "imperial")).toBe("Preheat to 375°F.");
   });
 });
 
@@ -374,6 +410,16 @@ describe("recipeToMarkdown", () => {
       { servings: 4, unitSystem: "metric", useAdapted: true },
     );
     expect(md).toContain("1. Boil the pasta.");
+  });
+
+  it("converts method temperatures in Markdown exports", () => {
+    const md = recipeToMarkdown(
+      { ...FIXTURE, steps: ["Bake at 375°F (190°C)."] },
+      { servings: 4, unitSystem: "metric", useAdapted: false },
+    );
+
+    expect(md).toContain("1. Bake at 190°C.");
+    expect(md).not.toContain("375°F");
   });
 
   it("skips empty fields cleanly", () => {
