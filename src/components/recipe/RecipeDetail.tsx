@@ -10,6 +10,7 @@ import {
   scaleAmount,
   roundScaled,
   convertUnit,
+  convertTemperatureText,
   formatAmount,
   toRoman,
   extractDomain,
@@ -38,6 +39,9 @@ export function RecipeDetail({
   const [isShowingAdapted, setIsShowingAdapted] = useState(false);
 
   const domain = extractDomain(recipe.sourceUrl);
+  const displaySteps = recipe.steps.map((step) =>
+    convertTemperatureText(step, unitSystem),
+  );
 
   const displayIngredients = recipe.ingredients.map((ing) => {
     const scaled = scaleAmount(ing.amount, recipe.servings, servings);
@@ -273,7 +277,7 @@ export function RecipeDetail({
               >
                 {toRoman(i + 1)}.
               </span>
-              <p className="font-display text-body text-ink">{step}</p>
+              <p className="font-display text-body text-ink">{displaySteps[i]}</p>
             </li>
           ))}
         </ol>
@@ -286,6 +290,7 @@ export function RecipeDetail({
         savedAdaptedSteps={savedAdaptedSteps}
         savedAdaptedNotes={null}
         userAppliances={userAppliances}
+        unitSystem={unitSystem}
         isShowingAdapted={isShowingAdapted}
         onShowingAdaptedChange={setIsShowingAdapted}
         onAdapt={handleAdapt}

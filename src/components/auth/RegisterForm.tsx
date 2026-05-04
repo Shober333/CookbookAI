@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export function RegisterForm() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,25 +32,24 @@ export function RegisterForm() {
       return;
     }
 
-    let result: Awaited<ReturnType<typeof signIn>> | undefined;
     try {
-      result = await signIn("credentials", {
+      const result = await signIn("credentials", {
         email,
         password,
         redirect: false,
+        callbackUrl: "/library",
       });
-    } catch {
-      // Auth.js v5 throws on certain failures instead of returning { error }
-    } finally {
-      setSubmitting(false);
-    }
 
-    if (result?.error) {
+      if (result?.error) {
+        setSubmitting(false);
+        setError("Account created — but sign-in failed. Please sign in manually.");
+        return;
+      }
+
+      window.location.assign(result?.url ?? "/library");
+    } catch {
+      setSubmitting(false);
       setError("Account created — but sign-in failed. Please sign in manually.");
-    } else if (!result) {
-      setError("Account created — but sign-in failed. Please sign in manually.");
-    } else {
-      router.push("/library");
     }
   }
 

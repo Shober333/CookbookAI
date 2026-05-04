@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { toRoman } from "@/lib/recipe-utils";
+import { convertTemperatureText, toRoman } from "@/lib/recipe-utils";
 
 export type AdaptResponse = {
   adaptedSteps: string[];
@@ -15,6 +15,7 @@ interface AdaptPanelProps {
   savedAdaptedSteps: string[] | null;
   savedAdaptedNotes?: string | null;
   userAppliances: string[];
+  unitSystem: "metric" | "imperial";
   isShowingAdapted: boolean;
   onShowingAdaptedChange: (isShowing: boolean) => void;
   onAdapt: (recipeId: string, appliances: string[]) => Promise<AdaptResponse>;
@@ -40,6 +41,7 @@ export function AdaptPanel({
   originalSteps,
   savedAdaptedSteps,
   userAppliances,
+  unitSystem,
   isShowingAdapted,
   onShowingAdaptedChange,
   onAdapt,
@@ -149,6 +151,7 @@ export function AdaptPanel({
         <ResultState
           adaptedSteps={result.adaptedSteps}
           notes={result.notes}
+          unitSystem={unitSystem}
           isSaving={isSaving}
           saveErrorMsg={saveErrorMsg}
           onSave={handleSave}
@@ -167,6 +170,7 @@ export function AdaptPanel({
       {mode === "idle" && hasSaved && (
         <SavedState
           adaptedSteps={savedAdaptedSteps ?? []}
+          unitSystem={unitSystem}
           expanded={expanded}
           onToggle={() => setExpanded((v) => !v)}
           onReadapt={handleAdapt}
@@ -263,6 +267,7 @@ function LoadingState() {
 function ResultState({
   adaptedSteps,
   notes,
+  unitSystem,
   isSaving,
   saveErrorMsg,
   onSave,
@@ -270,6 +275,7 @@ function ResultState({
 }: {
   adaptedSteps: string[];
   notes: string;
+  unitSystem: "metric" | "imperial";
   isSaving: boolean;
   saveErrorMsg: string;
   onSave: () => void;
@@ -309,7 +315,9 @@ function ResultState({
               >
                 {toRoman(i + 1)}.
               </span>
-              <p className="font-display text-body text-ink">{step}</p>
+              <p className="font-display text-body text-ink">
+                {convertTemperatureText(step, unitSystem)}
+              </p>
             </li>
           ))}
         </ol>
@@ -349,6 +357,7 @@ function ResultState({
 
 function SavedState({
   adaptedSteps,
+  unitSystem,
   expanded,
   onToggle,
   onReadapt,
@@ -357,6 +366,7 @@ function SavedState({
   saveErrorMsg,
 }: {
   adaptedSteps: string[];
+  unitSystem: "metric" | "imperial";
   expanded: boolean;
   onToggle: () => void;
   onReadapt: () => void;
@@ -396,7 +406,9 @@ function SavedState({
                 >
                   {toRoman(i + 1)}.
                 </span>
-                <p className="font-display text-body text-ink">{step}</p>
+                <p className="font-display text-body text-ink">
+                  {convertTemperatureText(step, unitSystem)}
+                </p>
               </li>
             ))}
           </ol>

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
 
 const NAV_LINKS = [
   { href: "/library", label: "Library" },
@@ -12,10 +11,6 @@ const NAV_LINKS = [
 export function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
-
-  function handleSignOut() {
-    signOut({ callbackUrl: "/login" });
-  }
 
   function handleImport() {
     router.push("/import");
@@ -65,12 +60,14 @@ export function Topbar() {
       <div className="flex-1" />
 
       {/* Desktop: sign out */}
-      <button
-        onClick={handleSignOut}
-        className="mr-4 hidden font-ui text-ui-sm text-ink-muted hover:text-ink md:block"
-      >
-        Sign out
-      </button>
+      <form action="/api/auth/logout" method="post" className="mr-4 hidden md:block">
+        <button
+          type="submit"
+          className="font-ui text-ui-sm text-ink-muted hover:text-ink"
+        >
+          Sign out
+        </button>
+      </form>
 
       {/* Import button — visible at all breakpoints */}
       <button
