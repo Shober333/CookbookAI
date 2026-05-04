@@ -43,7 +43,7 @@ client, and safer provider-error handling for deployed Gemini failures.
 
 ## QA Update — 2026-05-04
 
-Local Sprint 05 deployment preflight is green:
+Independent `[DEV-QA]` Sprint 05 deployment preflight is green:
 
 - `npm run typecheck` passed.
 - `npm test` passed: 9 files / 113 tests.
@@ -51,7 +51,8 @@ Local Sprint 05 deployment preflight is green:
 - `DATABASE_URL="postgresql://cookbook:password@localhost:5432/cookbook?sslmode=require" npm run build:vercel` passed.
 - `npm run db:generate` was rerun after `build:vercel` to restore the local
   SQLite Prisma Client.
-- `npx playwright test --project=chromium` passed: 27/27 tests.
+- `npx playwright test --project=chromium` passed: 27/27 tests after rerunning
+  with local server permission for port 3100.
 
 Deployed smoke remains pending because there is no Vercel project URL or Neon
 database connection string available in this turn.

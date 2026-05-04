@@ -4,7 +4,7 @@
 |-------|-------|
 | **Sprint** | 05 |
 | **Goal** | Make CookbookAI deployable and demoable on Vercel with documented production environment setup, smoke checks, and rollback notes |
-| **Status** | Local deployment preflight passed; deployed smoke pending Vercel/Neon handoff |
+| **Status** | Independent local deployment preflight passed; deployed smoke pending Vercel/Neon handoff |
 | **Start** | 2026-05-04 |
 | **End** | TBD |
 

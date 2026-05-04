@@ -2,14 +2,15 @@
 
 > Owner: `[DEV-QA]`
 > Date: 2026-05-04
-> Status: Local preflight passed; deployed smoke pending Vercel/Neon handoff
+> Status: Independent local preflight passed; deployed smoke pending Vercel/Neon handoff
 
 ## Summary
 
-Sprint 05 deployment readiness passes locally. Typecheck, unit tests, normal
-production build, Vercel-style Postgres build, and Chromium E2E regression are
-green. The remaining QA work requires external infrastructure: a Vercel
-preview URL and a Neon Postgres connection string.
+Sprint 05 deployment readiness passes local QA independently of the provisional
+handoff. Typecheck, unit tests, normal production build, Vercel-style Postgres
+build, and Chromium E2E regression are green. The remaining QA work requires
+external infrastructure: a Vercel preview URL and a Neon Postgres connection
+string.
 
 ## Passed
 
@@ -18,7 +19,8 @@ preview URL and a Neon Postgres connection string.
 - `npm run build`
 - `DATABASE_URL="postgresql://cookbook:password@localhost:5432/cookbook?sslmode=require" npm run build:vercel`
 - `npm run db:generate` after the Vercel build to restore local SQLite client
-- `npx playwright test --project=chromium` — 27/27 tests
+- `npx playwright test --project=chromium` — 27/27 tests after rerunning with
+  permission for the local Next.js server to bind port 3100
 
 ## Deployment Setup Review
 
