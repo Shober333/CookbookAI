@@ -1,7 +1,7 @@
 # Technical Architecture
 
-> **Status:** Accepted — Sprint 2
-> **Owner:** [CTO] — updated 2026-05-01
+> **Status:** Accepted — Sprint 5
+> **Owner:** [CTO] — updated 2026-05-04
 
 ---
 
@@ -12,7 +12,7 @@
 | **Frontend** | Next.js 15 (App Router) + React 19 + TypeScript | Full-stack monorepo, Vercel-native, RSC for fast initial loads |
 | **Styling** | Tailwind CSS + shadcn/ui | Utility-first CSS; shadcn gives accessible, unstyled components we fully own |
 | **Backend** | Next.js API Routes (Vercel Serverless Functions) | No separate server; co-located with frontend; zero deploy config |
-| **AI** | Local dev: Ollama (`qwen3.5:cloud` active, `gemma4:e4b` for GPU). Production (Vercel): Anthropic Claude (`claude-sonnet-4-6`) | Local validation is free; production uses Claude for higher structured-output reliability |
+| **AI** | Local dev: Ollama where available. Production (Vercel): Gemini 2.5 Flash by default; Anthropic remains optional fallback only | Local validation is free; production follows the project preference for Gemini while preserving provider abstraction |
 | **Auth** | Auth.js v5 (NextAuth) + Prisma adapter | De-facto standard for Next.js; credentials provider for email/password; extensible to OAuth later |
 | **ORM** | Prisma | Type-safe queries; handles SQLite ↔ Postgres swap via single env var |
 | **Database** | SQLite (local dev) → Neon serverless Postgres (production) | Zero-setup locally; Neon is Vercel's recommended Postgres partner with a free tier |
@@ -35,7 +35,7 @@
 │                                                   │
 │  ┌──────────────┐   ┌───────────────────────┐    │
 │  │  Auth.js v5  │   │  AI extraction layer    │    │
-│  │  (sessions)  │   │ Ollama / Anthropic      │    │
+│  │  (sessions)  │   │ Ollama / Gemini         │    │
 │  └──────┬───────┘   └──────────┬────────────┘    │
 │         │                      │                  │
 │  ┌──────▼───────┐   ┌──────────▼────────────┐    │
@@ -46,7 +46,7 @@
           │                          │ HTTPS
 ┌─────────▼──────────────┐  ┌────────▼─────────────┐
 │  SQLite (local dev)     │  │ Ollama local server    │
-│  Neon Postgres (prod)   │  │ Anthropic optional     │
+│  Neon Postgres (prod)   │  │ Gemini / optional AI   │
 └────────────────────────┘  └──────────────────────┘
 ```
 
@@ -57,8 +57,8 @@
 ### Recipe Importer
 - **Purpose:** Fetch a URL's HTML content, send a focused source excerpt to the configured AI provider, receive structured recipe JSON
 - **Location:** `src/app/api/ai/import/route.ts`
-- **Depends on:** Ollama local server by default, optional Anthropic/Vercel AI SDK provider path, Prisma (save)
-- **Notes:** Sprint 1 defaults to `AI_PROVIDER=ollama`; production (Vercel) uses `AI_PROVIDER=anthropic`. The route runs a keyword pre-screen (`looksLikeRecipePage`) before calling the AI — pages without recipe indicators are rejected in <1s. Sprint 2+ adds a URL deduplication check before the AI call: query `Recipe.sourceUrl` across all users; if a match exists, copy the extracted fields to a new Recipe for the current user and skip the AI call entirely. Webpage text is trimmed to a focused source excerpt for model latency. JSON-LD extraction exists in `src/lib/recipe-jsonld.ts` but is disabled unless `ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=true`.
+- **Depends on:** configured AI provider, Prisma (save)
+- **Notes:** Local development may use `AI_PROVIDER=ollama`; production (Vercel) uses `AI_PROVIDER=gemini` by default. Anthropic remains an optional fallback provider, not the preferred production path. The route runs a keyword pre-screen (`looksLikeRecipePage`) before calling the AI — pages without recipe indicators are rejected in <1s. Sprint 2+ adds a URL deduplication check before the AI call: query `Recipe.sourceUrl` across all users; if a match exists, copy the extracted fields to a new Recipe for the current user and skip the AI call entirely. Webpage text is trimmed to a focused source excerpt for model latency. JSON-LD extraction exists in `src/lib/recipe-jsonld.ts` but is disabled unless `ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=true`.
 
 ### Equipment Adapter
 - **Purpose:** Take a saved recipe + user's appliance list, send to the configured AI provider, return rewritten steps
@@ -227,7 +227,7 @@ CookbookAI/
 ## 7. Environment Variables
 
 ```bash
-# AI provider — local dev uses Ollama, production (Vercel) uses Anthropic
+# AI provider — local dev may use Ollama, production (Vercel) uses Gemini
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3.5:cloud          # cloud relay; no local GPU needed
@@ -235,7 +235,11 @@ OLLAMA_MODEL=qwen3.5:cloud          # cloud relay; no local GPU needed
 OLLAMA_EXTRACTION_TIMEOUT_MS=120000
 
 # Production AI provider (set in Vercel environment)
-# AI_PROVIDER=anthropic
+# AI_PROVIDER=gemini
+# GEMINI_API_KEY=...
+# GEMINI_MODEL=gemini-2.5-flash
+
+# Optional fallback provider
 # ANTHROPIC_API_KEY=sk-ant-...
 
 # Optional non-AI structured-data shortcut; disabled during AI validation

@@ -8,14 +8,17 @@
 ## Decision: Production AI Provider — Anthropic on Vercel
 
 **Date:** 2026-05-01
-**Status:** Superseded 2026-05-03 by "Sprint 04 AI Provider — Gemini 2.5 Flash"
+**Status:** Superseded 2026-05-03 by "Sprint 04 AI Provider — Gemini 2.5 Flash"; reaffirmed 2026-05-04 by Sprint 05 deployment posture
 **Decided by:** Founder
 
 **Context:**
 Sprint 1 validated AI extraction locally using Ollama. For production deployment on Vercel the team needed to decide which AI provider to use, balancing cost, quality, and operational simplicity.
 
 **Decision:**
-`AI_PROVIDER=anthropic` for the Vercel production environment. `AI_PROVIDER=ollama` remains the local development default. Zero code changes required — provider selection is already environment-driven.
+Originally, `AI_PROVIDER=anthropic` for the Vercel production environment
+and `AI_PROVIDER=ollama` for local development. This is no longer the current
+production plan; Sprint 04/Sprint 05 replaced the production default with
+Gemini while preserving the environment-driven provider boundary.
 
 **Rationale:**
 - Claude (Sonnet 4.x) delivers higher structured-output reliability than Ollama cloud relay, especially for complex recipe HTML
@@ -23,9 +26,9 @@ Sprint 1 validated AI extraction locally using Ollama. For production deployment
 - Local dev continues at zero API cost via Ollama
 
 **Consequences:**
-- `.env.example` should document both paths clearly
-- `ANTHROPIC_API_KEY` must be set in Vercel environment settings before production deploy
-- No schema or code changes needed
+- `.env.example` should document Anthropic as an optional fallback only.
+- `ANTHROPIC_API_KEY` is not required for the Sprint 05 Vercel demo path.
+- No schema changes were needed because provider selection is environment-driven.
 
 ---
 
@@ -76,9 +79,10 @@ provider target.
 **Context:**
 During real Ollama testing, the Founder hit paid-tier limitations on Ollama
 cloud and also expressed concern about Anthropic API usage based on reported
-bad experiences. The current accepted production-provider decision still says
-`AI_PROVIDER=anthropic`, so a paid-provider comparison is needed before deploy
-planning continues.
+bad experiences. The then-current production-provider decision still said
+`AI_PROVIDER=anthropic`, so a paid-provider comparison was needed before deploy
+planning continued. This note was superseded once Gemini 2.5 Flash became the
+accepted production default.
 
 **Pricing basis:**
 Prices are USD per 1M tokens for standard realtime API calls, excluding batch
@@ -484,8 +488,7 @@ Recipe extraction from HTML/video transcripts and equipment adaptation require i
 **Decision:**
 Originally `claude-sonnet-4-6` for all AI features. As of
 2026-05-01, Sprint 1 defaults to Ollama for local validation. Claude is
-still available via `AI_PROVIDER=anthropic` for later production/cloud
-evaluation.
+still available via `AI_PROVIDER=anthropic` for fallback cloud evaluation.
 
 **Rationale:**
 - Best balance of quality and speed in the current Claude 4.x family
@@ -596,3 +599,38 @@ Auth.js v5 (NextAuth) with Prisma adapter and credentials provider (email + pass
 
 **Tradeoffs accepted:**
 - Auth.js v5 is relatively new (some rough edges vs. v4); chosen for App Router compatibility
+
+---
+
+## Decision: Sprint 05 Deployment Demo Posture
+
+**Date:** 2026-05-04
+**Status:** Accepted
+**Decided by:** Founder + [CTO]
+
+**Context:**
+Sprint 05 needs to make CookbookAI deployable and demoable on Vercel without
+expanding into new product features. Sprint 04 already proved the local
+Gemini/YouTube smoke path, but production needs a clear environment,
+database, auth-domain, and rollback contract.
+
+**Decision:**
+Use Vercel preview deployment first, promote to production only after smoke
+checks pass. Keep managed Postgres as the production database path, with Neon
+as the documented default unless dev discovers a Vercel-specific blocker or a
+cleaner Vercel-native fit. Use Gemini as the production AI provider default.
+Demo the app with an authenticated account; no guest mode or email
+verification requirement in Sprint 05.
+
+**Rationale:**
+- Preview-first deployment keeps the first cloud pass reversible.
+- Managed Postgres matches the existing Prisma production direction.
+- Gemini is the preferred provider for this project, while Anthropic remains
+  optional fallback posture rather than the primary plan.
+- Authenticated demo account matches the app's current behavior and avoids
+  adding guest-mode scope before deployment is stable.
+
+**Tradeoffs accepted:**
+- Public guest onboarding remains deferred.
+- Direct Gemini video understanding, Browserbase fallback, recipe macros, and
+  YouTube embeds are valid backlog items, but not Sprint 05 blockers.
