@@ -16,7 +16,7 @@
 | **Name** | CookbookAI |
 | **Repo name** | `CookbookAI` |
 | **Purpose** | Import recipes from the web; adjust them with AI assistance |
-| **Stage** | Sprint 5 accepted — ready for Sprint 6 planning |
+| **Stage** | Sprint 6 planning — YouTube source continuity |
 | **Dev port** | 3000 |
 
 ---
