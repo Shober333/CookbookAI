@@ -3,7 +3,7 @@
 > **Owner:** [DEV-LEAD]  
 > **Sprint goal:** YouTube source continuity, Browserbase public-page fallback,
 > and deployed source smoke.
-> **Status:** Draft CTO plan; ready for Founder review.
+> **Status:** Backend implementation in progress; frontend and QA phases remain.
 
 ---
 
@@ -22,9 +22,9 @@
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|--------|--------|---------------------|
 | 6.1 | Confirm Sprint 06 scope | `[CTO]` | `[ ]` | Founder confirms Sprint 06 focuses on YouTube source continuity and deployed YouTube smoke |
-| 6.2 | Define source metadata contract | `[DEV-LEAD]` + `[DEV:backend]` | `[ ]` | Contract distinguishes `sourceUrl`, original YouTube video URL, source kind, source domain, and Browserbase fallback source without breaking existing recipes |
+| 6.2 | Define source metadata contract | `[DEV-LEAD]` + `[DEV:backend]` | `[x]` | Contract distinguishes `sourceUrl`, original YouTube video URL, source kind, source domain, and Browserbase fallback source without breaking existing recipes |
 | 6.3 | UI/UX source presentation check | `[UI/UX]` | `[ ]` | Embed placement, source label, loading/error/no-video states are approved or existing docs are confirmed sufficient |
-| 6.4 | Define Browserbase boundary | `[CTO]` + `[DEV-LEAD]` | `[ ]` | Sprint docs state Browserbase is only for public blocked/JS-heavy pages, not paywalls, logins, CAPTCHA bypass, or private content |
+| 6.4 | Define Browserbase boundary | `[CTO]` + `[DEV-LEAD]` | `[x]` | Sprint docs state Browserbase is only for public blocked/JS-heavy pages, not paywalls, logins, CAPTCHA bypass, or private content |
 
 ---
 
@@ -32,10 +32,10 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|--------|--------|---------------------|
-| 6.5 | Add source metadata fields | `[DEV:backend]` | `[ ]` | Local SQLite and Postgres schemas/migrations store original YouTube video URL and source kind; old recipes remain readable |
-| 6.6 | Persist YouTube origin during import | `[DEV:backend]` | `[ ]` | YouTube link, description, and transcript imports save original video URL separately from resolved recipe/source URL |
-| 6.7 | Expose source metadata in recipe APIs | `[DEV:backend]` | `[ ]` | Recipe list/detail responses include source metadata needed by frontend; tests cover YouTube and non-YouTube recipes |
-| 6.8 | Import response contract tests | `[DEV:backend]` | `[ ]` | Tests cover `sourceKind`, `sourceUrl`, `sourceDomain`, original video URL, and Browserbase fallback metadata for import paths |
+| 6.5 | Add source metadata fields | `[DEV:backend]` | `[x]` | Local SQLite and Postgres schemas/migrations store original YouTube video URL and source kind; old recipes remain readable |
+| 6.6 | Persist YouTube origin during import | `[DEV:backend]` | `[x]` | YouTube link, description, and transcript imports save original video URL separately from resolved recipe/source URL |
+| 6.7 | Expose source metadata in recipe APIs | `[DEV:backend]` | `[x]` | Recipe list/detail responses include source metadata needed by frontend; tests cover YouTube and non-YouTube recipes |
+| 6.8 | Import response contract tests | `[DEV:backend]` | `[x]` | Tests cover `sourceKind`, `sourceUrl`, `sourceDomain`, original video URL, and Browserbase fallback metadata for import paths |
 
 ---
 
@@ -43,10 +43,10 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|--------|--------|---------------------|
-| 6.9 | Add Browserbase env contract | `[DEV:backend]` | `[ ]` | `.env.example` and deployment docs list `BROWSERBASE_API_KEY`, `BROWSERBASE_PROJECT_ID` if required, enable flag, timeout, and cost/usage warning |
-| 6.10 | Implement deterministic Browserbase fetch/render adapter | `[DEV:backend]` | `[ ]` | Adapter renders public pages through Browserbase/Playwright, extracts readable text, closes sessions, and avoids AI browser control by default |
-| 6.11 | Wire fallback into URL import | `[DEV:backend]` | `[ ]` | Normal fetch remains first path; Browserbase runs only when enabled and fetch fails or returns unusable JS-heavy content |
-| 6.12 | Browserbase error handling tests | `[DEV:backend]` | `[ ]` | Missing key, timeout, session failure, and still-unreadable page return controlled errors without saving recipes |
+| 6.9 | Add Browserbase env contract | `[DEV:backend]` | `[x]` | `.env.example` and deployment docs list `BROWSERBASE_API_KEY`, `BROWSERBASE_PROJECT_ID` if required, enable flag, timeout, and cost/usage warning |
+| 6.10 | Implement deterministic Browserbase fetch/render adapter | `[DEV:backend]` | `[x]` | Adapter renders public pages through Browserbase/Playwright, extracts readable text, closes sessions, and avoids AI browser control by default |
+| 6.11 | Wire fallback into URL import | `[DEV:backend]` | `[x]` | Normal fetch remains first path; Browserbase runs only when enabled and fetch fails or returns unusable JS-heavy content |
+| 6.12 | Browserbase error handling tests | `[DEV:backend]` | `[x]` | Missing key, timeout, session failure, and still-unreadable page return controlled errors without saving recipes |
 
 ---
 

@@ -1,7 +1,12 @@
 import type { Recipe } from "@prisma/client";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import type { RecipePayload, RecipeResponse } from "@/types/recipe";
+import type {
+  RecipePayload,
+  RecipeResponse,
+  RecipeSourceImportMethod,
+  RecipeSourceKind,
+} from "@/types/recipe";
 
 function serializeStringArray(values: string[] | undefined): string {
   return (values ?? []).join(",");
@@ -29,6 +34,9 @@ export function toRecipeResponse(recipe: Recipe): RecipeResponse {
     title: recipe.title,
     description: recipe.description,
     sourceUrl: recipe.sourceUrl,
+    sourceVideoUrl: recipe.sourceVideoUrl,
+    sourceKind: parseSourceKind(recipe.sourceKind),
+    sourceImportMethod: parseSourceImportMethod(recipe.sourceImportMethod),
     servings: recipe.servings,
     ingredients: parseJsonField(recipe.ingredients, []),
     steps: parseJsonField(recipe.steps, []),
@@ -75,6 +83,9 @@ export async function createRecipeForUser(
       title: payload.title,
       description: payload.description ?? null,
       sourceUrl: payload.sourceUrl ?? null,
+      sourceVideoUrl: payload.sourceVideoUrl ?? null,
+      sourceKind: payload.sourceKind ?? null,
+      sourceImportMethod: payload.sourceImportMethod ?? null,
       servings: payload.servings,
       ingredients: JSON.stringify(payload.ingredients),
       steps: JSON.stringify(payload.steps),
@@ -101,6 +112,10 @@ export async function findRecipeByNormalizedSourceUrl(
 export async function copyRecipeForUser(
   userId: string,
   source: Recipe,
+  sourceOverrides: Pick<
+    RecipePayload,
+    "sourceVideoUrl" | "sourceKind" | "sourceImportMethod"
+  > = {},
 ): Promise<RecipeResponse> {
   const recipe = await prisma.recipe.create({
     data: {
@@ -108,6 +123,18 @@ export async function copyRecipeForUser(
       title: source.title,
       description: source.description,
       sourceUrl: source.sourceUrl,
+      sourceVideoUrl:
+        sourceOverrides.sourceVideoUrl !== undefined
+          ? sourceOverrides.sourceVideoUrl
+          : source.sourceVideoUrl,
+      sourceKind:
+        sourceOverrides.sourceKind !== undefined
+          ? sourceOverrides.sourceKind
+          : source.sourceKind,
+      sourceImportMethod:
+        sourceOverrides.sourceImportMethod !== undefined
+          ? sourceOverrides.sourceImportMethod
+          : source.sourceImportMethod,
       servings: source.servings,
       ingredients: source.ingredients,
       steps: source.steps,
@@ -140,6 +167,15 @@ export async function updateRecipeForUser(
       ...(payload.sourceUrl !== undefined && {
         sourceUrl: payload.sourceUrl ?? null,
       }),
+      ...(payload.sourceVideoUrl !== undefined && {
+        sourceVideoUrl: payload.sourceVideoUrl ?? null,
+      }),
+      ...(payload.sourceKind !== undefined && {
+        sourceKind: payload.sourceKind ?? null,
+      }),
+      ...(payload.sourceImportMethod !== undefined && {
+        sourceImportMethod: payload.sourceImportMethod ?? null,
+      }),
       ...(payload.servings !== undefined && { servings: payload.servings }),
       ...(payload.ingredients !== undefined && {
         ingredients: JSON.stringify(payload.ingredients),
@@ -169,4 +205,30 @@ export async function deleteRecipeForUser(
   await prisma.recipe.delete({
     where: { id, userId },
   });
+}
+
+function parseSourceKind(value: string | null): RecipeSourceKind | null {
+  switch (value) {
+    case "url":
+    case "text":
+    case "youtube-link":
+    case "youtube-description":
+    case "youtube-transcript":
+      return value;
+    default:
+      return null;
+  }
+}
+
+function parseSourceImportMethod(
+  value: string | null,
+): RecipeSourceImportMethod | null {
+  switch (value) {
+    case "fetch":
+    case "browserbase":
+    case "text":
+      return value;
+    default:
+      return null;
+  }
 }

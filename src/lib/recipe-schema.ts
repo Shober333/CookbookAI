@@ -11,6 +11,12 @@ export const recipePayloadSchema = z.object({
   title: z.string().trim().min(1).max(160),
   description: z.string().trim().max(2000).nullable().optional(),
   sourceUrl: z.string().url().nullable().optional(),
+  sourceVideoUrl: z.string().url().nullable().optional(),
+  sourceKind: z
+    .enum(["url", "text", "youtube-link", "youtube-description", "youtube-transcript"])
+    .nullable()
+    .optional(),
+  sourceImportMethod: z.enum(["fetch", "browserbase", "text"]).nullable().optional(),
   servings: z.number().int().positive().max(1000),
   ingredients: z.array(recipeIngredientSchema).min(1),
   steps: z.array(z.string().trim().min(1)).min(1),
@@ -23,6 +29,9 @@ export const recipePatchSchema = recipePayloadSchema
     title: true,
     description: true,
     sourceUrl: true,
+    sourceVideoUrl: true,
+    sourceKind: true,
+    sourceImportMethod: true,
     servings: true,
     ingredients: true,
     steps: true,

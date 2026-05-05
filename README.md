@@ -12,6 +12,10 @@ available kitchen equipment.
   - follow recipe links found in the description
   - extract recipe-like description text
   - fall back to public transcripts when needed
+- Preserve source continuity for YouTube imports so the saved recipe can show
+  the original video separately from any resolved recipe link.
+- Optionally render public JS-heavy recipe pages through Browserbase when
+  normal URL fetch is blocked or unusable.
 - Reuse prior URL extractions to avoid repeat AI calls.
 - Save recipes per user with private library isolation.
 - Scale servings, convert units, and adapt cooking steps with AI.
@@ -58,6 +62,19 @@ For YouTube import:
 YOUTUBE_API_KEY=your-google-cloud-youtube-key
 ```
 
+For optional Browserbase public-page fallback:
+
+```bash
+BROWSERBASE_FALLBACK_ENABLED=true
+BROWSERBASE_API_KEY=your-browserbase-key
+BROWSERBASE_PROJECT_ID=your-browserbase-project-id
+BROWSERBASE_TIMEOUT_MS=30000
+```
+
+Browserbase is disabled by default and is paid/usage-metered. It is only for
+public recipe pages that fail normal fetch or need client-side rendering; it is
+not a paywall, login, CAPTCHA, or private-content bypass.
+
 Required app/database values:
 
 ```bash
@@ -85,6 +102,10 @@ GEMINI_MODEL=gemini-2.5-flash
 YOUTUBE_API_KEY=your-google-cloud-youtube-key
 ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=false
 AI_EXTRACTION_TIMEOUT_MS=120000
+BROWSERBASE_FALLBACK_ENABLED=false
+# BROWSERBASE_API_KEY=your-browserbase-key
+# BROWSERBASE_PROJECT_ID=your-browserbase-project-id
+BROWSERBASE_TIMEOUT_MS=30000
 ```
 
 Before the first Vercel smoke test, run production migrations against the Neon
@@ -128,9 +149,8 @@ npx playwright test  # E2E tests
 
 ## Current Focus
 
-Sprint 05 focuses on Vercel demo deployment readiness: production env vars,
-Neon Postgres migration flow, Vercel build setup, deployed smoke checks, and
-rollback notes.
+Sprint 06 focuses on YouTube source continuity, Browserbase public-page
+fallback, and deployed source smoke.
 
 ## Notes
 

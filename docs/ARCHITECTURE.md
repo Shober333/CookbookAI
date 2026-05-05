@@ -13,6 +13,7 @@
 | **Styling** | Tailwind CSS + shadcn/ui | Utility-first CSS; shadcn gives accessible, unstyled components we fully own |
 | **Backend** | Next.js API Routes (Vercel Serverless Functions) | No separate server; co-located with frontend; zero deploy config |
 | **AI** | Local dev: Ollama where available. Production (Vercel): Gemini 2.5 Flash by default; Anthropic remains optional fallback only | Local validation is free; production follows the project preference for Gemini while preserving provider abstraction |
+| **Public page rendering fallback** | Browserbase + Playwright Core, disabled by default | Optional paid fallback for public recipe pages that normal server fetch cannot read |
 | **Auth** | Auth.js v5 (NextAuth) + Prisma adapter | De-facto standard for Next.js; credentials provider for email/password; extensible to OAuth later |
 | **ORM** | Prisma | Type-safe queries; local and production schemas keep the same models while targeting SQLite and Postgres respectively |
 | **Database** | SQLite (local dev) → Neon serverless Postgres (production) | Zero-setup locally; Neon is Vercel's recommended Postgres partner with a free tier |
@@ -42,11 +43,16 @@
 │  │    Prisma    │   │  JSON schema output     │    │
 │  │    (ORM)     │   │  + normalization        │    │
 │  └──────┬───────┘   └───────────────────────┘    │
+│         │              ▲                          │
+│         │              │ public-page render       │
+│         │        ┌─────┴──────────────┐           │
+│         │        │ Browserbase fallback │           │
+│         │        └────────────────────┘           │
 └─────────┼─────────────────────────────────────────┘
           │                          │ HTTPS
 ┌─────────▼──────────────┐  ┌────────▼─────────────┐
 │  SQLite (local dev)     │  │ Ollama local server    │
-│  Neon Postgres (prod)   │  │ Gemini / optional AI   │
+│  Neon Postgres (prod)   │  │ Gemini / Browserbase   │
 └────────────────────────┘  └──────────────────────┘
 ```
 
@@ -57,8 +63,8 @@
 ### Recipe Importer
 - **Purpose:** Fetch a URL's HTML content, send a focused source excerpt to the configured AI provider, receive structured recipe JSON
 - **Location:** `src/app/api/ai/import/route.ts`
-- **Depends on:** configured AI provider, Prisma (save)
-- **Notes:** Local development may use `AI_PROVIDER=ollama`; production (Vercel) uses `AI_PROVIDER=gemini` by default. Anthropic remains an optional fallback provider, not the preferred production path. The route runs a keyword pre-screen (`looksLikeRecipePage`) before calling the AI — pages without recipe indicators are rejected in <1s. Sprint 2+ adds a URL deduplication check before the AI call: query `Recipe.sourceUrl` across all users; if a match exists, copy the extracted fields to a new Recipe for the current user and skip the AI call entirely. Webpage text is trimmed to a focused source excerpt for model latency. JSON-LD extraction exists in `src/lib/recipe-jsonld.ts` but is disabled unless `ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=true`.
+- **Depends on:** configured AI provider, Prisma (save), optional Browserbase fallback
+- **Notes:** Local development may use `AI_PROVIDER=ollama`; production (Vercel) uses `AI_PROVIDER=gemini` by default. Anthropic remains an optional fallback provider, not the preferred production path. The route runs a keyword pre-screen (`looksLikeRecipeSource`) before calling the AI; pages without recipe indicators are rejected unless Browserbase fallback is enabled and the source is public HTML that may need rendering. Sprint 2+ adds a URL deduplication check before the AI call: query `Recipe.sourceUrl` across all users; if a match exists, copy the extracted fields to a new Recipe for the current user and skip the AI call entirely. Webpage text is trimmed to a focused source excerpt for model latency. JSON-LD extraction exists in `src/lib/recipe-jsonld.ts` but is disabled unless `ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=true`.
 
 ### Equipment Adapter
 - **Purpose:** Take a saved recipe + user's appliance list, send to the configured AI provider, return rewritten steps
@@ -103,22 +109,25 @@ model User {
 }
 
 model Recipe {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title        String
-  description  String?
-  sourceUrl    String?
-  servings     Int
-  ingredients  String   // JSON string: [{ amount, unit, name, notes? }]
-  steps        String   // JSON string: string[]
-  adaptedSteps String?  // JSON string: string[] — nullable; Sprint 2
-  tags         String   // comma-separated; split to array in app layer
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title              String
+  description        String?
+  sourceUrl          String?
+  sourceVideoUrl     String?
+  sourceKind         String?  // url, text, youtube-link, youtube-description, youtube-transcript
+  sourceImportMethod String?  // fetch, browserbase, text
+  servings           Int
+  ingredients        String   // JSON string: [{ amount, unit, name, notes? }]
+  steps              String   // JSON string: string[]
+  adaptedSteps       String?  // JSON string: string[] — nullable; Sprint 2
+  tags               String   // comma-separated; split to array in app layer
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@index([userId])
-  @@index([sourceUrl])  // Sprint 2+: enables O(1) deduplication lookup before AI call
+  @@index([sourceUrl])  // Sprint 2+: enables deduplication lookup before AI call
 }
 
 model EquipmentProfile {
@@ -135,9 +144,12 @@ model Session { ... }
 model VerificationToken { ... }
 ```
 
-SQLite and Postgres store recipe `ingredients` and `steps` as JSON-serialized
-strings. App/service code parses them into typed arrays at module boundaries
-and serializes them before persistence.
+SQLite and Postgres store recipe `ingredients`, `steps`, and adapted steps as
+JSON-serialized strings. App/service code parses them into typed arrays at
+module boundaries and serializes them before persistence. Sprint 06 adds source
+metadata so API responses can distinguish the saved recipe URL, original
+YouTube video URL, import source kind, and whether a URL import used normal
+fetch or Browserbase.
 
 Local development uses `prisma/schema.prisma` with SQLite and
 `npm run db:migrate`. Production uses `prisma-postgres/schema.prisma` with
@@ -248,6 +260,12 @@ OLLAMA_EXTRACTION_TIMEOUT_MS=120000
 
 # Optional non-AI structured-data shortcut; disabled during AI validation
 ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=false
+
+# Optional paid public-page render fallback; disabled by default
+BROWSERBASE_FALLBACK_ENABLED=false
+# BROWSERBASE_API_KEY=...
+# BROWSERBASE_PROJECT_ID=...
+BROWSERBASE_TIMEOUT_MS=30000
 
 # Required app secret
 AUTH_SECRET=...                      # openssl rand -base64 32
