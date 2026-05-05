@@ -52,6 +52,11 @@ with:
 npm run db:migrate
 ```
 
+Vercel builds also run `prisma migrate deploy` automatically when `VERCEL=1`,
+so new deployments apply committed production migrations before generating the
+Postgres Prisma Client. Set `SKIP_VERCEL_MIGRATE=true` only for an emergency
+build where database mutation has been intentionally paused.
+
 ## Vercel Build
 
 `vercel.json` sets:
@@ -63,11 +68,14 @@ npm run build:vercel
 That script runs:
 
 ```bash
-prisma generate --schema prisma-postgres/schema.prisma && next build
+node scripts/build-vercel.mjs
 ```
 
 This matters because Prisma datasource providers are generated into the client.
-The deployed client must be generated from the Postgres schema.
+The deployed client must be generated from the Postgres schema. Local
+`npm run build:vercel` runs the same Postgres-shaped build and then restores
+the local SQLite Prisma Client afterward, so local E2E does not inherit the
+Postgres client by accident.
 
 ## Smoke Checklist
 

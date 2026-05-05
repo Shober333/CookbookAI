@@ -115,8 +115,11 @@ database:
 DATABASE_URL="postgresql://...sslmode=require" npm run db:migrate:prod
 ```
 
-Vercel builds with `npm run build:vercel` via `vercel.json`, which generates
-Prisma Client from the Postgres schema before `next build`.
+Vercel builds with `npm run build:vercel` via `vercel.json`, which applies
+committed Postgres migrations in Vercel, generates Prisma Client from the
+Postgres schema, and then runs `next build`. Local `npm run build:vercel`
+restores the SQLite Prisma Client afterward so local E2E stays on the local
+schema.
 
 Full deployment notes and rollback steps live in
 `docs/deployment/VERCEL.md`.

@@ -14,7 +14,8 @@ import {
   formatAmount,
   toRoman,
   extractDomain,
-  extractYouTubeVideoId,
+  getRecipeSourceProvenance,
+  parseYouTubeEmbedVideoId,
   recipeToMarkdown,
   slugify,
 } from "@/lib/recipe-utils";
@@ -23,63 +24,6 @@ interface RecipeDetailProps {
   recipe: RecipeResponse;
   marginNote?: string;
   userAppliances?: string[];
-}
-
-type SourceProvenance = {
-  domain: string | null;
-  textBeforeDomain: string;
-  textAfterDomain: string | null;
-};
-
-function getSourceProvenance(recipe: RecipeResponse): SourceProvenance | null {
-  const domain = extractDomain(recipe.sourceUrl);
-  const wasReadInBrowser = recipe.sourceImportMethod === "browserbase";
-  const browserSuffix = wasReadInBrowser ? " · read in a browser" : "";
-
-  switch (recipe.sourceKind) {
-    case "url":
-      return domain
-        ? {
-            domain,
-            textBeforeDomain: "From ",
-            textAfterDomain: browserSuffix || null,
-          }
-        : null;
-    case "text":
-      return {
-        domain: null,
-        textBeforeDomain: "From pasted text",
-        textAfterDomain: null,
-      };
-    case "youtube-link":
-      return domain
-        ? {
-            domain,
-            textBeforeDomain: "From ",
-            textAfterDomain: ` · first found on YouTube${browserSuffix}`,
-          }
-        : null;
-    case "youtube-description":
-      return {
-        domain: null,
-        textBeforeDomain: "From YouTube description",
-        textAfterDomain: browserSuffix || null,
-      };
-    case "youtube-transcript":
-      return {
-        domain: null,
-        textBeforeDomain: "From YouTube transcript",
-        textAfterDomain: browserSuffix || null,
-      };
-    default:
-      return domain
-        ? {
-            domain,
-            textBeforeDomain: "From ",
-            textAfterDomain: null,
-          }
-        : null;
-  }
 }
 
 export function RecipeDetail({
@@ -97,8 +41,8 @@ export function RecipeDetail({
   const [isShowingAdapted, setIsShowingAdapted] = useState(false);
 
   const domain = extractDomain(recipe.sourceUrl);
-  const sourceProvenance = getSourceProvenance(recipe);
-  const sourceVideoId = extractYouTubeVideoId(recipe.sourceVideoUrl);
+  const sourceProvenance = getRecipeSourceProvenance(recipe);
+  const videoId = parseYouTubeEmbedVideoId(recipe.sourceVideoUrl);
   const displaySteps = recipe.steps.map((step) =>
     convertTemperatureText(step, unitSystem),
   );
@@ -223,32 +167,34 @@ export function RecipeDetail({
       {/* Byline */}
       {sourceProvenance && (
         <p className="mt-1 font-ui text-ui-sm text-ink-faint">
-          {sourceProvenance.textBeforeDomain}
-          {sourceProvenance.domain && recipe.sourceUrl && (
+          From{" "}
+          {sourceProvenance.href ? (
             <a
-              href={recipe.sourceUrl}
+              href={sourceProvenance.href}
               target="_blank"
               rel="noopener noreferrer"
               className="underline-offset-2 hover:underline"
             >
-              {sourceProvenance.domain}
+              {sourceProvenance.label}
             </a>
+          ) : (
+            sourceProvenance.label
           )}
-          {sourceProvenance.textAfterDomain}
+          {sourceProvenance.suffix && <> · {sourceProvenance.suffix}</>}
         </p>
       )}
 
-      {sourceVideoId && recipe.sourceVideoUrl && (
-        <section className="mt-[22px]" aria-label="Original video">
-          <h2 className="mb-3 font-ui text-eyebrow uppercase tracking-[0.16em] text-ink-faint">
+      {videoId && recipe.sourceVideoUrl && (
+        <section aria-label="Original video" className="mt-[22px]">
+          <h2 className="font-ui text-eyebrow uppercase tracking-[0.16em] text-ink-faint">
             Original video
           </h2>
-          <div className="aspect-video w-full overflow-hidden rounded-sm border-[0.5px] border-border bg-paper-sunken">
+          <div className="mt-3 aspect-video w-full overflow-hidden rounded-sm border-[0.5px] border-border bg-paper-sunken">
             <iframe
-              className="h-full w-full"
-              src={`https://www.youtube-nocookie.com/embed/${sourceVideoId}`}
+              src={`https://www.youtube-nocookie.com/embed/${videoId}`}
               title={`Original video for ${recipe.title}`}
-              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              className="h-full w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
           </div>

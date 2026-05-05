@@ -8,6 +8,8 @@ import {
   toRoman,
   extractDomain,
   extractYouTubeVideoId,
+  getRecipeSourceProvenance,
+  parseYouTubeEmbedVideoId,
   parseJsonObjectFromText,
   slugify,
   recipeToMarkdown,
@@ -359,6 +361,95 @@ describe("slugify", () => {
 
   it("strips diacritics", () => {
     expect(slugify("Crème brûlée")).toBe("creme-brulee");
+  });
+});
+
+// ─── source presentation helpers ──────────────────────────────────────────
+
+describe("parseYouTubeEmbedVideoId", () => {
+  it("parses standard, short, shorts, and embed YouTube URLs", () => {
+    expect(
+      parseYouTubeEmbedVideoId("https://www.youtube.com/watch?v=abc_123-xyz"),
+    ).toBe("abc_123-xyz");
+    expect(parseYouTubeEmbedVideoId("https://youtu.be/abc_123-xyz")).toBe(
+      "abc_123-xyz",
+    );
+    expect(
+      parseYouTubeEmbedVideoId("https://www.youtube.com/shorts/abc_123-xyz"),
+    ).toBe("abc_123-xyz");
+    expect(
+      parseYouTubeEmbedVideoId("https://www.youtube.com/embed/abc_123-xyz"),
+    ).toBe("abc_123-xyz");
+  });
+
+  it("rejects non-YouTube and malformed video URLs", () => {
+    expect(parseYouTubeEmbedVideoId("https://example.com/watch?v=abc123")).toBeNull();
+    expect(parseYouTubeEmbedVideoId("https://www.youtube.com/feed/subscriptions")).toBeNull();
+    expect(parseYouTubeEmbedVideoId("not a url")).toBeNull();
+  });
+});
+
+describe("getRecipeSourceProvenance", () => {
+  it("formats Browser-assisted URL provenance without naming the provider", () => {
+    expect(
+      getRecipeSourceProvenance({
+        sourceKind: "url",
+        sourceUrl: "https://www.example.com/recipe",
+        sourceImportMethod: "browserbase",
+      }),
+    ).toEqual({
+      label: "example.com",
+      href: "https://www.example.com/recipe",
+      suffix: "read in a browser",
+    });
+  });
+
+  it("formats YouTube link provenance with the resolved recipe domain", () => {
+    expect(
+      getRecipeSourceProvenance({
+        sourceKind: "youtube-link",
+        sourceUrl: "https://www.seriouseats.com/cacio",
+        sourceImportMethod: "fetch",
+      }),
+    ).toEqual({
+      label: "seriouseats.com",
+      href: "https://www.seriouseats.com/cacio",
+      suffix: "first found on YouTube",
+    });
+  });
+
+  it("formats text and YouTube transcript provenance", () => {
+    expect(
+      getRecipeSourceProvenance({
+        sourceKind: "text",
+        sourceUrl: null,
+        sourceImportMethod: "text",
+      }),
+    ).toEqual({ label: "pasted text" });
+
+    expect(
+      getRecipeSourceProvenance({
+        sourceKind: "youtube-transcript",
+        sourceUrl: "https://youtu.be/abc1234",
+        sourceImportMethod: "fetch",
+      }),
+    ).toEqual({
+      label: "YouTube transcript",
+      href: "https://youtu.be/abc1234",
+    });
+  });
+
+  it("falls back to legacy source URL behavior", () => {
+    expect(
+      getRecipeSourceProvenance({
+        sourceKind: null,
+        sourceUrl: "https://www.example.com/recipe",
+        sourceImportMethod: null,
+      }),
+    ).toEqual({
+      label: "example.com",
+      href: "https://www.example.com/recipe",
+    });
   });
 });
 

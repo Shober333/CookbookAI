@@ -4,7 +4,7 @@
 |-------|-------|
 | **Sprint** | 06 |
 | **Goal** | Make external recipe sources more reliable by preserving YouTube origin metadata, embedding source videos, closing deployed YouTube smoke, and adding a bounded Browserbase fallback for public blocked/JavaScript-heavy recipe pages |
-| **Status** | Draft CTO plan; ready for Founder review |
+| **Status** | Local QA pass; deployed smoke blocked by Vercel API 500s |
 | **Start** | 2026-05-05 |
 | **End** | TBD |
 
@@ -76,8 +76,8 @@ import resilience without overloading the sprint.
 - [ ] Local SQLite and production Postgres Prisma schemas/migrations stay in
       sync.
 - [ ] Import responses expose source metadata with a tested contract.
-- [ ] Recipe detail embeds the YouTube video when present.
-- [ ] Non-YouTube recipes render unchanged.
+- [x] Recipe detail embeds the YouTube video when present.
+- [x] Non-YouTube recipes render unchanged.
 - [ ] Browserbase fallback is implemented behind env/config and only runs for
       public URL import failures or JavaScript-heavy pages.
 - [ ] Browserbase missing-key, timeout, and blocked-page outcomes produce
@@ -87,7 +87,7 @@ import resilience without overloading the sprint.
 - [ ] Browserbase fallback is smoke-tested locally and on Vercel, or blocked
       by documented Browserbase account/quota limits.
 - [ ] Demo script is updated with stable URLs/videos.
-- [ ] QA report completed.
+- [x] QA report completed.
 - [ ] CTO Good/Bad/Ugly review completed.
 
 ---

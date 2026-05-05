@@ -106,7 +106,7 @@ test.describe("Sprint 6 source continuity", () => {
     await expect(page.getByRole("button", { name: "Increase servings" })).toBeVisible();
 
     await page.screenshot({
-      path: path.join(SCREENSHOT_DIR, "recipe-youtube-source-desktop.png"),
+      path: path.join(SCREENSHOT_DIR, "recipe-youtube-embed.png"),
       fullPage: true,
     });
   });
@@ -140,7 +140,7 @@ test.describe("Sprint 6 source continuity", () => {
     await expect(page.getByRole("button", { name: "Increase servings" })).toBeVisible();
 
     await page.screenshot({
-      path: path.join(SCREENSHOT_DIR, "recipe-youtube-source-mobile.png"),
+      path: path.join(SCREENSHOT_DIR, "recipe-youtube-embed-mobile.png"),
       fullPage: true,
     });
   });

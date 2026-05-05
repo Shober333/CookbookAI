@@ -3,7 +3,7 @@
 > **Owner:** [DEV-LEAD]  
 > **Sprint goal:** YouTube source continuity, Browserbase public-page fallback,
 > and deployed source smoke.
-> **Status:** Backend and frontend implementation complete; QA phases remain.
+> **Status:** Backend and frontend implementation complete; QA and demo phases remain.
 
 ---
 

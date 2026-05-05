@@ -138,6 +138,10 @@ from the Postgres schema before `next build`. Production migrations run with
 **Consequences:**
 - Local and production schema model definitions must be kept in sync.
 - Production migrations live under `prisma-postgres/migrations`.
+- Vercel builds run production migrations automatically before generating the
+  Postgres Prisma Client; local `npm run build:vercel` restores the SQLite
+  Prisma Client after the build to avoid local E2E using the wrong generated
+  client.
 - Future schema changes need both a local SQLite migration and a production
   Postgres migration until the project chooses one database path everywhere.
 

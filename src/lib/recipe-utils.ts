@@ -285,6 +285,106 @@ export function slugify(title: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+export function parseYouTubeEmbedVideoId(
+  value: string | null | undefined,
+): string | null {
+  if (!value) return null;
+
+  let url: URL;
+
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+
+  const host = url.hostname.toLowerCase();
+
+  if (host === "youtu.be") {
+    return cleanYouTubeVideoId(url.pathname.slice(1).split("/")[0]);
+  }
+
+  if (
+    host !== "youtube.com" &&
+    host !== "www.youtube.com" &&
+    host !== "m.youtube.com"
+  ) {
+    return null;
+  }
+
+  if (url.pathname === "/watch") {
+    return cleanYouTubeVideoId(url.searchParams.get("v"));
+  }
+
+  if (url.pathname.startsWith("/shorts/") || url.pathname.startsWith("/embed/")) {
+    return cleanYouTubeVideoId(url.pathname.split("/")[2]);
+  }
+
+  return null;
+}
+
+export type RecipeSourceProvenance = {
+  label: string;
+  href?: string;
+  suffix?: string;
+};
+
+export function getRecipeSourceProvenance(
+  recipe: Pick<
+    RecipeResponse,
+    "sourceUrl" | "sourceKind" | "sourceImportMethod"
+  >,
+): RecipeSourceProvenance | null {
+  const domain = extractDomain(recipe.sourceUrl);
+  const browserSuffix =
+    recipe.sourceImportMethod === "browserbase" ? "read in a browser" : null;
+
+  switch (recipe.sourceKind) {
+    case "url":
+      if (!domain || !recipe.sourceUrl) return null;
+      return {
+        label: domain,
+        href: recipe.sourceUrl,
+        suffix: browserSuffix ?? undefined,
+      };
+    case "text":
+      return { label: "pasted text" };
+    case "youtube-link":
+      if (!domain || !recipe.sourceUrl) return null;
+      return {
+        label: domain,
+        href: recipe.sourceUrl,
+        suffix: ["first found on YouTube", browserSuffix]
+          .filter(Boolean)
+          .join(" · "),
+      };
+    case "youtube-description":
+      return {
+        label: "YouTube description",
+        href: recipe.sourceUrl ?? undefined,
+      };
+    case "youtube-transcript":
+      return {
+        label: "YouTube transcript",
+        href: recipe.sourceUrl ?? undefined,
+      };
+    default:
+      if (!domain || !recipe.sourceUrl) return null;
+      return {
+        label: domain,
+        href: recipe.sourceUrl,
+        suffix: browserSuffix ?? undefined,
+      };
+  }
+}
+
+function cleanYouTubeVideoId(value: string | null | undefined): string | null {
+  if (!value) return null;
+
+  const match = value.match(/^[A-Za-z0-9_-]{6,}$/);
+  return match ? value : null;
+}
+
 export interface RecipeMarkdownOptions {
   servings: number;
   unitSystem: "metric" | "imperial";
