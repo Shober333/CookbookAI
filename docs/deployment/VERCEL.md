@@ -22,8 +22,17 @@ Set these in Vercel for Preview and Production unless noted otherwise.
 | `YOUTUBE_API_KEY` | Yes for YouTube smoke | `AIza...` | Google Cloud YouTube Data API v3 key |
 | `ENABLE_RECIPE_STRUCTURED_DATA_IMPORT` | Recommended | `false` | Keeps demo on validated AI extraction path |
 | `AI_EXTRACTION_TIMEOUT_MS` | Recommended | `120000` | Shared AI timeout |
+| `BROWSERBASE_FALLBACK_ENABLED` | Optional | `false` | Enables paid public-page render fallback only when explicitly set to `true` |
+| `BROWSERBASE_API_KEY` | Required when Browserbase enabled | `bb_...` | Browserbase API key; keep server-side only |
+| `BROWSERBASE_PROJECT_ID` | Recommended when Browserbase enabled | `project_...` | Browserbase project used for sessions |
+| `BROWSERBASE_TIMEOUT_MS` | Optional | `30000` | Render/connect timeout; values below 10000 fall back to 30000 |
 | `ANTHROPIC_API_KEY` | Optional | `sk-ant-...` | Only if `AI_PROVIDER=anthropic` |
 | `OLLAMA_BASE_URL` / `OLLAMA_MODEL` | Local only | `http://localhost:11434` | Do not use for Vercel demo |
+
+Browserbase is disabled by default because it is paid/usage-metered. Sprint 06
+uses it only for public recipe pages where normal fetch fails or returns
+unusable JS-heavy HTML. It must not be used to access paywalled, login-gated,
+CAPTCHA-protected, or private content.
 
 ## Database Setup
 
@@ -68,14 +77,16 @@ Run these against the Preview URL first.
 2. Log out, visit `/library`, and confirm redirect to `/login`.
 3. Log back in.
 4. Paste a short recipe in text mode and confirm Gemini creates a recipe.
-5. Import a stable recipe URL. If the site blocks automation, verify the
-   controlled blocked-site message appears.
+5. Import a stable recipe URL. If Browserbase is disabled and the site blocks
+   automation, verify the controlled blocked-site message appears.
 6. Import a YouTube URL with a recipe link in the description.
 7. Import a YouTube URL with recipe-like description text.
 8. Import a YouTube URL with no recipe and confirm the designed recovery
    message appears.
 9. Open a saved recipe and verify ingredients, method, serving scaler, unit
    toggle, and equipment adaptation still render.
+10. If Browserbase is enabled, import the stable public JS-heavy/blocked sample
+    URL and verify the recipe saves with Browserbase-assisted metadata.
 
 ## Rollback Notes
 

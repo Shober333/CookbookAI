@@ -5,10 +5,22 @@ export type RecipeIngredient = {
   notes?: string;
 };
 
+export type RecipeSourceKind =
+  | "url"
+  | "text"
+  | "youtube-link"
+  | "youtube-description"
+  | "youtube-transcript";
+
+export type RecipeSourceImportMethod = "fetch" | "browserbase" | "text";
+
 export type RecipePayload = {
   title: string;
   description?: string | null;
   sourceUrl?: string | null;
+  sourceVideoUrl?: string | null;
+  sourceKind?: RecipeSourceKind | null;
+  sourceImportMethod?: RecipeSourceImportMethod | null;
   servings: number;
   ingredients: RecipeIngredient[];
   steps: string[];

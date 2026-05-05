@@ -4,6 +4,11 @@ import {
   prepareRecipeSourceForAi,
 } from "@/lib/recipe-ai-extractor";
 import { selectedAiProvider } from "@/lib/ai-provider";
+import {
+  BrowserbaseFetchError,
+  isBrowserbaseFallbackEnabled,
+  renderPublicRecipePageWithBrowserbase,
+} from "@/lib/browserbase-fetch";
 import { extractRecipeFromJsonLd } from "@/lib/recipe-jsonld";
 import {
   copyRecipeForUser,
@@ -18,7 +23,12 @@ import {
   normalizeBareHost,
   YouTubeImportError,
 } from "@/lib/youtube-import";
-import type { RecipePayload, RecipeResponse } from "@/types/recipe";
+import type {
+  RecipePayload,
+  RecipeResponse,
+  RecipeSourceImportMethod,
+  RecipeSourceKind,
+} from "@/types/recipe";
 
 export const maxRecipeSourceChars = getRecipeSourceLimit();
 
@@ -44,14 +54,11 @@ export type RecipeImportSource =
 export type RecipeImportResult = {
   recipe: RecipeResponse;
   reused?: boolean;
-  sourceKind?:
-    | "url"
-    | "text"
-    | "youtube-link"
-    | "youtube-description"
-    | "youtube-transcript";
+  sourceKind?: RecipeSourceKind;
   sourceUrl?: string | null;
+  sourceVideoUrl?: string | null;
   sourceDomain?: string | null;
+  sourceImportMethod?: RecipeSourceImportMethod | null;
 };
 
 export class RecipeImportError extends Error {
@@ -73,29 +80,67 @@ export async function importRecipeForUser(
       return importRecipeFromYouTube(userId, source.url);
     }
 
-    const sourceUrl = normalizeImportableUrl(source.url);
-    const existing = await findRecipeByNormalizedSourceUrl(sourceUrl);
-
-    if (existing) {
-      const recipe = await copyRecipeForUser(userId, existing);
-
-      return {
-        recipe,
-        reused: true,
-        sourceKind: "url",
-        sourceUrl,
-      };
-    }
+    return importRecipeFromUrl(userId, source.url, { sourceKind: "url" });
   }
 
   const payload = await extractRecipePayload(source);
-  const recipe = await createRecipeForUser(userId, payload);
+  const recipe = await createRecipeForUser(userId, {
+    ...payload,
+    sourceKind: "text",
+    sourceImportMethod: "text",
+  });
 
   return {
     recipe,
     reused: false,
-    sourceKind: source.kind,
+    sourceKind: "text",
     sourceUrl: payload.sourceUrl ?? null,
+    sourceVideoUrl: null,
+    sourceImportMethod: "text",
+  };
+}
+
+async function importRecipeFromUrl(
+  userId: string,
+  value: string,
+  metadata: {
+    sourceKind: RecipeSourceKind;
+    sourceVideoUrl?: string | null;
+  },
+): Promise<RecipeImportResult> {
+  const sourceUrl = normalizeImportableUrl(value);
+  const existing = await findRecipeByNormalizedSourceUrl(sourceUrl);
+
+  if (existing) {
+    const recipe = await copyRecipeForUser(userId, existing, {
+      sourceVideoUrl: metadata.sourceVideoUrl ?? null,
+      sourceKind: metadata.sourceKind,
+    });
+
+    return {
+      recipe,
+      reused: true,
+      sourceKind: metadata.sourceKind,
+      sourceUrl,
+      sourceVideoUrl: metadata.sourceVideoUrl ?? null,
+      sourceImportMethod: recipe.sourceImportMethod,
+    };
+  }
+
+  const payload = await extractRecipePayloadFromUrl(sourceUrl);
+  const recipe = await createRecipeForUser(userId, {
+    ...payload,
+    sourceKind: metadata.sourceKind,
+    sourceVideoUrl: metadata.sourceVideoUrl ?? null,
+  });
+
+  return {
+    recipe,
+    reused: false,
+    sourceKind: metadata.sourceKind,
+    sourceUrl: payload.sourceUrl ?? sourceUrl,
+    sourceVideoUrl: metadata.sourceVideoUrl ?? null,
+    sourceImportMethod: payload.sourceImportMethod ?? "fetch",
   };
 }
 
@@ -119,15 +164,17 @@ async function importRecipeFromYouTube(
 
   if (candidateUrl) {
     try {
-      const result = await importRecipeForUser(userId, {
-        kind: "url",
-        url: candidateUrl,
+      const videoUrl = normalizeImportableUrl(url);
+      const result = await importRecipeFromUrl(userId, candidateUrl, {
+        sourceKind: "youtube-link",
+        sourceVideoUrl: videoUrl,
       });
 
       return {
         ...result,
         sourceKind: "youtube-link",
         sourceUrl: normalizeImportableUrl(candidateUrl),
+        sourceVideoUrl: videoUrl,
         sourceDomain: normalizeBareHost(new URL(candidateUrl).hostname),
       };
     } catch (error) {
@@ -143,6 +190,7 @@ async function importRecipeFromYouTube(
   const descriptionResult = await tryImportYouTubeText(userId, {
     text: metadata.description,
     sourceUrl: url,
+    sourceVideoUrl: normalizeImportableUrl(url),
     sourceKind: "youtube-description",
   });
 
@@ -156,6 +204,7 @@ async function importRecipeFromYouTube(
     const transcriptResult = await tryImportYouTubeText(userId, {
       text: transcript,
       sourceUrl: url,
+      sourceVideoUrl: normalizeImportableUrl(url),
       sourceKind: "youtube-transcript",
     });
 
@@ -221,25 +270,41 @@ function clipSourceForAi(sourceText: string): string {
 
 async function extractRecipePayloadFromUrl(value: string): Promise<RecipePayload> {
   const sourceUrl = normalizeImportableUrl(value);
-  const { rawText, sourceText, contentType } = await fetchRecipeSource(sourceUrl);
+  let rendered = await fetchRecipeSourceWithOptionalFallback(sourceUrl);
 
-  if (ENABLE_STRUCTURED_DATA_IMPORT && contentType.includes("html")) {
-    const jsonLdRecipe = extractRecipeFromJsonLd(rawText, sourceUrl);
+  if (ENABLE_STRUCTURED_DATA_IMPORT && rendered.contentType.includes("html")) {
+    const jsonLdRecipe = extractRecipeFromJsonLd(rendered.rawText, sourceUrl);
     const parsed = recipePayloadSchema.safeParse(jsonLdRecipe);
 
     if (parsed.success) {
-      return parsed.data;
+      return {
+        ...parsed.data,
+        sourceImportMethod: rendered.sourceImportMethod,
+      };
     }
   }
 
-  if (!looksLikeRecipeSource(sourceText)) {
+  if (!looksLikeRecipeSource(rendered.sourceText) && shouldTryBrowserbaseFallback(rendered)) {
+    rendered = await fetchRecipeSourceWithBrowserbase(sourceUrl);
+  }
+
+  if (!looksLikeRecipeSource(rendered.sourceText)) {
     throw new RecipeImportError(
       "We couldn't find a recipe at that link. Make sure it's a page with ingredients and steps.",
       422,
     );
   }
 
-  return extractPayloadWithAi(clipSourceForAi(sourceText), sourceUrl);
+  const payload = await extractPayloadWithAi(
+    clipSourceForAi(rendered.sourceText),
+    sourceUrl,
+  );
+
+  return {
+    ...payload,
+    sourceUrl,
+    sourceImportMethod: rendered.sourceImportMethod,
+  };
 }
 
 async function extractRecipePayloadFromText(
@@ -266,7 +331,64 @@ async function extractRecipePayloadFromText(
     );
   }
 
-  return extractPayloadWithAi(clipSourceForAi(sourceText), normalizedSourceUrl);
+  const payload = await extractPayloadWithAi(
+    clipSourceForAi(sourceText),
+    normalizedSourceUrl,
+  );
+
+  return {
+    ...payload,
+    sourceImportMethod: "text",
+  };
+}
+
+type FetchedRecipeSource = {
+  rawText: string;
+  sourceText: string;
+  contentType: string;
+  sourceImportMethod: RecipeSourceImportMethod;
+};
+
+async function fetchRecipeSourceWithOptionalFallback(
+  sourceUrl: string,
+): Promise<FetchedRecipeSource> {
+  try {
+    return {
+      ...(await fetchRecipeSource(sourceUrl)),
+      sourceImportMethod: "fetch",
+    };
+  } catch (error) {
+    if (!isBrowserbaseFallbackEnabled()) throw error;
+    return fetchRecipeSourceWithBrowserbase(sourceUrl);
+  }
+}
+
+async function fetchRecipeSourceWithBrowserbase(
+  sourceUrl: string,
+): Promise<FetchedRecipeSource> {
+  try {
+    const rendered = await renderPublicRecipePageWithBrowserbase(sourceUrl);
+    return {
+      rawText: rendered.rawText,
+      sourceText: rendered.sourceText,
+      contentType: rendered.contentType,
+      sourceImportMethod: "browserbase",
+    };
+  } catch (error) {
+    if (error instanceof BrowserbaseFetchError) {
+      throw new RecipeImportError(error.message, error.status);
+    }
+
+    throw error;
+  }
+}
+
+function shouldTryBrowserbaseFallback(source: FetchedRecipeSource): boolean {
+  return (
+    isBrowserbaseFallbackEnabled() &&
+    source.sourceImportMethod !== "browserbase" &&
+    source.contentType.includes("html")
+  );
 }
 
 async function fetchRecipeSource(sourceUrl: string): Promise<{
@@ -373,7 +495,8 @@ async function tryImportYouTubeText(
   params: {
     text: string;
     sourceUrl: string;
-    sourceKind: "youtube-description" | "youtube-transcript";
+    sourceVideoUrl: string;
+    sourceKind: Extract<RecipeSourceKind, "youtube-description" | "youtube-transcript">;
   },
 ): Promise<RecipeImportResult | null> {
   try {
@@ -382,16 +505,24 @@ async function tryImportYouTubeText(
       text: params.text,
       sourceUrl: params.sourceUrl,
     });
-    const recipe = await createRecipeForUser(userId, payload);
+    const recipe = await createRecipeForUser(userId, {
+      ...payload,
+      sourceKind: params.sourceKind,
+      sourceVideoUrl: params.sourceVideoUrl,
+    });
+    const sourceUrl = payload.sourceUrl ?? normalizeImportableUrl(params.sourceUrl);
 
     return {
       recipe,
       reused: false,
       sourceKind: params.sourceKind,
-      sourceUrl: payload.sourceUrl ?? normalizeImportableUrl(params.sourceUrl),
+      sourceUrl,
+      sourceVideoUrl: params.sourceVideoUrl,
+      sourceImportMethod: payload.sourceImportMethod ?? "text",
     };
   } catch (error) {
     if (error instanceof RecipeImportError) {
+      if (error.status === 503) throw error;
       return null;
     }
 

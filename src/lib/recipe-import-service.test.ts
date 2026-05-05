@@ -3,6 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { importRecipeForUser } from "./recipe-import-service";
 
 const mocks = vi.hoisted(() => ({
+  browserbaseEnabled: vi.fn(() => false),
+  BrowserbaseFetchError: class BrowserbaseFetchError extends Error {
+    constructor(
+      message: string,
+      readonly status: number,
+    ) {
+      super(message);
+    }
+  },
   copyRecipeForUser: vi.fn(),
   createRecipeForUser: vi.fn(),
   extractRecipeFromJsonLd: vi.fn(),
@@ -17,6 +26,7 @@ const mocks = vi.hoisted(() => ({
   prepareRecipeSourceForAi: vi.fn((text: string, maxChars: number) =>
     text.slice(0, maxChars),
   ),
+  renderPublicRecipePageWithBrowserbase: vi.fn(),
   YouTubeImportError: class YouTubeImportError extends Error {
     constructor(
       message: string,
@@ -25,6 +35,12 @@ const mocks = vi.hoisted(() => ({
       super(message);
     }
   },
+}));
+
+vi.mock("@/lib/browserbase-fetch", () => ({
+  BrowserbaseFetchError: mocks.BrowserbaseFetchError,
+  isBrowserbaseFallbackEnabled: mocks.browserbaseEnabled,
+  renderPublicRecipePageWithBrowserbase: mocks.renderPublicRecipePageWithBrowserbase,
 }));
 
 vi.mock("@/lib/anthropic", () => ({
@@ -78,6 +94,9 @@ const recipeResponse = {
   id: "recipe-1",
   userId: "user-1",
   adaptedSteps: null,
+  sourceVideoUrl: null,
+  sourceKind: null,
+  sourceImportMethod: null,
   createdAt: "2026-05-03T00:00:00.000Z",
   updatedAt: "2026-05-03T00:00:00.000Z",
 };
@@ -90,6 +109,13 @@ describe("importRecipeForUser", () => {
     mocks.fetchYouTubeTranscript.mockResolvedValue(recipeText);
     mocks.findRecipeByNormalizedSourceUrl.mockResolvedValue(null);
     mocks.isYouTubeUrl.mockReturnValue(false);
+    mocks.browserbaseEnabled.mockReturnValue(false);
+    mocks.renderPublicRecipePageWithBrowserbase.mockResolvedValue({
+      rawText: recipeText,
+      sourceText: recipeText,
+      contentType: "text/browserbase-rendered",
+      finalUrl: "https://example.com/cacio",
+    });
     vi.stubGlobal("fetch", vi.fn());
   });
 
@@ -107,13 +133,19 @@ describe("importRecipeForUser", () => {
     );
     expect(mocks.createRecipeForUser).toHaveBeenCalledWith(
       "user-1",
-      recipePayload,
+      {
+        ...recipePayload,
+        sourceImportMethod: "text",
+        sourceKind: "text",
+      },
     );
     expect(result).toEqual({
       recipe: recipeResponse,
       reused: false,
       sourceKind: "text",
       sourceUrl: "https://example.com/cacio",
+      sourceVideoUrl: null,
+      sourceImportMethod: "text",
     });
   });
 
@@ -166,6 +198,9 @@ describe("importRecipeForUser", () => {
       ingredients: JSON.stringify(recipePayload.ingredients),
       steps: JSON.stringify(recipePayload.steps),
       adaptedSteps: JSON.stringify(["Personal adaptation."]),
+      sourceVideoUrl: null,
+      sourceKind: null,
+      sourceImportMethod: "browserbase",
       tags: "pasta",
       createdAt: new Date("2026-05-02T00:00:00.000Z"),
       updatedAt: new Date("2026-05-02T00:00:00.000Z"),
@@ -175,6 +210,7 @@ describe("importRecipeForUser", () => {
       ...recipeResponse,
       id: "recipe-copy",
       adaptedSteps: null,
+      sourceImportMethod: "browserbase",
     });
 
     const result = await importRecipeForUser("user-1", {
@@ -185,6 +221,10 @@ describe("importRecipeForUser", () => {
     expect(mocks.copyRecipeForUser).toHaveBeenCalledWith(
       "user-1",
       sourceRecipe,
+      {
+        sourceVideoUrl: null,
+        sourceKind: "url",
+      },
     );
     expect(fetch).not.toHaveBeenCalled();
     expect(mocks.extractRecipeWithAi).not.toHaveBeenCalled();
@@ -193,6 +233,8 @@ describe("importRecipeForUser", () => {
       reused: true,
       sourceKind: "url",
       sourceUrl: "https://example.com/cacio",
+      sourceVideoUrl: null,
+      sourceImportMethod: "browserbase",
       recipe: { id: "recipe-copy", adaptedSteps: null },
     });
   });
@@ -219,13 +261,93 @@ describe("importRecipeForUser", () => {
     );
     expect(mocks.createRecipeForUser).toHaveBeenCalledWith(
       "user-1",
-      recipePayload,
+      {
+        ...recipePayload,
+        sourceUrl: "https://example.com/cacio",
+        sourceImportMethod: "fetch",
+        sourceKind: "url",
+        sourceVideoUrl: null,
+      },
     );
     expect(result).toMatchObject({
       reused: false,
       sourceKind: "url",
+      sourceImportMethod: "fetch",
+      sourceVideoUrl: null,
       recipe: recipeResponse,
     });
+  });
+
+  it("uses Browserbase when normal fetch fails and fallback is enabled", async () => {
+    mocks.browserbaseEnabled.mockReturnValue(true);
+    vi.mocked(fetch).mockRejectedValue(new Error("fetch failed"));
+
+    const result = await importRecipeForUser("user-1", {
+      kind: "url",
+      url: "https://example.com/js-heavy",
+    });
+
+    expect(mocks.renderPublicRecipePageWithBrowserbase).toHaveBeenCalledWith(
+      "https://example.com/js-heavy",
+    );
+    expect(mocks.extractRecipeWithAi).toHaveBeenCalledWith(
+      recipeText,
+      "https://example.com/js-heavy",
+    );
+    expect(mocks.createRecipeForUser).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({
+        sourceImportMethod: "browserbase",
+        sourceKind: "url",
+      }),
+    );
+    expect(result).toMatchObject({
+      sourceKind: "url",
+      sourceUrl: "https://example.com/js-heavy",
+      sourceImportMethod: "browserbase",
+    });
+  });
+
+  it("uses Browserbase when normal fetch returns an unreadable JS-heavy page", async () => {
+    mocks.browserbaseEnabled.mockReturnValue(true);
+    vi.mocked(fetch).mockResolvedValue(
+      new Response("<main>Loading app...</main>", {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      }),
+    );
+
+    await importRecipeForUser("user-1", {
+      kind: "url",
+      url: "https://example.com/js-heavy",
+    });
+
+    expect(mocks.renderPublicRecipePageWithBrowserbase).toHaveBeenCalledWith(
+      "https://example.com/js-heavy",
+    );
+  });
+
+  it("returns a controlled Browserbase configuration error", async () => {
+    mocks.browserbaseEnabled.mockReturnValue(true);
+    mocks.renderPublicRecipePageWithBrowserbase.mockRejectedValue(
+      new mocks.BrowserbaseFetchError(
+        "Browserbase fallback is enabled, but BROWSERBASE_API_KEY is not configured.",
+        503,
+      ),
+    );
+    vi.mocked(fetch).mockRejectedValue(new Error("fetch failed"));
+
+    await expect(
+      importRecipeForUser("user-1", {
+        kind: "url",
+        url: "https://example.com/js-heavy",
+      }),
+    ).rejects.toMatchObject({
+      status: 503,
+      message:
+        "Browserbase fallback is enabled, but BROWSERBASE_API_KEY is not configured.",
+    });
+
+    expect(mocks.createRecipeForUser).not.toHaveBeenCalled();
   });
 
   it("returns a controlled provider-unavailable error when Gemini config is invalid", async () => {
@@ -278,9 +400,17 @@ describe("importRecipeForUser", () => {
     expect(result).toMatchObject({
       sourceKind: "youtube-link",
       sourceUrl: "https://www.example.com/cacio",
+      sourceVideoUrl: "https://www.youtube.com/watch?v=abc1234",
       sourceDomain: "example.com",
       recipe: recipeResponse,
     });
+    expect(mocks.createRecipeForUser).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({
+        sourceKind: "youtube-link",
+        sourceVideoUrl: "https://www.youtube.com/watch?v=abc1234",
+      }),
+    );
   });
 
   it("falls back to recipe-like YouTube description text", async () => {
@@ -311,7 +441,15 @@ describe("importRecipeForUser", () => {
     expect(result).toMatchObject({
       sourceKind: "youtube-description",
       sourceUrl: "https://youtu.be/abc1234",
+      sourceVideoUrl: "https://youtu.be/abc1234",
     });
+    expect(mocks.createRecipeForUser).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({
+        sourceKind: "youtube-description",
+        sourceVideoUrl: "https://youtu.be/abc1234",
+      }),
+    );
   });
 
   it("returns a clear failure when the YouTube description has no recipe", async () => {
@@ -370,6 +508,7 @@ describe("importRecipeForUser", () => {
     expect(result).toMatchObject({
       sourceKind: "youtube-transcript",
       sourceUrl: "https://www.youtube.com/watch?v=abc1234",
+      sourceVideoUrl: "https://www.youtube.com/watch?v=abc1234",
     });
   });
 

@@ -5,6 +5,45 @@
 
 ---
 
+## Decision: Sprint 06 Source Metadata and Browserbase Boundary
+
+**Date:** 2026-05-05
+**Status:** Accepted — Sprint 06 implementation
+**Decided by:** [CTO] sprint plan; `[DEV:backend]` implementation
+
+**Context:**
+YouTube imports can resolve to three different recipe sources: a recipe link in
+the video description, recipe text in the description, or a transcript. The
+saved recipe also needs enough metadata for the detail UI to show the original
+YouTube video separately from the recipe page that was actually extracted.
+Separately, some public recipe pages block server fetches or render their
+content client-side, but Browserbase is paid and must not become a broad
+browsing bypass.
+
+**Decision:**
+Persist nullable recipe source metadata on `Recipe`: `sourceVideoUrl`,
+`sourceKind`, and `sourceImportMethod`. URL imports keep `sourceKind=url`;
+YouTube imports use `youtube-link`, `youtube-description`, or
+`youtube-transcript`; import method is `fetch`, `browserbase`, or `text`.
+Browserbase is a disabled-by-default fallback used only for public HTTP/HTTPS
+recipe pages when normal fetch fails or returns unusable JS-heavy HTML.
+
+**Rationale:**
+- Keeps old recipes readable because all new fields are nullable.
+- Gives frontend/API consumers a stable contract without overloading
+  `sourceUrl`.
+- Preserves URL deduplication while still recording original YouTube context.
+- Contains Browserbase cost and compliance risk by requiring an explicit env
+  flag and rejecting credentialed/private URL shapes.
+
+**Consequences:**
+- Local SQLite and production Postgres migrations must stay in lockstep.
+- Deployment docs must make Browserbase opt-in and paid/usage-metered.
+- QA needs separate smoke coverage for YouTube source continuity and the
+  Browserbase-assisted public-page path.
+
+---
+
 ## Decision: Production AI Provider — Anthropic on Vercel
 
 **Date:** 2026-05-01
