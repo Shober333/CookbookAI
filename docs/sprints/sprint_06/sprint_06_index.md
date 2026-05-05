@@ -95,6 +95,7 @@ import resilience without overloading the sprint.
 ## Artifacts
 
 - Team note: `team.md`
+- UI/UX source presentation: `uiux_source_presentation.md`
 - Dev tasks: `todo/dev_todo.md`
 - QA scenarios: `todo/qa_todo.md`
 - Sprint report: `reports/sprint_06_report.md`

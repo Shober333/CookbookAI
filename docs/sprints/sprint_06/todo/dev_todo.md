@@ -23,7 +23,7 @@
 |---|------|--------|--------|---------------------|
 | 6.1 | Confirm Sprint 06 scope | `[CTO]` | `[ ]` | Founder confirms Sprint 06 focuses on YouTube source continuity and deployed YouTube smoke |
 | 6.2 | Define source metadata contract | `[DEV-LEAD]` + `[DEV:backend]` | `[x]` | Contract distinguishes `sourceUrl`, original YouTube video URL, source kind, source domain, and Browserbase fallback source without breaking existing recipes |
-| 6.3 | UI/UX source presentation check | `[UI/UX]` | `[ ]` | Embed placement, source label, loading/error/no-video states are approved or existing docs are confirmed sufficient |
+| 6.3 | UI/UX source presentation check | `[UI/UX]` | `[x]` | Embed placement, source label, loading/error/no-video states are approved in `docs/sprints/sprint_06/uiux_source_presentation.md` |
 | 6.4 | Define Browserbase boundary | `[CTO]` + `[DEV-LEAD]` | `[x]` | Sprint docs state Browserbase is only for public blocked/JS-heavy pages, not paywalls, logins, CAPTCHA bypass, or private content |
 
 ---
