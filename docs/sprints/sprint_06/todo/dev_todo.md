@@ -3,7 +3,7 @@
 > **Owner:** [DEV-LEAD]  
 > **Sprint goal:** YouTube source continuity, Browserbase public-page fallback,
 > and deployed source smoke.
-> **Status:** Backend implementation in progress; frontend and QA phases remain.
+> **Status:** Backend and frontend implementation complete; QA phases remain.
 
 ---
 
@@ -54,9 +54,9 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|--------|--------|---------------------|
-| 6.13 | Embed YouTube video on recipe detail | `[DEV:frontend]` | `[ ]` | Recipes with original YouTube URL render an accessible, responsive embed; non-YouTube recipes are unchanged |
-| 6.14 | Add source label/detail copy | `[DEV:frontend]` | `[ ]` | UI communicates YouTube source, resolved recipe source, and Browserbase-assisted import where useful without confusing users; copy follows `[UI/UX]` guidance |
-| 6.15 | Mobile and keyboard pass | `[DEV:frontend]` | `[ ]` | Embed and source controls fit at 375px, preserve focus visibility, and do not break existing recipe detail controls |
+| 6.13 | Embed YouTube video on recipe detail | `[DEV:frontend]` | `[x]` | Recipes with original YouTube URL render an accessible, responsive embed; non-YouTube recipes are unchanged |
+| 6.14 | Add source label/detail copy | `[DEV:frontend]` | `[x]` | UI communicates YouTube source, resolved recipe source, and Browserbase-assisted import where useful without confusing users; copy follows `[UI/UX]` guidance |
+| 6.15 | Mobile and keyboard pass | `[DEV:frontend]` | `[x]` | Embed and source controls fit at 375px, preserve focus visibility, and do not break existing recipe detail controls |
 
 ---
 
