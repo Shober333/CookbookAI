@@ -7,6 +7,7 @@ import {
   formatAmount,
   toRoman,
   extractDomain,
+  extractYouTubeVideoId,
   parseJsonObjectFromText,
   slugify,
   recipeToMarkdown,
@@ -267,6 +268,37 @@ describe("extractDomain", () => {
 
   it("returns null for an invalid URL", () => {
     expect(extractDomain("not-a-url")).toBeNull();
+  });
+});
+
+// ─── extractYouTubeVideoId ─────────────────────────────────────────────────
+
+describe("extractYouTubeVideoId", () => {
+  it("extracts video IDs from watch URLs", () => {
+    expect(
+      extractYouTubeVideoId("https://www.youtube.com/watch?v=abc_123-xyz"),
+    ).toBe("abc_123-xyz");
+  });
+
+  it("extracts video IDs from short URLs", () => {
+    expect(extractYouTubeVideoId("https://youtu.be/abc1234?t=30")).toBe(
+      "abc1234",
+    );
+  });
+
+  it("extracts video IDs from Shorts URLs", () => {
+    expect(extractYouTubeVideoId("https://m.youtube.com/shorts/short_123")).toBe(
+      "short_123",
+    );
+  });
+
+  it("returns null for non-YouTube URLs", () => {
+    expect(extractYouTubeVideoId("https://example.com/watch?v=abc1234")).toBeNull();
+  });
+
+  it("returns null for invalid or missing values", () => {
+    expect(extractYouTubeVideoId("not-a-url")).toBeNull();
+    expect(extractYouTubeVideoId(null)).toBeNull();
   });
 });
 

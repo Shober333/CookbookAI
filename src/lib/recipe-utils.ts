@@ -150,6 +150,43 @@ export function extractDomain(url?: string | null): string | null {
   }
 }
 
+export function extractYouTubeVideoId(url?: string | null): string | null {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./, "").replace(/^m\./, "");
+
+    if (host === "youtu.be") {
+      return sanitizeYouTubeId(parsed.pathname.split("/").filter(Boolean)[0]);
+    }
+
+    if (host !== "youtube.com") return null;
+
+    if (parsed.pathname === "/watch") {
+      return sanitizeYouTubeId(parsed.searchParams.get("v"));
+    }
+
+    const [firstSegment, secondSegment] = parsed.pathname
+      .split("/")
+      .filter(Boolean);
+
+    if (firstSegment === "shorts") {
+      return sanitizeYouTubeId(secondSegment);
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function sanitizeYouTubeId(value?: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return /^[A-Za-z0-9_-]{6,}$/.test(trimmed) ? trimmed : null;
+}
+
 // parseJsonObjectFromText: accepts raw JSON or a JSON object wrapped by model prose/fences.
 export function parseJsonObjectFromText(text: string): Record<string, unknown> {
   const trimmed = text.trim();
