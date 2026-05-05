@@ -4,9 +4,9 @@
 |-------|-------|
 | **Sprint** | 05 |
 | **Goal** | Make CookbookAI deployable and demoable on Vercel with documented production environment setup, smoke checks, and rollback notes |
-| **Status** | Local preflight and deployed core smoke passed; CTO review pending |
+| **Status** | CTO accepted; ready for Sprint 06 planning |
 | **Start** | 2026-05-04 |
-| **End** | TBD |
+| **End** | 2026-05-05 |
 
 ---
 
@@ -60,7 +60,7 @@
       demo key/video selection.
 - [x] Rollback/demo recovery notes are written.
 - [x] QA report completed.
-- [ ] CTO Good/Bad/Ugly review completed.
+- [x] CTO Good/Bad/Ugly review completed.
 
 ---
 
