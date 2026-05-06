@@ -13,6 +13,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const e2ePort = Number(process.env.PORT ?? 3100);
+const liveBaseURL = process.env.LIVE_BASE_URL;
+const baseURL = liveBaseURL ?? `http://localhost:${e2ePort}`;
 
 export default defineConfig({
   // Look for test files in the tests/e2e directory
@@ -38,7 +40,7 @@ export default defineConfig({
 
   // Shared settings for all projects
   use: {
-    baseURL: `http://localhost:${e2ePort}`,
+    baseURL,
 
     // Collect trace on first retry
     trace: "on-first-retry",
@@ -64,10 +66,12 @@ export default defineConfig({
     // },
   ],
 
-  webServer: {
-    command: `PORT=${e2ePort} NEXTAUTH_URL=http://localhost:${e2ePort} AUTH_URL=http://localhost:${e2ePort} npm run dev`,
-    port: e2ePort,
-    reuseExistingServer: false,
-    timeout: 120_000,
-  },
+  webServer: liveBaseURL
+    ? undefined
+    : {
+        command: `PORT=${e2ePort} NEXTAUTH_URL=http://localhost:${e2ePort} AUTH_URL=http://localhost:${e2ePort} npm run dev`,
+        port: e2ePort,
+        reuseExistingServer: false,
+        timeout: 120_000,
+      },
 });

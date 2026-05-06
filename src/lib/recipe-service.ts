@@ -55,14 +55,15 @@ export function toRecipeResponse(recipe: Recipe): RecipeResponse {
 
 export function buildRecipeListWhere(
   userId: string,
-  query?: string | null,
 ): Prisma.RecipeWhereInput {
-  const q = query?.trim();
+  return { userId };
+}
 
-  return {
-    userId,
-    ...(q ? { title: { contains: q } } : {}),
-  };
+function matchesRecipeQuery(recipe: Recipe, query?: string | null): boolean {
+  const q = query?.trim().toLocaleLowerCase();
+  if (!q) return true;
+
+  return recipe.title.toLocaleLowerCase().includes(q);
 }
 
 export async function listRecipesForUser(
@@ -70,11 +71,13 @@ export async function listRecipesForUser(
   query?: string | null,
 ): Promise<RecipeResponse[]> {
   const recipes = await prisma.recipe.findMany({
-    where: buildRecipeListWhere(userId, query),
+    where: buildRecipeListWhere(userId),
     orderBy: { createdAt: "desc" },
   });
 
-  return recipes.map(toRecipeResponse);
+  return recipes
+    .filter((recipe) => matchesRecipeQuery(recipe, query))
+    .map(toRecipeResponse);
 }
 
 export async function createRecipeForUser(
