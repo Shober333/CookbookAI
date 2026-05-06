@@ -156,6 +156,13 @@ export async function calculateNutritionEstimate(params: {
     });
   }
 
+  if (ingredientMatches.length === unmatchedIngredients.length) {
+    throw new NutritionCalculationError(
+      "We couldn't match any recipe ingredients to nutrition data.",
+      422,
+    );
+  }
+
   const estimate: RecipeNutritionEstimate = {
     source: "usda-fdc",
     calculatedAt: new Date().toISOString(),

@@ -76,6 +76,14 @@ export function NutritionPanel({
   }
 
   const fullMatch = estimate ? isFullMatch(estimate) : false;
+  const fullRecipeMacros = estimate
+    ? [
+        { label: "cal", value: estimate.total.calories, unit: "" },
+        { label: "protein", value: estimate.total.proteinGrams, unit: "g" },
+        { label: "carbs", value: estimate.total.carbohydrateGrams, unit: "g" },
+        { label: "fat", value: estimate.total.fatGrams, unit: "g" },
+      ]
+    : [];
 
   return (
     <section
@@ -176,6 +184,26 @@ export function NutritionPanel({
               </div>
             ))}
           </div>
+
+          {/* Full recipe totals */}
+          <p className="mt-3 max-w-[34rem] font-ui text-ui-sm leading-relaxed text-ink-faint">
+            <span className="uppercase tracking-[0.08em]">Whole recipe</span>
+            <span aria-hidden="true"> · </span>
+            {fullRecipeMacros.map(({ label, value, unit }, index) => (
+              <span key={label}>
+                <span
+                  className="font-display text-body-sm font-medium text-ink-muted"
+                  style={{ fontFeatureSettings: "'tnum'" }}
+                >
+                  {index === 0 ? `~${value}` : value}
+                </span>
+                {unit && <span className="ml-[1px]">{unit}</span>} {label}
+                {index < fullRecipeMacros.length - 1 && (
+                  <span aria-hidden="true"> · </span>
+                )}
+              </span>
+            ))}
+          </p>
 
           {/* Fiber — full match only */}
           {fullMatch && estimate.perServing.fiberGrams !== undefined && (

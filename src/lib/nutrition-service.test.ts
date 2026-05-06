@@ -76,15 +76,51 @@ describe("calculateNutritionEstimate", () => {
     });
   });
 
-  it("tracks unmatched ingredients without fabricating macros", async () => {
+  it("returns a controlled no-match error when every ingredient is unmatched", async () => {
+    await expect(
+      calculateNutritionEstimate({
+        title: "Garlic Oil",
+        servings: 4,
+        ingredients: [{ amount: 2, unit: "cloves", name: "garlic" }],
+        searchFood: vi.fn().mockResolvedValue(null),
+      }),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining("match"),
+      status: 422,
+    });
+  });
+
+  it("keeps partial matches as estimates without fabricating unmatched macros", async () => {
+    const searchFood = vi.fn().mockImplementation((query: string) => {
+      if (query === "tomatoes") {
+        return Promise.resolve({
+          fdcId: 123,
+          description: "Tomatoes, raw",
+          per100g: {
+            calories: 20,
+            proteinGrams: 1,
+            carbohydrateGrams: 4,
+            fatGrams: 0.2,
+            fiberGrams: 1.2,
+          },
+        });
+      }
+
+      return Promise.resolve(null);
+    });
+
     const estimate = await calculateNutritionEstimate({
       title: "Garlic Oil",
       servings: 4,
-      ingredients: [{ amount: 2, unit: "cloves", name: "garlic" }],
-      searchFood: vi.fn().mockResolvedValue(null),
+      ingredients: [
+        { amount: 200, unit: "g", name: "tomatoes" },
+        { amount: 2, unit: "cloves", name: "garlic" },
+      ],
+      searchFood,
     });
 
-    expect(estimate.total.calories).toBe(0);
+    expect(estimate.total.calories).toBe(40);
+    expect(estimate.perServing.calories).toBe(10);
     expect(estimate.unmatchedIngredients).toEqual(["garlic"]);
     expect(estimate.warnings).toContain(
       "Some ingredients could not be converted to grams.",
@@ -102,6 +138,45 @@ describe("searchFoodDataCentral", () => {
       "FoodData Central API key",
     );
     expect(fetch).not.toHaveBeenCalled();
+
+    process.env.FOODDATA_CENTRAL_API_KEY = originalKey;
+    vi.unstubAllGlobals();
+  });
+
+  it("returns null when FoodData Central has no match", async () => {
+    const originalKey = process.env.FOODDATA_CENTRAL_API_KEY;
+    process.env.FOODDATA_CENTRAL_API_KEY = "test-fdc-key";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ foods: [] })));
+
+    await expect(searchFoodDataCentral("pink pepper dust")).resolves.toBeNull();
+
+    process.env.FOODDATA_CENTRAL_API_KEY = originalKey;
+    vi.unstubAllGlobals();
+  });
+
+  it("maps FoodData Central rate limits to a controlled service error", async () => {
+    const originalKey = process.env.FOODDATA_CENTRAL_API_KEY;
+    process.env.FOODDATA_CENTRAL_API_KEY = "test-fdc-key";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("", { status: 429 })));
+
+    await expect(searchFoodDataCentral("tomato")).rejects.toMatchObject({
+      message: expect.stringContaining("rate-limiting"),
+      status: 503,
+    });
+
+    process.env.FOODDATA_CENTRAL_API_KEY = originalKey;
+    vi.unstubAllGlobals();
+  });
+
+  it("maps FoodData Central network failures to a controlled service error", async () => {
+    const originalKey = process.env.FOODDATA_CENTRAL_API_KEY;
+    process.env.FOODDATA_CENTRAL_API_KEY = "test-fdc-key";
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
+
+    await expect(searchFoodDataCentral("tomato")).rejects.toMatchObject({
+      message: expect.stringContaining("FoodData Central"),
+      status: 502,
+    });
 
     process.env.FOODDATA_CENTRAL_API_KEY = originalKey;
     vi.unstubAllGlobals();
