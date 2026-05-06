@@ -82,7 +82,7 @@
 | # | Scenario | Steps | Expected | Status |
 |---|----------|-------|----------|--------|
 | Q7.27 | Deployed auth/library baseline | Register/login on Vercel and open library | Auth and library still work | `[x]` |
-| Q7.28 | Deployed macro calculation | Calculate macros for one stable saved recipe | Macro estimate saves and renders | `[!]` |
+| Q7.28 | Deployed macro calculation | Calculate macros for one stable saved recipe | Macro estimate saves and renders | `[x]` |
 | Q7.29 | Deployed Groq smoke | If Groq key is configured, run one stable text/URL import | Recipe saves through Groq or blocker is documented | `[x]` |
 | Q7.30 | Deployed video fallback smoke | If Gemini video fallback is configured, run stable direct-video sample | Recipe saves or no-recipe recovery appears as expected | `[-]` |
 

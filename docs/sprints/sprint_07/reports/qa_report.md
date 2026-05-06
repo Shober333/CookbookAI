@@ -2,7 +2,7 @@
 
 > **Owner:** [DEV-QA]  
 > **Run date:** 2026-05-06  
-> **Status:** Local regression, nutrition UI, Groq mocks, and deployed baseline pass; deployed USDA macro calculation blocked by missing FoodData Central key.
+> **Status:** Local regression, nutrition UI, Groq mocks, deployed baseline, and deployed USDA macro calculation pass; USDA match quality still needs review.
 
 ---
 
@@ -20,8 +20,11 @@ Sprint 07 now passes the local QA gates:
 - Deployed URL checked: `https://cookbook-ai-5qdb.vercel.app/`.
 - Deployed registration/login, recipe creation, saved macro-estimate persistence,
   and text import smoke passed.
-- Deployed live macro calculation returned a controlled 503 because
-  `FOODDATA_CENTRAL_API_KEY` is not configured on the Vercel deployment.
+- Deployed live macro calculation passed on recheck: `POST /api/recipes/[id]/nutrition`
+  returned `200` with `source: "usda-fdc"` and a saved estimate.
+- USDA lookup quality needs review: FoodData Central matched `tomatoes` to
+  `Tomato powder`, producing an implausibly high calorie estimate for fresh
+  tomatoes.
 
 The earlier browser blocker is no longer active in this environment. The actual
 local setup issue was stale Prisma state: the generated client was missing the
@@ -65,8 +68,13 @@ applied migration `20260506120000_add_nutrition_estimate`. After
   `source = "usda-fdc"`.
 - Deployed recipe detail HTML for that saved estimate contained `Macros` and
   `Approximately 160 calories per serving`.
-- Deployed live USDA lookup is blocked: `POST /api/recipes/[id]/nutrition`
-  returned `503` with `Macro calculation needs a configured FoodData Central API key.`
+- Deployed live USDA lookup passed on 2026-05-06 at
+  `https://cookbook-ai-5qdb.vercel.app/`: a fresh recipe with tomatoes, pasta,
+  and olive oil returned `200`, persisted `source: "usda-fdc"`, matched 3 of 3
+  ingredients, and had no unmatched ingredients.
+- USDA match quality needs follow-up: the deployed run matched `tomatoes` to
+  `Tomato powder`, which inflated the estimate to `2312.5` calories per serving
+  for a simple tomato/pasta recipe.
 
 ### Groq GPT-OSS Provider
 
@@ -88,12 +96,13 @@ applied migration `20260506120000_add_nutrition_estimate`. After
 
 ### Deployed Smoke
 
-Partially passed against `https://cookbook-ai-5qdb.vercel.app/`.
+Passed for auth, recipe creation, text import, saved macro rendering, and live
+macro calculation against `https://cookbook-ai-5qdb.vercel.app/`.
 
 - Auth/register baseline passed with a throwaway QA account.
 - Recipe creation baseline passed.
 - Saved macro-estimate persistence and recipe-detail rendering passed.
-- Live macro calculation is blocked by missing deployed FoodData Central config.
+- Live macro calculation passed after Vercel FoodData Central config propagated.
 - Text import/provider smoke passed, but provider identity is not exposed in the
   response.
 - Gemini video fallback smoke remains deferred.
@@ -115,7 +124,7 @@ Fix status: resolved locally. `npm run db:generate` refreshed Prisma Client, and
 `npm run db:migrate` applied `20260506120000_add_nutrition_estimate`. The final
 full Chromium run passed.
 
-**Bug:** Deployed macro calculation is unavailable because FoodData Central is not configured  
+**Bug:** Deployed macro calculation previously unavailable because FoodData Central was not configured  
 **Steps to Reproduce:**
 1. Register/login at `https://cookbook-ai-5qdb.vercel.app/`.
 2. Create a saved recipe with common metric ingredients.
@@ -123,6 +132,19 @@ full Chromium run passed.
 **Expected:** The deployment calculates and saves per-serving and full-recipe macros from USDA data.  
 **Actual:** The API returns `503` with `Macro calculation needs a configured FoodData Central API key.`  
 **Severity:** High for Sprint 07 deployed macro functionality  
+**Repro environment:** Vercel deployment `https://cookbook-ai-5qdb.vercel.app/`, 2026-05-06.
+
+Fix status: resolved on recheck. The same deployed endpoint now returns `200`
+and saves a USDA estimate.
+
+**Bug:** USDA first-result matching can choose the wrong food form  
+**Steps to Reproduce:**
+1. Register/login at `https://cookbook-ai-5qdb.vercel.app/`.
+2. Create a recipe with `200 g tomatoes`, `100 g pasta`, and `1 tbsp olive oil`.
+3. Call `POST /api/recipes/[id]/nutrition`.
+**Expected:** Common ingredients match ordinary food forms, for example fresh/raw tomatoes.  
+**Actual:** `tomatoes` matched `Tomato powder`, inflating total and per-serving calories.  
+**Severity:** Medium for nutrition estimate trust  
 **Repro environment:** Vercel deployment `https://cookbook-ai-5qdb.vercel.app/`, 2026-05-06.
 
 ---
@@ -143,12 +165,11 @@ current git rules, matching the existing screenshot artifact behavior.
 
 Local Sprint 07 QA is green for compile, unit, build, browser regression,
 nutrition UI coverage, focused Groq mocks, and focused macro service checks.
-The deployed app is usable for auth, recipe creation, saved macro display, and
-text import, but it is not ready for live macro calculation until the USDA key
-is configured.
+The deployed app is usable for auth, recipe creation, saved macro display, text
+import, and live macro calculation. Before shipping the macro feature as a
+trusted estimate, improve USDA result ranking or ingredient normalization so
+common ingredients do not match concentrated/dried forms unexpectedly.
 
-- Configure `FOODDATA_CENTRAL_API_KEY` on Vercel, then rerun deployed macro
-  calculation.
 - If provider-level proof matters, expose internal QA-only provider metadata or
   inspect Vercel logs for the text import smoke; the public API response does
   not reveal whether Groq or another text provider handled the import.
