@@ -413,6 +413,61 @@ describe("importRecipeForUser", () => {
     );
   });
 
+  it("tries later YouTube candidate links before falling back to description text", async () => {
+    mocks.isYouTubeUrl.mockImplementation((url: string) =>
+      url.includes("youtube.com"),
+    );
+    mocks.fetchYouTubeDescriptionMetadata.mockResolvedValue({
+      videoId: "abc1234",
+      title: "Pastrami video",
+      description: recipeText,
+      candidateUrls: [
+        "https://sponsor.example.com/deal",
+        "https://www.example.com/cacio",
+      ],
+    });
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response("<main>Hydration packets and subscription discounts.</main>", {
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(`<main>${recipeText}</main>`, {
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+      );
+
+    const result = await importRecipeForUser("user-1", {
+      kind: "url",
+      url: "https://www.youtube.com/watch?v=abc1234",
+    });
+
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      "https://sponsor.example.com/deal",
+      expect.objectContaining({ headers: expect.any(Object) }),
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      "https://www.example.com/cacio",
+      expect.objectContaining({ headers: expect.any(Object) }),
+    );
+    expect(result).toMatchObject({
+      sourceKind: "youtube-link",
+      sourceUrl: "https://www.example.com/cacio",
+      sourceVideoUrl: "https://www.youtube.com/watch?v=abc1234",
+      sourceDomain: "example.com",
+    });
+    expect(mocks.createRecipeForUser).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({
+        sourceKind: "youtube-link",
+        sourceVideoUrl: "https://www.youtube.com/watch?v=abc1234",
+      }),
+    );
+  });
+
   it("falls back to recipe-like YouTube description text", async () => {
     mocks.isYouTubeUrl.mockImplementation((url: string) =>
       url.includes("youtu.be"),

@@ -30,6 +30,7 @@ const NON_RECIPE_DOMAINS = new Set([
   "shopify.com",
   "teespring.com",
   "spring.com",
+  "epidemicsound.com",
 ]);
 
 export type YouTubeDescriptionMetadata = {
@@ -187,19 +188,21 @@ export function extractCandidateRecipeUrls(description: string): string[] {
 
   return urls
     .map((url) => url.replace(/[),.;\]]+$/g, ""))
-    .filter((url) => {
+    .flatMap((url, index) => {
       try {
         const parsed = new URL(url);
         const host = normalizeBareHost(parsed.hostname);
 
-        if (isBlockedDomain(host) || seen.has(parsed.toString())) return false;
+        if (isBlockedDomain(host) || seen.has(parsed.toString())) return [];
 
         seen.add(parsed.toString());
-        return true;
+        return [{ index, score: scoreRecipeCandidate(parsed), url: parsed.toString() }];
       } catch {
-        return false;
+        return [];
       }
-    });
+    })
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map((candidate) => candidate.url);
 }
 
 export function normalizeBareHost(hostname: string): string {
@@ -217,4 +220,19 @@ function isBlockedDomain(host: string): boolean {
   return [...NON_RECIPE_DOMAINS].some(
     (domain) => host === domain || host.endsWith(`.${domain}`),
   );
+}
+
+function scoreRecipeCandidate(url: URL): number {
+  const haystack = `${normalizeBareHost(url.hostname)} ${url.pathname}`.toLowerCase();
+  let score = 0;
+
+  if (/(^|\/)recipes?(\/|$)/.test(url.pathname.toLowerCase())) score += 80;
+  if (/\b(recipe|recipes|cook|cooking|kitchen|food|meal|dish)\b/.test(haystack)) {
+    score += 25;
+  }
+  if (/\b(sponsor|discount|promo|referral|affiliate|merch|shop)\b/.test(haystack)) {
+    score -= 40;
+  }
+
+  return score;
 }

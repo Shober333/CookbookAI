@@ -160,9 +160,7 @@ async function importRecipeFromYouTube(
     throw error;
   }
 
-  const candidateUrl = metadata.candidateUrls[0];
-
-  if (candidateUrl) {
+  for (const candidateUrl of metadata.candidateUrls) {
     try {
       const videoUrl = normalizeImportableUrl(url);
       const result = await importRecipeFromUrl(userId, candidateUrl, {

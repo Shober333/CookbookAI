@@ -59,6 +59,19 @@ describe("extractCandidateRecipeUrls", () => {
       `),
     ).toEqual(["https://www.example.com/cacio"]);
   });
+
+  it("prioritizes recipe-looking links over sponsor links", () => {
+    expect(
+      extractCandidateRecipeUrls(`
+        Sponsor: https://DrinkLMNT.com/BrianLagerstrom
+        Recipe: https://brianlagerstrom.com/recipes/pastrami-on-rye
+        Music: https://www.epidemicsound.com/referral/ccpjb3
+      `),
+    ).toEqual([
+      "https://brianlagerstrom.com/recipes/pastrami-on-rye",
+      "https://drinklmnt.com/BrianLagerstrom",
+    ]);
+  });
 });
 
 describe("normalizeBareHost", () => {

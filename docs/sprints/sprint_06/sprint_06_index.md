@@ -4,7 +4,7 @@
 |-------|-------|
 | **Sprint** | 06 |
 | **Goal** | Make external recipe sources more reliable by preserving YouTube origin metadata, embedding source videos, closing deployed YouTube smoke, and adding a bounded Browserbase fallback for public blocked/JavaScript-heavy recipe pages |
-| **Status** | Local QA pass; deployed smoke blocked by Vercel API 500s |
+| **Status** | Local QA pass; deployed auth and YouTube description smoke pass |
 | **Start** | 2026-05-05 |
 | **End** | TBD |
 
@@ -84,7 +84,7 @@ import resilience without overloading the sprint.
       controlled user-safe errors.
 - [ ] Deployed YouTube link, description, and no-recipe recovery smoke passes
       or is blocked by a documented provider/quota issue.
-- [ ] Browserbase fallback is smoke-tested locally and on Vercel, or blocked
+- [x] Browserbase fallback is smoke-tested locally and on Vercel, or blocked
       by documented Browserbase account/quota limits.
 - [ ] Demo script is updated with stable URLs/videos.
 - [x] QA report completed.
