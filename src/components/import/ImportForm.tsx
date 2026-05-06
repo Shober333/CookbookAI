@@ -76,6 +76,15 @@ const YOUTUBE_TRANSCRIPT_PHASE_LINES: StatusLine[] = [
   { text: "Done", strong: true },
 ];
 
+const YOUTUBE_VIDEO_PHASE_LINES: StatusLine[] = [
+  { text: "Looking up the video…" },
+  { text: "Reading the video…" },
+  { text: "Finding the recipe…" },
+  { text: "Reading ingredients…" },
+  { text: "Reading the method…" },
+  { text: "Done", strong: true },
+];
+
 function initialLineFor(mode: ImportMode, value: string): StatusLine {
   if (mode === "url" && looksLikeYouTubeUrl(value)) {
     return { text: "Looking up the video…" };
@@ -106,7 +115,7 @@ function doneLinesFor(
     case "youtube-transcript":
       return YOUTUBE_TRANSCRIPT_PHASE_LINES;
     case "youtube-direct-video":
-      return YOUTUBE_TRANSCRIPT_PHASE_LINES;
+      return YOUTUBE_VIDEO_PHASE_LINES;
     case "url":
     default:
       return URL_PHASE_LINES;

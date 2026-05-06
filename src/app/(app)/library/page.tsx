@@ -180,7 +180,7 @@ function LibraryBody() {
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Search recipes…"
-              className="h-[44px] w-full rounded-md border-[0.5px] border-border-strong bg-paper pl-9 pr-[14px] font-ui text-body text-ink placeholder:text-ink-faint focus-visible:border-accent focus-visible:outline-none md:h-[38px]"
+              className="h-[44px] w-full rounded-md border-[0.5px] border-border-strong bg-paper pl-9 pr-[14px] font-ui text-ui text-ink placeholder:text-ink-faint focus-visible:border-accent focus-visible:outline-none md:h-[38px]"
               style={{
                 boxShadow: undefined,
               }}
