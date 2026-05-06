@@ -1,7 +1,7 @@
 # Technical Architecture
 
-> **Status:** Accepted — Sprint 5
-> **Owner:** [CTO] — updated 2026-05-04
+> **Status:** Accepted — updated for Sprint 7 planning
+> **Owner:** [CTO] — updated 2026-05-06
 
 ---
 
@@ -12,7 +12,9 @@
 | **Frontend** | Next.js 15 (App Router) + React 19 + TypeScript | Full-stack monorepo, Vercel-native, RSC for fast initial loads |
 | **Styling** | Tailwind CSS + shadcn/ui | Utility-first CSS; shadcn gives accessible, unstyled components we fully own |
 | **Backend** | Next.js API Routes (Vercel Serverless Functions) | No separate server; co-located with frontend; zero deploy config |
-| **AI** | Local dev: Ollama where available. Production (Vercel): Gemini 2.5 Flash by default; Anthropic remains optional fallback only | Local validation is free; production follows the project preference for Gemini while preserving provider abstraction |
+| **AI** | Local dev: Ollama where available. Production (Vercel): Gemini 2.5 Flash by default; Anthropic remains optional fallback only; Sprint 7 adds optional Groq GPT-OSS for text structured-output work | Local validation is free; production follows the project preference for Gemini while preserving provider abstraction; Groq is a low-cost text provider candidate |
+| **Video AI fallback** | Gemini video understanding, disabled by default | Groq GPT-OSS is text-only; direct video fallback needs a video-capable provider |
+| **Nutrition data** | USDA FoodData Central API, planned Sprint 7 | Authoritative public-domain nutrition source for macro estimates; AI assists matching only |
 | **Public page rendering fallback** | Browserbase + Playwright Core, disabled by default | Optional paid fallback for public recipe pages that normal server fetch cannot read |
 | **Auth** | Auth.js v5 (NextAuth) + Prisma adapter | De-facto standard for Next.js; credentials provider for email/password; extensible to OAuth later |
 | **ORM** | Prisma | Type-safe queries; local and production schemas keep the same models while targeting SQLite and Postgres respectively |
@@ -36,7 +38,7 @@
 │                                                   │
 │  ┌──────────────┐   ┌───────────────────────┐    │
 │  │  Auth.js v5  │   │  AI extraction layer    │    │
-│  │  (sessions)  │   │ Ollama / Gemini         │    │
+│  │  (sessions)  │   │ Ollama / Gemini / Groq  │    │
 │  └──────┬───────┘   └──────────┬────────────┘    │
 │         │                      │                  │
 │  ┌──────▼───────┐   ┌──────────▼────────────┐    │
@@ -52,7 +54,8 @@
           │                          │ HTTPS
 ┌─────────▼──────────────┐  ┌────────▼─────────────┐
 │  SQLite (local dev)     │  │ Ollama local server    │
-│  Neon Postgres (prod)   │  │ Gemini / Browserbase   │
+│  Neon Postgres (prod)   │  │ Gemini / Groq / USDA   │
+│                          │  │ Browserbase optional   │
 └────────────────────────┘  └──────────────────────┘
 ```
 
@@ -88,6 +91,37 @@
 - **Location:** `src/components/recipe/ServingScaler.tsx`
 - **Depends on:** nothing server-side — pure client math
 
+### Nutrition / Macro Estimator
+- **Purpose:** Estimate recipe-level and per-serving macros from saved recipe
+  ingredients using USDA FoodData Central data where possible.
+- **Location:** planned Sprint 7 under `src/lib/` service code plus recipe
+  API/UI integration.
+- **Depends on:** Prisma, USDA FoodData Central API key, optional configured
+  text AI provider for ingredient normalization assistance.
+- **Notes:** Macro output is an estimate, not medical advice. AI may help
+  normalize ingredient names or missing gram estimates, but USDA data remains
+  the nutrition source of truth. Unmatched or uncertain ingredients must be
+  surfaced rather than hidden.
+
+### AI Provider Boundary
+- **Purpose:** Route structured text tasks through the configured provider while
+  keeping provider-specific request/response details isolated.
+- **Location:** `src/lib/ai-provider.ts`
+- **Depends on:** environment configuration.
+- **Notes:** Sprint 7 adds `AI_PROVIDER=groq` with
+  `GROQ_MODEL=openai/gpt-oss-120b` as the recommended Groq model. Groq strict
+  structured outputs require strict-compatible JSON schemas. Text provider
+  choice is separate from video fallback provider choice.
+
+### AI-Direct YouTube Video Fallback
+- **Purpose:** Optional recovery path when YouTube description links,
+  description text, and public transcript all fail.
+- **Location:** planned Sprint 7 in the YouTube import service boundary.
+- **Depends on:** `AI_VIDEO_TRANSCRIPTION_ENABLED=true` and a video-capable
+  provider, recommended `AI_VIDEO_PROVIDER=gemini`.
+- **Notes:** Disabled by default due cost/quota and provider capability
+  concerns. Groq GPT-OSS is not used for this path because it is text-only.
+
 ---
 
 ## 4. Data Model
@@ -122,6 +156,7 @@ model Recipe {
   ingredients        String   // JSON string: [{ amount, unit, name, notes? }]
   steps              String   // JSON string: string[]
   adaptedSteps       String?  // JSON string: string[] — nullable; Sprint 2
+  nutritionEstimate  String?  // JSON string: macro estimate + confidence metadata; planned Sprint 7
   tags               String   // comma-separated; split to array in app layer
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -175,6 +210,8 @@ in lockstep until the project chooses a single production-only database path.
 
 > `GET /api/recipes` accepts an optional `?q=` query param for title search (Sprint 2).
 > `PATCH /api/recipes/[id]` accepts `adaptedSteps` in its update payload (Sprint 2).
+> Sprint 7 plans an owner-only nutrition calculation/recalculation API for
+> macro estimates; exact route shape is owned by the Sprint 7 backend contract.
 
 ---
 
@@ -255,8 +292,21 @@ OLLAMA_EXTRACTION_TIMEOUT_MS=120000
 # GEMINI_API_KEY=...
 # GEMINI_MODEL=gemini-2.5-flash
 
+# Optional Sprint 7 text provider experiment
+# AI_PROVIDER=groq
+# GROQ_API_KEY=...
+# GROQ_MODEL=openai/gpt-oss-120b
+
 # Optional fallback provider
 # ANTHROPIC_API_KEY=sk-ant-...
+
+# Optional Sprint 7 AI-direct YouTube video fallback
+# AI_VIDEO_TRANSCRIPTION_ENABLED=false
+# AI_VIDEO_PROVIDER=gemini
+# AI_VIDEO_MODEL=gemini-2.5-flash
+
+# Optional Sprint 7 nutrition estimates
+# FOODDATA_CENTRAL_API_KEY=...
 
 # Optional non-AI structured-data shortcut; disabled during AI validation
 ENABLE_RECIPE_STRUCTURED_DATA_IMPORT=false

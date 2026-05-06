@@ -5,6 +5,72 @@
 
 ---
 
+## Decision Proposal: Sprint 07 Nutrition, Direct Video Fallback, and Groq GPT-OSS
+
+**Date:** 2026-05-06  
+**Status:** Proposed — awaiting Founder approval before dev-body activation  
+**Decided by:** [CTO] recommendation; Founder requested Sprint 07 planning
+
+**Context:**
+The Founder wants Sprint 07 to add recipe macro calculations, add an option for
+the LLM to transcribe/process YouTube video by itself, and add an option to
+change the AI provider to Groq running OpenAI GPT-OSS. These touch schema,
+external data, provider routing, cost, and model capability boundaries.
+
+Current source checks:
+- USDA FoodData Central provides REST food search/details endpoints, requires a
+  data.gov API key, and publishes public-domain nutrition data:
+  https://fdc.nal.usda.gov/api-guide/
+- OpenAI documents `gpt-oss-120b` as text input/output with structured outputs,
+  but image/audio/video are not supported:
+  https://developers.openai.com/api/docs/models/gpt-oss-120b
+- Groq documents `openai/gpt-oss-120b` with 131,072 context tokens and current
+  pricing of $0.15/M input and $0.60/M output:
+  https://console.groq.com/docs/model/openai/gpt-oss-120b
+- Groq strict structured outputs currently support `openai/gpt-oss-20b` and
+  `openai/gpt-oss-120b`:
+  https://console.groq.com/docs/structured-outputs
+- Gemini can process videos and YouTube URLs, and all Gemini models can process
+  video data:
+  https://ai.google.dev/gemini-api/docs/video-understanding
+
+**Recommendation:**
+1. Use USDA FoodData Central as the nutrition source of truth for macro
+   estimates. AI may normalize ingredient names or estimate missing gram
+   quantities, but must not invent authoritative nutrition values.
+2. Persist recipe nutrition as nullable JSON on `Recipe` in both SQLite and
+   Postgres schemas. Include totals, per-serving values, matched/unmatched
+   ingredient metadata, data source, confidence, and recalculation timestamp.
+3. Add `AI_PROVIDER=groq` for text structured-output work and choose
+   `GROQ_MODEL=openai/gpt-oss-120b` for Sprint 07. Keep `openai/gpt-oss-20b`
+   as a later cost experiment only after QA proves extraction quality.
+4. Separate text provider routing from video fallback routing. Direct YouTube
+   video fallback should use `AI_VIDEO_PROVIDER=gemini` behind
+   `AI_VIDEO_TRANSCRIPTION_ENABLED=false` by default.
+5. Do not expose provider switching to normal users. Provider selection remains
+   env/admin configuration for now.
+
+**Rationale:**
+- Nutrition estimates are user-facing and health-adjacent; using USDA data is
+  safer and more explainable than asking an LLM for macro totals.
+- The nullable JSON storage keeps the schema addition small and reversible
+  while the product is still learning the right nutrition shape.
+- Groq GPT-OSS 120B gives better quality headroom than 20B while remaining very
+  inexpensive for recipe-sized text tasks.
+- Groq GPT-OSS is text-only, so using it for direct video transcription would
+  be a category error. Gemini already fits the project roadmap for direct video.
+
+**Consequences:**
+- Sprint 07 requires a schema migration in both Prisma schema trees.
+- USDA key, Groq key, and optional Gemini video fallback key must be documented
+  and handled as missing-key states.
+- QA must include partial nutrition matches, provider failure modes, and
+  no-recipe video recovery to prevent hallucinated nutrition or recipes.
+- The current production default remains Gemini unless Founder separately
+  approves making Groq the production default after Sprint 07 evaluation.
+
+---
+
 ## Decision: Sprint 06 Source Metadata and Browserbase Boundary
 
 **Date:** 2026-05-05

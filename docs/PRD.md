@@ -1,7 +1,7 @@
 # Product Requirements Document (PRD)
 
-> **Status:** Draft — Sprint 2
-> **Owner:** [CTO] — updated 2026-05-01
+> **Status:** Draft — Sprint 7 planning
+> **Owner:** [CTO] — updated 2026-05-06
 
 ---
 
@@ -32,6 +32,9 @@
 | 9 | Guest mode | Try the app without creating an account; recipes are DB-persistent and tied to a cookie-based guest session. URL deduplication: if any user already imported a given URL, the extracted recipe is reused (no repeat AI call) | Nice to Have |
 | 10 | Recipe tagging / search | Tag recipes by cuisine, dietary label, or equipment; full-text search | Nice to Have |
 | 11 | Ingredient substitution | Ask AI to swap an ingredient (e.g., "replace butter with olive oil") | Nice to Have |
+| 12 | Recipe macro estimates | Calculate estimated calories, protein, carbohydrates, and fat per recipe and per serving using USDA nutrition data where possible | Nice to Have |
+| 13 | AI-direct video fallback | For YouTube imports where description, recipe links, and public transcript all fail, optionally ask a video-capable AI provider to extract recipe-relevant content directly from the video URL | Nice to Have |
+| 14 | Configurable Groq provider | Allow the text AI provider to be configured as Groq running OpenAI GPT-OSS, with `openai/gpt-oss-120b` as the recommended Sprint 7 model | Nice to Have |
 
 ---
 
@@ -82,13 +85,34 @@
 - [ ] Session persists across page refreshes
 - [ ] User can log out
 
+### Story 6: Recipe Macro Estimates
+> As a home cook, I want a quick estimate of a recipe's macros, so that I can understand roughly how rich or light a recipe is before I cook it.
+
+**Acceptance Criteria:**
+- [ ] User can calculate or recalculate macro estimates for a saved recipe
+- [ ] App shows calories, protein, carbohydrates, and fat per serving and per full recipe
+- [ ] Estimates identify partial or uncertain ingredient matches instead of pretending to be exact
+- [ ] Nutrition data is sourced from USDA FoodData Central where available; AI may help normalize ingredients but is not the source of truth for macro values
+- [ ] UI avoids medical, diet, allergy, or weight-loss advice
+
+### Story 7: AI-Direct Video Fallback
+> As a home cook importing from YouTube, I want the app to try one more AI-based recovery path when captions or descriptions do not include the recipe, so that useful cooking videos are not dead ends.
+
+**Acceptance Criteria:**
+- [ ] Direct video fallback is disabled by default and controlled by environment configuration
+- [ ] Fallback runs only after YouTube link, description text, and public transcript paths fail
+- [ ] Fallback uses a video-capable provider; Groq GPT-OSS is not used for video/audio transcription
+- [ ] Saved recipe metadata distinguishes AI-direct video extraction from public transcript import
+- [ ] If the video has no usable recipe, the app shows a controlled no-recipe recovery state and saves nothing
+
 ---
 
 ## 4. Out of Scope (MVP)
 
 - Social features: sharing recipes, following other users, public library
 - Meal planning, weekly schedules, or shopping list generation
-- Nutritional analysis or calorie tracking
+- Medical, diet, allergy, weight-loss, or health recommendations
+- Micronutrient-complete nutrition labels or exact calorie tracking
 - Native mobile app (iOS/Android)
 - Custom recipe creation from scratch (non-import)
 - Offline mode
@@ -112,6 +136,8 @@
 
 - **Must support:** local Ollama models for Sprint 1 recipe extraction and adaptation validation
 - **Should keep configurable:** Anthropic/Claude provider support for later cloud and production validation
+- **Should support:** Groq GPT-OSS as an environment-selectable text provider after Sprint 7 validation
+- **Should separate:** text AI provider from video-capable fallback provider; not every text provider can process video/audio
 - **Must run in:** browser (web app)
 - **Must support:** multi-user with authentication and persistent data storage
 - **Must deploy to:** Vercel (free / Hobby tier — hundreds of users at scale target)

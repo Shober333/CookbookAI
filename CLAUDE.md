@@ -16,7 +16,7 @@
 | **Name** | CookbookAI |
 | **Repo name** | `CookbookAI` |
 | **Purpose** | Import recipes from the web; adjust them with AI assistance |
-| **Stage** | Sprint 6 accepted — ready for Sprint 7 planning |
+| **Stage** | Sprint 7 planned — awaiting Founder approval to activate dev body |
 | **Dev port** | 3000 |
 
 ---
