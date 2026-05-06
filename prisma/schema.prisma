@@ -36,6 +36,7 @@ model Recipe {
   ingredients        String
   steps              String
   adaptedSteps       String?
+  nutritionEstimate  String?
   tags               String   @default("")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt

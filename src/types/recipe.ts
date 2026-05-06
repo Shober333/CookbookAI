@@ -10,9 +10,42 @@ export type RecipeSourceKind =
   | "text"
   | "youtube-link"
   | "youtube-description"
-  | "youtube-transcript";
+  | "youtube-transcript"
+  | "youtube-direct-video";
 
-export type RecipeSourceImportMethod = "fetch" | "browserbase" | "text";
+export type RecipeSourceImportMethod = "fetch" | "browserbase" | "text" | "video-ai";
+
+export type MacroNutrients = {
+  calories: number;
+  proteinGrams: number;
+  carbohydrateGrams: number;
+  fatGrams: number;
+  fiberGrams?: number;
+};
+
+export type NutritionIngredientMatch = {
+  ingredientName: string;
+  normalizedName: string;
+  amount: number | null;
+  unit: string;
+  grams: number | null;
+  fdcId?: number;
+  foodDescription?: string;
+  confidence: "high" | "medium" | "low" | "unmatched";
+  macros?: MacroNutrients;
+  warnings?: string[];
+};
+
+export type RecipeNutritionEstimate = {
+  source: "usda-fdc";
+  calculatedAt: string;
+  servings: number;
+  total: MacroNutrients;
+  perServing: MacroNutrients;
+  ingredients: NutritionIngredientMatch[];
+  unmatchedIngredients: string[];
+  warnings: string[];
+};
 
 export type RecipePayload = {
   title: string;
@@ -25,6 +58,7 @@ export type RecipePayload = {
   ingredients: RecipeIngredient[];
   steps: string[];
   adaptedSteps?: string[] | null;
+  nutritionEstimate?: RecipeNutritionEstimate | null;
   tags?: string[];
 };
 

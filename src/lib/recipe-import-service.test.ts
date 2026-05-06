@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   createRecipeForUser: vi.fn(),
   extractRecipeFromJsonLd: vi.fn(),
   extractRecipeWithAi: vi.fn(),
+  extractRecipeTextFromYouTubeVideo: vi.fn(),
   fetchYouTubeDescriptionMetadata: vi.fn(),
   fetchYouTubeTranscript: vi.fn(),
   findRecipeByNormalizedSourceUrl: vi.fn(),
@@ -28,6 +29,14 @@ const mocks = vi.hoisted(() => ({
   ),
   renderPublicRecipePageWithBrowserbase: vi.fn(),
   YouTubeImportError: class YouTubeImportError extends Error {
+    constructor(
+      message: string,
+      readonly status: number,
+    ) {
+      super(message);
+    }
+  },
+  YouTubeVideoAiError: class YouTubeVideoAiError extends Error {
     constructor(
       message: string,
       readonly status: number,
@@ -76,6 +85,11 @@ vi.mock("@/lib/youtube-import", () => ({
   YouTubeImportError: mocks.YouTubeImportError,
 }));
 
+vi.mock("@/lib/youtube-video-ai", () => ({
+  extractRecipeTextFromYouTubeVideo: mocks.extractRecipeTextFromYouTubeVideo,
+  YouTubeVideoAiError: mocks.YouTubeVideoAiError,
+}));
+
 const recipeText =
   "Ingredients: 200 g spaghetti, 1 cup cheese, black pepper. Instructions: Cook the pasta, then toss with cheese and pepper.";
 
@@ -106,6 +120,7 @@ describe("importRecipeForUser", () => {
     vi.clearAllMocks();
     mocks.createRecipeForUser.mockResolvedValue(recipeResponse);
     mocks.extractRecipeWithAi.mockResolvedValue(recipePayload);
+    mocks.extractRecipeTextFromYouTubeVideo.mockResolvedValue(null);
     mocks.fetchYouTubeTranscript.mockResolvedValue(recipeText);
     mocks.findRecipeByNormalizedSourceUrl.mockResolvedValue(null);
     mocks.isYouTubeUrl.mockReturnValue(false);
@@ -198,6 +213,7 @@ describe("importRecipeForUser", () => {
       ingredients: JSON.stringify(recipePayload.ingredients),
       steps: JSON.stringify(recipePayload.steps),
       adaptedSteps: JSON.stringify(["Personal adaptation."]),
+      nutritionEstimate: null,
       sourceVideoUrl: null,
       sourceKind: null,
       sourceImportMethod: "browserbase",
@@ -363,7 +379,7 @@ describe("importRecipeForUser", () => {
     ).rejects.toMatchObject({
       status: 503,
       message:
-        "The configured AI provider is unavailable. Check the Gemini key and model settings.",
+        "The configured AI provider is unavailable. Check the provider key and model settings.",
     });
 
     expect(mocks.createRecipeForUser).not.toHaveBeenCalled();
@@ -588,5 +604,48 @@ describe("importRecipeForUser", () => {
 
     expect(mocks.extractRecipeWithAi).not.toHaveBeenCalled();
     expect(mocks.createRecipeForUser).not.toHaveBeenCalled();
+  });
+
+  it("falls back to direct AI video extraction after transcript paths fail", async () => {
+    mocks.isYouTubeUrl.mockReturnValue(true);
+    mocks.fetchYouTubeDescriptionMetadata.mockResolvedValue({
+      videoId: "abc1234",
+      title: "Pasta video",
+      description: "Subscribe for more dinner ideas.",
+      candidateUrls: [],
+    });
+    mocks.fetchYouTubeTranscript.mockRejectedValue(
+      new mocks.YouTubeImportError("No transcript.", 404),
+    );
+    mocks.extractRecipeTextFromYouTubeVideo.mockResolvedValue({
+      hasRecipe: true,
+      recipeText,
+      notes: "Extracted by video model.",
+    });
+    mocks.extractRecipeWithAi.mockResolvedValue({
+      ...recipePayload,
+      sourceUrl: "https://www.youtube.com/watch?v=abc1234",
+    });
+
+    const result = await importRecipeForUser("user-1", {
+      kind: "url",
+      url: "https://www.youtube.com/watch?v=abc1234",
+    });
+
+    expect(mocks.extractRecipeTextFromYouTubeVideo).toHaveBeenCalledWith(
+      "https://www.youtube.com/watch?v=abc1234",
+    );
+    expect(mocks.createRecipeForUser).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({
+        sourceKind: "youtube-direct-video",
+        sourceVideoUrl: "https://www.youtube.com/watch?v=abc1234",
+        sourceImportMethod: "video-ai",
+      }),
+    );
+    expect(result).toMatchObject({
+      sourceKind: "youtube-direct-video",
+      sourceImportMethod: "video-ai",
+    });
   });
 });

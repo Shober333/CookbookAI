@@ -11,7 +11,8 @@ type SourceKind =
   | "text"
   | "youtube-link"
   | "youtube-description"
-  | "youtube-transcript";
+  | "youtube-transcript"
+  | "youtube-direct-video";
 
 type ImportResponse = {
   recipe?: { id?: string };
@@ -103,6 +104,8 @@ function doneLinesFor(
     case "youtube-description":
       return YOUTUBE_DESCRIPTION_PHASE_LINES;
     case "youtube-transcript":
+      return YOUTUBE_TRANSCRIPT_PHASE_LINES;
+    case "youtube-direct-video":
       return YOUTUBE_TRANSCRIPT_PHASE_LINES;
     case "url":
     default:
