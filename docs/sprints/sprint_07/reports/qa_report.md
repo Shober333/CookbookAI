@@ -2,7 +2,7 @@
 
 > **Owner:** [DEV-QA]  
 > **Run date:** 2026-05-06  
-> **Status:** Local regression and nutrition UI QA pass; live-provider/deployed smoke deferred.
+> **Status:** Local regression, nutrition UI, Groq mocks, and deployed baseline pass; deployed USDA macro calculation blocked by missing FoodData Central key.
 
 ---
 
@@ -12,10 +12,16 @@ Sprint 07 now passes the local QA gates:
 
 - `npm run typecheck` - passed.
 - `npm test` - passed: 14 test files, 161 tests.
+- Focused Groq/macros tests passed: 3 files, 30 tests.
 - `npm run build` - passed.
 - `DATABASE_URL=postgresql://cookbook:stub@localhost:5432/cookbook npm run build:vercel` - passed.
 - `npx playwright test --project=chromium` - passed: 33 passed, 3 skipped.
 - `npx playwright test tests/e2e/sprint7.spec.ts --project=chromium` - passed: 3 passed.
+- Deployed URL checked: `https://cookbook-ai-5qdb.vercel.app/`.
+- Deployed registration/login, recipe creation, saved macro-estimate persistence,
+  and text import smoke passed.
+- Deployed live macro calculation returned a controlled 503 because
+  `FOODDATA_CENTRAL_API_KEY` is not configured on the Vercel deployment.
 
 The earlier browser blocker is no longer active in this environment. The actual
 local setup issue was stale Prisma state: the generated client was missing the
@@ -43,6 +49,8 @@ applied migration `20260506120000_add_nutrition_estimate`. After
 
 - Unit coverage exists for macro calculation, partial matches, all-unmatched
   no-match behavior, USDA missing-key handling, and nutrient parsing.
+- Focused unit coverage now also verifies USDA no-match, rate-limit, and network
+  failure handling.
 - API route `POST /api/recipes/[id]/nutrition` exists and owner-checks the
   recipe before calculation.
 - `tests/e2e/sprint7.spec.ts` browser-verifies saved full and partial nutrition
@@ -52,15 +60,25 @@ applied migration `20260506120000_add_nutrition_estimate`. After
   overflow.
 - Missing USDA key renders a controlled configuration error from the Calculate
   action.
-- Live USDA lookup is deferred because no `FOODDATA_CENTRAL_API_KEY` was
-  available.
+- Deployed saved macro-estimate persistence passed: a recipe created with a
+  `nutritionEstimate` was fetched back with `perServing.calories = 160` and
+  `source = "usda-fdc"`.
+- Deployed recipe detail HTML for that saved estimate contained `Macros` and
+  `Approximately 160 calories per serving`.
+- Deployed live USDA lookup is blocked: `POST /api/recipes/[id]/nutrition`
+  returned `503` with `Macro calculation needs a configured FoodData Central API key.`
 
 ### Groq GPT-OSS Provider
 
 - Mocked Groq unit tests are included in the passing test suite.
 - Missing-key behavior is covered by unit tests.
+- Mocked Groq edge coverage now verifies 401, 403, 429, 500, 503, schema
+  refusal, malformed content, and timeout signal wiring.
 - Default-provider regression is covered by the passing full local suite.
-- Live Groq smoke was deferred because no `GROQ_API_KEY` was available.
+- Deployed text import smoke passed on `https://cookbook-ai-5qdb.vercel.app/`:
+  pasted recipe text saved as `sourceKind: "text"` with parsed ingredients and
+  method. The public response does not expose provider identity, so QA cannot
+  prove from the URL alone that Groq specifically handled the request.
 
 ### AI-Direct YouTube Video Fallback
 
@@ -70,8 +88,15 @@ applied migration `20260506120000_add_nutrition_estimate`. After
 
 ### Deployed Smoke
 
-Deferred. QA did not verify that Sprint 07 is deployed to the live Vercel URL
-and did not have live USDA/Groq/Gemini credentials for production smoke.
+Partially passed against `https://cookbook-ai-5qdb.vercel.app/`.
+
+- Auth/register baseline passed with a throwaway QA account.
+- Recipe creation baseline passed.
+- Saved macro-estimate persistence and recipe-detail rendering passed.
+- Live macro calculation is blocked by missing deployed FoodData Central config.
+- Text import/provider smoke passed, but provider identity is not exposed in the
+  response.
+- Gemini video fallback smoke remains deferred.
 
 ---
 
@@ -90,6 +115,16 @@ Fix status: resolved locally. `npm run db:generate` refreshed Prisma Client, and
 `npm run db:migrate` applied `20260506120000_add_nutrition_estimate`. The final
 full Chromium run passed.
 
+**Bug:** Deployed macro calculation is unavailable because FoodData Central is not configured  
+**Steps to Reproduce:**
+1. Register/login at `https://cookbook-ai-5qdb.vercel.app/`.
+2. Create a saved recipe with common metric ingredients.
+3. Call `POST /api/recipes/[id]/nutrition`.
+**Expected:** The deployment calculates and saves per-serving and full-recipe macros from USDA data.  
+**Actual:** The API returns `503` with `Macro calculation needs a configured FoodData Central API key.`  
+**Severity:** High for Sprint 07 deployed macro functionality  
+**Repro environment:** Vercel deployment `https://cookbook-ai-5qdb.vercel.app/`, 2026-05-06.
+
 ---
 
 ## Screenshots
@@ -106,12 +141,15 @@ current git rules, matching the existing screenshot artifact behavior.
 
 ## QA Recommendation
 
-Local Sprint 07 QA is green for compile, unit, build, browser regression, and
-nutrition UI coverage. Before full sprint closeout, run the live-provider and
-deployed smoke checks if the CTO/Founder require production confidence:
+Local Sprint 07 QA is green for compile, unit, build, browser regression,
+nutrition UI coverage, focused Groq mocks, and focused macro service checks.
+The deployed app is usable for auth, recipe creation, saved macro display, and
+text import, but it is not ready for live macro calculation until the USDA key
+is configured.
 
-- USDA macro lookup with `FOODDATA_CENTRAL_API_KEY`.
-- Groq import/adaptation smoke with `GROQ_API_KEY`.
+- Configure `FOODDATA_CENTRAL_API_KEY` on Vercel, then rerun deployed macro
+  calculation.
+- If provider-level proof matters, expose internal QA-only provider metadata or
+  inspect Vercel logs for the text import smoke; the public API response does
+  not reveal whether Groq or another text provider handled the import.
 - Gemini direct-video fallback smoke with the configured video-provider key.
-- Vercel deployed auth/library/macro/provider smoke against the current Sprint
-  07 deployment.
