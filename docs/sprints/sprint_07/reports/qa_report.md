@@ -2,28 +2,26 @@
 
 > **Owner:** [DEV-QA]  
 > **Run date:** 2026-05-06  
-> **Status:** Partial pass; browser and deployed smoke blocked by local environment / missing live credentials.
+> **Status:** Local regression and nutrition UI QA pass; live-provider/deployed smoke deferred.
 
 ---
 
 ## Summary
 
-Sprint 07 passed the local non-browser gates:
+Sprint 07 now passes the local QA gates:
 
 - `npm run typecheck` - passed.
 - `npm test` - passed: 14 test files, 161 tests.
 - `npm run build` - passed.
-- `DATABASE_URL='postgresql://user:pass@localhost:5432/cookbookai_stub' npm run build:vercel` - passed when run in isolation.
+- `DATABASE_URL=postgresql://cookbook:stub@localhost:5432/cookbook npm run build:vercel` - passed.
+- `npx playwright test --project=chromium` - passed: 33 passed, 3 skipped.
+- `npx playwright test tests/e2e/sprint7.spec.ts --project=chromium` - passed: 3 passed.
 
-The full Chromium E2E regression could not complete in this Codex desktop
-environment. The first attempt was blocked because Chromium was missing; after
-installing Chromium into a workspace-local Playwright cache, Chromium launches
-failed with a macOS sandbox Mach-port permission error:
-
-`bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer... Permission denied (1100)`
-
-The temporary workspace-local browser cache was removed after the run because
-the machine reached critically low disk space.
+The earlier browser blocker is no longer active in this environment. The actual
+local setup issue was stale Prisma state: the generated client was missing the
+Sprint 07 `nutritionEstimate` field, and the local SQLite database had not
+applied migration `20260506120000_add_nutrition_estimate`. After
+`npm run db:generate` and `npm run db:migrate`, the full browser suite passed.
 
 ---
 
@@ -34,13 +32,8 @@ the machine reached critically low disk space.
 | Q7.1 Typecheck | Passed | `npm run typecheck` completed cleanly |
 | Q7.2 Unit tests | Passed | `npm test`: 14 files / 161 tests passed |
 | Q7.3 Local production build | Passed | `npm run build` completed cleanly |
-| Q7.4 Vercel-style build | Passed | Isolated `npm run build:vercel` with stub Postgres URL completed cleanly |
-| Q7.5 E2E regression | Blocked / Failed | Browser launch blocked by local macOS sandbox; one API assertion also returned 404 instead of 401 |
-
-Note: an earlier parallel run of `npm run build` and `npm run build:vercel`
-produced `Unexpected end of JSON input` during Next page-data collection. The
-same Vercel-style build passed when rerun alone, so QA treats the isolated run
-as the valid build gate.
+| Q7.4 Vercel-style build | Passed | `build:vercel` completed with stub Postgres URL and restored the local Prisma client |
+| Q7.5 E2E regression | Passed | Full Chromium suite: 33 passed, 3 skipped |
 
 ---
 
@@ -52,21 +45,21 @@ as the valid build gate.
   no-match behavior, USDA missing-key handling, and nutrient parsing.
 - API route `POST /api/recipes/[id]/nutrition` exists and owner-checks the
   recipe before calculation.
-- UI component `NutritionPanel` includes idle, calculating, success, partial,
-  recalculate, config error, service error, and no-match states.
-
-Not browser-verified in this run:
-
-- Desktop/mobile nutrition panel rendering.
-- Keyboard flow and visible focus.
-- Reduced-motion visual behavior.
-- Screenshot evidence for idle/full/partial/error nutrition states.
-- Live USDA lookup, because no `FOODDATA_CENTRAL_API_KEY` was available.
+- `tests/e2e/sprint7.spec.ts` browser-verifies saved full and partial nutrition
+  estimates on recipe detail.
+- Desktop nutrition panel rendering passed.
+- Mobile 375px partial-estimate rendering passed, including no horizontal
+  overflow.
+- Missing USDA key renders a controlled configuration error from the Calculate
+  action.
+- Live USDA lookup is deferred because no `FOODDATA_CENTRAL_API_KEY` was
+  available.
 
 ### Groq GPT-OSS Provider
 
 - Mocked Groq unit tests are included in the passing test suite.
 - Missing-key behavior is covered by unit tests.
+- Default-provider regression is covered by the passing full local suite.
 - Live Groq smoke was deferred because no `GROQ_API_KEY` was available.
 
 ### AI-Direct YouTube Video Fallback
@@ -77,55 +70,48 @@ Not browser-verified in this run:
 
 ### Deployed Smoke
 
-Deferred. No deployed URL or production credentials were provided in this turn.
+Deferred. QA did not verify that Sprint 07 is deployed to the live Vercel URL
+and did not have live USDA/Groq/Gemini credentials for production smoke.
 
 ---
 
 ## Bugs / Blockers
 
-**Bug:** Text import auth E2E receives 404 instead of 401  
+**Bug:** Local Prisma setup missing Sprint 07 nutrition migration  
 **Steps to Reproduce:**
-1. Run `PLAYWRIGHT_BROWSERS_PATH='./.playwright-browsers' npx playwright test --project=chromium`.
-2. Observe `tests/e2e/sprint3.spec.ts` scenario "text import API requires authentication".
-3. The test posts unauthenticated JSON to `/api/ai/import` with `mode: "text"`.
-**Expected:** The API returns `401` with the existing authentication-required behavior.  
-**Actual:** The request returned `404` during the E2E run.  
-**Severity:** Medium  
-**Repro environment:** Codex desktop, local Next dev server on port 3100, Chromium E2E run.
+1. Run `npm run typecheck` or `npx playwright test --project=chromium` before refreshing Prisma state.
+2. Observe Prisma Client type errors or recipe API 500s during browser tests.
+**Expected:** The generated client and local SQLite database include `Recipe.nutritionEstimate`.  
+**Actual:** Typecheck failed until `npm run db:generate`; browser recipe API calls failed with Prisma `P2022` until `npm run db:migrate`.  
+**Severity:** Medium for local QA setup, Low for product behavior after migration  
+**Repro environment:** Codex desktop, local SQLite, local Next dev server.
 
-**Bug:** Browser E2E and screenshot gates blocked by Chromium launch permissions  
-**Steps to Reproduce:**
-1. Install Chromium into a workspace-local Playwright cache.
-2. Run `PLAYWRIGHT_BROWSERS_PATH='./.playwright-browsers' npx playwright test --project=chromium`.
-3. Observe Chromium launch failures before page-level assertions run.
-**Expected:** Chromium launches and the E2E suite exercises app flows.  
-**Actual:** Chromium exits with `bootstrap_check_in ... Permission denied (1100)`.  
-**Severity:** High for QA confidence, Low for product behavior  
-**Repro environment:** Codex desktop macOS sandbox, local Playwright Chromium.
-
-**Bug:** Local machine disk space is too low for reliable browser QA  
-**Steps to Reproduce:**
-1. Install local Playwright Chromium and run E2E.
-2. Start the dev server afterward.
-**Expected:** Dev server can write `.next` artifacts normally.  
-**Actual:** The dev server hit `ENOSPC: no space left on device` while writing `.next/package.json` and `.next/trace`.  
-**Severity:** High for QA execution, Low for product behavior  
-**Repro environment:** Codex desktop workspace; `df -h .` showed under 1 GiB available.
+Fix status: resolved locally. `npm run db:generate` refreshed Prisma Client, and
+`npm run db:migrate` applied `20260506120000_add_nutrition_estimate`. The final
+full Chromium run passed.
 
 ---
 
 ## Screenshots
 
-Not captured. Screenshot gates Q7.26 and UI-specific desktop/mobile evidence are
-blocked until browser execution works in an environment where Chromium can
-launch and enough disk space is available.
+Captured locally:
+
+- `tests/screenshots/recipe-nutrition-full-desktop.png`
+- `tests/screenshots/recipe-nutrition-partial-mobile.png`
+
+Note: these nutrition screenshots exist in the workspace but are ignored by the
+current git rules, matching the existing screenshot artifact behavior.
 
 ---
 
 ## QA Recommendation
 
-Do not mark Sprint 07 fully QA-complete yet. The implementation passes compile,
-unit, and build gates, but the browser/UI quality gates and deployed smoke
-remain open. Rerun E2E and capture the required nutrition screenshots in a
-normal local shell or CI runner with Playwright browsers installed and adequate
-disk space.
+Local Sprint 07 QA is green for compile, unit, build, browser regression, and
+nutrition UI coverage. Before full sprint closeout, run the live-provider and
+deployed smoke checks if the CTO/Founder require production confidence:
+
+- USDA macro lookup with `FOODDATA_CENTRAL_API_KEY`.
+- Groq import/adaptation smoke with `GROQ_API_KEY`.
+- Gemini direct-video fallback smoke with the configured video-provider key.
+- Vercel deployed auth/library/macro/provider smoke against the current Sprint
+  07 deployment.
