@@ -22,17 +22,19 @@ Set these in Vercel for Preview and Production unless noted otherwise.
 | `YOUTUBE_API_KEY` | Yes for YouTube smoke | `AIza...` | Google Cloud YouTube Data API v3 key |
 | `ENABLE_RECIPE_STRUCTURED_DATA_IMPORT` | Recommended | `false` | Keeps demo on validated AI extraction path |
 | `AI_EXTRACTION_TIMEOUT_MS` | Recommended | `120000` | Shared AI timeout |
-| `BROWSERBASE_FALLBACK_ENABLED` | Optional | `false` | Enables paid public-page render fallback only when explicitly set to `true` |
+| `BROWSERBASE_FALLBACK_ENABLED` | Optional | unset | Set to `false` to force-disable Browserbase; otherwise `BROWSERBASE_API_KEY` enables fallback |
 | `BROWSERBASE_API_KEY` | Required when Browserbase enabled | `bb_...` | Browserbase API key; keep server-side only |
 | `BROWSERBASE_PROJECT_ID` | Recommended when Browserbase enabled | `project_...` | Browserbase project used for sessions |
+| `BROWSERBASE_REGION` | Optional | `us-east-1` | Browserbase session region |
 | `BROWSERBASE_TIMEOUT_MS` | Optional | `30000` | Render/connect timeout; values below 10000 fall back to 30000 |
 | `ANTHROPIC_API_KEY` | Optional | `sk-ant-...` | Only if `AI_PROVIDER=anthropic` |
 | `OLLAMA_BASE_URL` / `OLLAMA_MODEL` | Local only | `http://localhost:11434` | Do not use for Vercel demo |
 
-Browserbase is disabled by default because it is paid/usage-metered. Sprint 06
-uses it only for public recipe pages where normal fetch fails or returns
-unusable JS-heavy HTML. It must not be used to access paywalled, login-gated,
-CAPTCHA-protected, or private content.
+Browserbase activates when `BROWSERBASE_API_KEY` is present unless explicitly
+disabled with `BROWSERBASE_FALLBACK_ENABLED=false`. Sprint 06 uses it only for
+public recipe pages where normal fetch fails or returns unusable JS-heavy HTML.
+It must not be used to access paywalled, login-gated, CAPTCHA-protected, or
+private content.
 
 ## Database Setup
 

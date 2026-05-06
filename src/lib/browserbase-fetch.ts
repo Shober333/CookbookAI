@@ -23,7 +23,12 @@ export type BrowserbaseRenderedPage = {
 };
 
 export function isBrowserbaseFallbackEnabled(): boolean {
-  return process.env.BROWSERBASE_FALLBACK_ENABLED === "true";
+  const enabled = process.env.BROWSERBASE_FALLBACK_ENABLED;
+
+  if (enabled === "false") return false;
+  if (enabled === "true") return true;
+
+  return Boolean(process.env.BROWSERBASE_API_KEY);
 }
 
 export async function renderPublicRecipePageWithBrowserbase(
@@ -132,6 +137,10 @@ async function createBrowserbaseSession(
     body.projectId = process.env.BROWSERBASE_PROJECT_ID;
   }
 
+  if (process.env.BROWSERBASE_REGION) {
+    body.region = process.env.BROWSERBASE_REGION;
+  }
+
   const response = await fetch("https://api.browserbase.com/v1/sessions", {
     method: "POST",
     headers: {
@@ -143,6 +152,11 @@ async function createBrowserbaseSession(
   });
 
   if (!response.ok) {
+    console.error("[browserbase-fetch] session creation failed", {
+      status: response.status,
+      message: await readBrowserbaseErrorBody(response),
+    });
+
     throw new BrowserbaseFetchError(
       `Browserbase session creation failed (${response.status}).`,
       response.status === 401 || response.status === 403 ? 503 : 502,
@@ -159,6 +173,22 @@ async function createBrowserbaseSession(
   }
 
   return { id: session.id, connectUrl: session.connectUrl };
+}
+
+async function readBrowserbaseErrorBody(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as {
+      error?: unknown;
+      message?: unknown;
+    };
+    const message = body.message ?? body.error;
+
+    return typeof message === "string" && message.trim()
+      ? message.trim()
+      : `${response.status} ${response.statusText}`.trim();
+  } catch {
+    return `${response.status} ${response.statusText}`.trim();
+  }
 }
 
 async function releaseBrowserbaseSession(

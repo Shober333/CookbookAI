@@ -24,16 +24,28 @@ vi.mock("playwright-core", () => ({
 
 describe("isBrowserbaseFallbackEnabled", () => {
   const originalEnabled = process.env.BROWSERBASE_FALLBACK_ENABLED;
+  const originalApiKey = process.env.BROWSERBASE_API_KEY;
 
   afterEach(() => {
     process.env.BROWSERBASE_FALLBACK_ENABLED = originalEnabled;
+    process.env.BROWSERBASE_API_KEY = originalApiKey;
   });
 
-  it("only enables fallback when explicitly set to true", () => {
+  it("enables fallback when explicitly set to true", () => {
     process.env.BROWSERBASE_FALLBACK_ENABLED = "true";
+    delete process.env.BROWSERBASE_API_KEY;
     expect(isBrowserbaseFallbackEnabled()).toBe(true);
+  });
 
+  it("enables fallback when Browserbase credentials are configured", () => {
+    delete process.env.BROWSERBASE_FALLBACK_ENABLED;
+    process.env.BROWSERBASE_API_KEY = "bb-test-key";
+    expect(isBrowserbaseFallbackEnabled()).toBe(true);
+  });
+
+  it("keeps fallback disabled when explicitly set to false", () => {
     process.env.BROWSERBASE_FALLBACK_ENABLED = "false";
+    process.env.BROWSERBASE_API_KEY = "bb-test-key";
     expect(isBrowserbaseFallbackEnabled()).toBe(false);
   });
 });
@@ -42,6 +54,7 @@ describe("renderPublicRecipePageWithBrowserbase", () => {
   const originalEnv = {
     apiKey: process.env.BROWSERBASE_API_KEY,
     projectId: process.env.BROWSERBASE_PROJECT_ID,
+    region: process.env.BROWSERBASE_REGION,
     timeout: process.env.BROWSERBASE_TIMEOUT_MS,
   };
 
@@ -50,6 +63,7 @@ describe("renderPublicRecipePageWithBrowserbase", () => {
     vi.stubGlobal("fetch", vi.fn());
     process.env.BROWSERBASE_API_KEY = "bb-test-key";
     process.env.BROWSERBASE_PROJECT_ID = "project-123";
+    process.env.BROWSERBASE_REGION = "us-east-1";
     process.env.BROWSERBASE_TIMEOUT_MS = "10000";
 
     mocks.goto.mockResolvedValue(undefined);
@@ -89,6 +103,7 @@ describe("renderPublicRecipePageWithBrowserbase", () => {
   afterEach(() => {
     process.env.BROWSERBASE_API_KEY = originalEnv.apiKey;
     process.env.BROWSERBASE_PROJECT_ID = originalEnv.projectId;
+    process.env.BROWSERBASE_REGION = originalEnv.region;
     process.env.BROWSERBASE_TIMEOUT_MS = originalEnv.timeout;
     vi.unstubAllGlobals();
   });
@@ -108,6 +123,7 @@ describe("renderPublicRecipePageWithBrowserbase", () => {
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({ "x-bb-api-key": "bb-test-key" }),
+        body: expect.stringContaining("us-east-1"),
       }),
     );
     expect(mocks.connectOverCDP).toHaveBeenCalledWith(
