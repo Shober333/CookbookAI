@@ -22,8 +22,9 @@ type RecipePayload = {
     | "youtube-link"
     | "youtube-description"
     | "youtube-transcript"
+    | "youtube-direct-video"
     | null;
-  sourceImportMethod?: "fetch" | "browserbase" | "text" | null;
+  sourceImportMethod?: "fetch" | "browserbase" | "text" | "video-ai" | null;
   servings: number;
   ingredients: Ingredient[];
   steps: string[];

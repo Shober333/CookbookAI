@@ -17,6 +17,10 @@ import {
 } from "@/lib/recipe-service";
 import { recipePayloadSchema } from "@/lib/recipe-schema";
 import {
+  extractRecipeTextFromYouTubeVideo,
+  YouTubeVideoAiError,
+} from "@/lib/youtube-video-ai";
+import {
   fetchYouTubeDescriptionMetadata,
   fetchYouTubeTranscript,
   isYouTubeUrl,
@@ -208,6 +212,22 @@ async function importRecipeFromYouTube(
 
     if (transcriptResult) {
       return transcriptResult;
+    }
+  }
+
+  const directVideoText = await tryFetchYouTubeVideoRecipeText(url);
+
+  if (directVideoText) {
+    const directVideoResult = await tryImportYouTubeText(userId, {
+      text: directVideoText,
+      sourceUrl: url,
+      sourceVideoUrl: normalizeImportableUrl(url),
+      sourceKind: "youtube-direct-video",
+      sourceImportMethod: "video-ai",
+    });
+
+    if (directVideoResult) {
+      return directVideoResult;
     }
   }
 
@@ -442,7 +462,7 @@ async function extractPayloadWithAi(
   } catch (error) {
     if (isProviderConfigurationError(error)) {
       throw new RecipeImportError(
-        "The configured AI provider is unavailable. Check the Gemini key and model settings.",
+        "The configured AI provider is unavailable. Check the provider key and model settings.",
         503,
       );
     }
@@ -483,6 +503,9 @@ function isProviderConfigurationError(error: unknown): boolean {
     error.message.includes("missing GEMINI_API_KEY") ||
     error.message.includes("Gemini generation failed") ||
     error.message.includes("Gemini generation returned no content") ||
+    error.message.includes("missing GROQ_API_KEY") ||
+    error.message.includes("Groq generation failed") ||
+    error.message.includes("Groq generation returned no content") ||
     error.message.includes("401") ||
     error.message.includes("403")
   );
@@ -494,7 +517,11 @@ async function tryImportYouTubeText(
     text: string;
     sourceUrl: string;
     sourceVideoUrl: string;
-    sourceKind: Extract<RecipeSourceKind, "youtube-description" | "youtube-transcript">;
+    sourceKind: Extract<
+      RecipeSourceKind,
+      "youtube-description" | "youtube-transcript" | "youtube-direct-video"
+    >;
+    sourceImportMethod?: RecipeSourceImportMethod;
   },
 ): Promise<RecipeImportResult | null> {
   try {
@@ -507,6 +534,7 @@ async function tryImportYouTubeText(
       ...payload,
       sourceKind: params.sourceKind,
       sourceVideoUrl: params.sourceVideoUrl,
+      sourceImportMethod: params.sourceImportMethod ?? payload.sourceImportMethod,
     });
     const sourceUrl = payload.sourceUrl ?? normalizeImportableUrl(params.sourceUrl);
 
@@ -516,11 +544,28 @@ async function tryImportYouTubeText(
       sourceKind: params.sourceKind,
       sourceUrl,
       sourceVideoUrl: params.sourceVideoUrl,
-      sourceImportMethod: payload.sourceImportMethod ?? "text",
+      sourceImportMethod:
+        params.sourceImportMethod ?? payload.sourceImportMethod ?? "text",
     };
   } catch (error) {
     if (error instanceof RecipeImportError) {
       if (error.status === 503) throw error;
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function tryFetchYouTubeVideoRecipeText(url: string): Promise<string | null> {
+  try {
+    const extraction = await extractRecipeTextFromYouTubeVideo(url);
+    return extraction?.recipeText ?? null;
+  } catch (error) {
+    if (error instanceof YouTubeVideoAiError) {
+      if (error.status === 503) {
+        throw new RecipeImportError(error.message, error.status);
+      }
       return null;
     }
 

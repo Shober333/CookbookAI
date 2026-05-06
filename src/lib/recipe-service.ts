@@ -6,6 +6,7 @@ import type {
   RecipeResponse,
   RecipeSourceImportMethod,
   RecipeSourceKind,
+  RecipeNutritionEstimate,
 } from "@/types/recipe";
 
 function serializeStringArray(values: string[] | undefined): string {
@@ -42,6 +43,9 @@ export function toRecipeResponse(recipe: Recipe): RecipeResponse {
     steps: parseJsonField(recipe.steps, []),
     adaptedSteps: recipe.adaptedSteps
       ? parseJsonField(recipe.adaptedSteps, [])
+      : null,
+    nutritionEstimate: recipe.nutritionEstimate
+      ? parseJsonField<RecipeNutritionEstimate | null>(recipe.nutritionEstimate, null)
       : null,
     tags: deserializeStringArray(recipe.tags),
     createdAt: recipe.createdAt.toISOString(),
@@ -93,6 +97,11 @@ export async function createRecipeForUser(
         payload.adaptedSteps === undefined || payload.adaptedSteps === null
           ? null
           : JSON.stringify(payload.adaptedSteps),
+      nutritionEstimate:
+        payload.nutritionEstimate === undefined ||
+        payload.nutritionEstimate === null
+          ? null
+          : JSON.stringify(payload.nutritionEstimate),
       tags: serializeStringArray(payload.tags),
     },
   });
@@ -139,6 +148,7 @@ export async function copyRecipeForUser(
       ingredients: source.ingredients,
       steps: source.steps,
       adaptedSteps: null,
+      nutritionEstimate: source.nutritionEstimate,
       tags: source.tags,
     },
   });
@@ -189,6 +199,12 @@ export async function updateRecipeForUser(
             ? null
             : JSON.stringify(payload.adaptedSteps),
       }),
+      ...(payload.nutritionEstimate !== undefined && {
+        nutritionEstimate:
+          payload.nutritionEstimate === null
+            ? null
+            : JSON.stringify(payload.nutritionEstimate),
+      }),
       ...(payload.tags !== undefined && {
         tags: serializeStringArray(payload.tags),
       }),
@@ -214,6 +230,7 @@ function parseSourceKind(value: string | null): RecipeSourceKind | null {
     case "youtube-link":
     case "youtube-description":
     case "youtube-transcript":
+    case "youtube-direct-video":
       return value;
     default:
       return null;
@@ -227,6 +244,7 @@ function parseSourceImportMethod(
     case "fetch":
     case "browserbase":
     case "text":
+    case "video-ai":
       return value;
     default:
       return null;

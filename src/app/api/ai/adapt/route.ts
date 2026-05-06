@@ -85,6 +85,8 @@ export async function POST(request: Request) {
       message.includes("requires a subscription") ||
       message.includes("missing GEMINI_API_KEY") ||
       message.includes("Gemini generation failed") ||
+      message.includes("missing GROQ_API_KEY") ||
+      message.includes("Groq generation failed") ||
       message.includes("401") ||
       message.includes("402") ||
       message.includes("403");

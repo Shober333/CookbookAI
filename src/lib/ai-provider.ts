@@ -10,7 +10,7 @@ import {
 } from "@/lib/anthropic";
 import { parseJsonObjectFromText } from "@/lib/recipe-utils";
 
-export type AiProvider = "ollama" | "anthropic" | "gemini";
+export type AiProvider = "ollama" | "anthropic" | "gemini" | "groq";
 
 export type GenerateRecipeObjectParams = {
   schema: object;
@@ -25,6 +25,7 @@ export const selectedAiProvider = normalizeAiProvider(aiProvider);
 export const geminiModel = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 export const geminiFallbackModel =
   process.env.GEMINI_FALLBACK_MODEL ?? "gemini-2.5-flash-lite";
+export const groqModel = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
 
 export function getRecipeSourceLimit(): number {
   if (selectedAiProvider === "ollama") {
@@ -43,6 +44,10 @@ export async function generateRecipeObject(
 
   if (selectedAiProvider === "gemini") {
     return generateWithGemini(params);
+  }
+
+  if (selectedAiProvider === "groq") {
+    return generateWithGroq(params);
   }
 
   const result = await generateObject({
@@ -67,7 +72,12 @@ export async function generateRecipeObject(
 }
 
 function normalizeAiProvider(value: string): AiProvider {
-  if (value === "anthropic" || value === "gemini" || value === "ollama") {
+  if (
+    value === "anthropic" ||
+    value === "gemini" ||
+    value === "groq" ||
+    value === "ollama"
+  ) {
     return value;
   }
 
@@ -127,6 +137,76 @@ async function generateWithOllama(
   return parseJsonObjectFromText(content);
 }
 
+export function toGroqStrictSchema(schema: object): object {
+  return transformGroqStrictNode(schema as Record<string, unknown>);
+}
+
+function transformGroqStrictNode(
+  node: Record<string, unknown>,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  const properties =
+    node.properties && typeof node.properties === "object" && !Array.isArray(node.properties)
+      ? (node.properties as Record<string, unknown>)
+      : null;
+  const originallyRequired = new Set(
+    Array.isArray(node.required)
+      ? node.required.filter((item): item is string => typeof item === "string")
+      : [],
+  );
+
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "minimum" || key === "minItems") {
+      continue;
+    }
+
+    if (key === "properties" && properties) {
+      result.properties = Object.fromEntries(
+        Object.entries(properties).map(([propertyName, propertyValue]) => {
+          const transformed = transformGroqStrictNode(
+            propertyValue as Record<string, unknown>,
+          );
+          return [
+            propertyName,
+            originallyRequired.has(propertyName)
+              ? transformed
+              : makeNullableSchema(transformed),
+          ];
+        }),
+      );
+      result.required = Object.keys(properties);
+      result.additionalProperties = false;
+      continue;
+    }
+
+    if (key === "required" || key === "additionalProperties") {
+      continue;
+    }
+
+    if (key === "items" && value && typeof value === "object" && !Array.isArray(value)) {
+      result.items = transformGroqStrictNode(value as Record<string, unknown>);
+      continue;
+    }
+
+    result[key] = value;
+  }
+
+  return result;
+}
+
+function makeNullableSchema(schema: Record<string, unknown>): Record<string, unknown> {
+  if (
+    Array.isArray(schema.anyOf) &&
+    schema.anyOf.some((item) => (item as Record<string, unknown>).type === "null")
+  ) {
+    return schema;
+  }
+
+  return {
+    anyOf: [schema, { type: "null" }],
+  };
+}
+
 export function toGeminiSchema(schema: object): object {
   return transformGeminiNode(schema as Record<string, unknown>);
 }
@@ -176,6 +256,77 @@ function transformGeminiNode(
   }
 
   return result;
+}
+
+async function generateWithGroq(
+  params: GenerateRecipeObjectParams,
+): Promise<Record<string, unknown>> {
+  const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Groq generation failed: missing GROQ_API_KEY.");
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    getAiExtractionTimeoutMs(),
+  );
+
+  let response: Response;
+  try {
+    response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: groqModel,
+        temperature: 0,
+        messages: [
+          { role: "system", content: params.system },
+          { role: "user", content: params.prompt },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: params.schemaName,
+            description: params.schemaDescription,
+            schema: toGroqStrictSchema(params.schema),
+            strict: true,
+          },
+        },
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!response.ok) {
+    throw new Error(`Groq generation failed: ${await readErrorBody(response)}`);
+  }
+
+  const body = (await response.json()) as {
+    choices?: Array<{
+      message?: {
+        content?: string | null;
+        refusal?: string | null;
+      };
+    }>;
+  };
+  const message = body.choices?.[0]?.message;
+
+  if (message?.refusal) {
+    throw new Error(`Groq generation refused: ${message.refusal}`);
+  }
+
+  if (!message?.content) {
+    throw new Error("Groq generation returned no content.");
+  }
+
+  return parseJsonObjectFromText(message.content);
 }
 
 async function generateWithGemini(

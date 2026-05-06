@@ -368,6 +368,12 @@ export function getRecipeSourceProvenance(
         label: "YouTube transcript",
         href: recipe.sourceUrl ?? undefined,
       };
+    case "youtube-direct-video":
+      return {
+        label: "YouTube video",
+        href: recipe.sourceUrl ?? undefined,
+        suffix: "read by AI",
+      };
     default:
       if (!domain || !recipe.sourceUrl) return null;
       return {

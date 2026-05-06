@@ -437,6 +437,18 @@ describe("getRecipeSourceProvenance", () => {
       label: "YouTube transcript",
       href: "https://youtu.be/abc1234",
     });
+
+    expect(
+      getRecipeSourceProvenance({
+        sourceKind: "youtube-direct-video",
+        sourceUrl: "https://youtu.be/abc1234",
+        sourceImportMethod: "video-ai",
+      }),
+    ).toEqual({
+      label: "YouTube video",
+      href: "https://youtu.be/abc1234",
+      suffix: "read by AI",
+    });
   });
 
   it("falls back to legacy source URL behavior", () => {
