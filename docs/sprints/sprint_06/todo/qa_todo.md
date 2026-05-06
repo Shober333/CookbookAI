@@ -1,7 +1,7 @@
 # Sprint 06 — QA Scenarios
 
 > **Owner:** [DEV-QA]  
-> **Run date:** 2026-05-06 · **Status:** Local QA pass; deployed auth and YouTube description smoke pass; YouTube link/no-recipe and Browserbase live smoke remain blocked.
+> **Run date:** 2026-05-06 · **Status:** Local and deployed QA pass; Browserbase fallback and normal-fetch-first behavior verified; CTO accepted.
 
 ---
 
@@ -44,7 +44,7 @@
 |---|----------|-------|----------|--------|
 | Q6.10 | Browserbase disabled | Import public page that normal fetch cannot read with fallback disabled | Existing controlled connection/error state appears; no Browserbase call is required | `[x]` |
 | Q6.11 | Browserbase missing key | Enable fallback without `BROWSERBASE_API_KEY` | User-safe provider configuration error appears; app does not crash | `[x]` |
-| Q6.12 | Browserbase-assisted public page | Import Allrecipes and Serious Eats public recipe pages with fallback enabled | Browserbase renders/extracts page text; recipe saves or shows controlled no-recipe state | `[!]` |
+| Q6.12 | Browserbase-assisted public page | Import Allrecipes, Serious Eats, and Joshua Weissman public recipe pages with fallback enabled | Blocked/JS-heavy pages use Browserbase; readable pages use normal fetch first | `[x]` |
 | Q6.13 | Browserbase boundary | Try a login/paywall/CAPTCHA-gated sample only if safe to identify without bypassing | App does not attempt credentialed/private bypass; outcome is documented as unsupported | `[-]` |
 
 ---
@@ -65,10 +65,10 @@
 | # | Scenario | Steps | Expected | Status |
 |---|----------|-------|----------|--------|
 | Q6.18 | Deployed auth baseline | Register/login on Vercel | Auth still works after schema/API changes | `[x]` |
-| Q6.19 | Deployed YouTube link path | Import stable video with recipe link | Recipe saves; detail embeds original video and shows resolved source | `[/]` |
+| Q6.19 | Deployed YouTube link path | Import stable video with recipe link | Recipe saves; detail embeds original video and shows resolved source | `[x]` |
 | Q6.20 | Deployed YouTube description path | Import stable video with recipe-like description | Recipe saves; detail embeds original video | `[x]` |
-| Q6.21 | Deployed YouTube no-recipe recovery | Import stable no-recipe video | Designed recovery state appears; no recipe is saved | `[!]` |
-| Q6.22 | Deployed Browserbase fallback | Import Allrecipes and Serious Eats public recipe pages | Recipe saves through fallback or account/quota blocker is documented | `[!]` |
+| Q6.21 | Deployed YouTube no-recipe recovery | Import stable no-recipe video | Designed recovery state appears; no recipe is saved | `[x]` |
+| Q6.22 | Deployed Browserbase fallback | Import Allrecipes, Serious Eats, and Joshua Weissman public recipe pages | Recipe saves through Browserbase when needed, or normal fetch when readable | `[x]` |
 | Q6.23 | Screenshots | Capture recipe detail with embed on desktop and mobile | Screenshots saved if UI changed | `[x]` |
 
 ---
@@ -97,11 +97,12 @@ Postgres-client build.
 **Bug:** Deployed Vercel APIs return 500 after Sprint 06 changes.
 **Fix status:** Partially cleared after push/deploy on 2026-05-06. Deployed
 auth/library and YouTube description import pass. The supplied "both" sample
-imports as `youtube-description` instead of the `youtube-link` path, and the
-no-recipe sample now fails with `Browserbase session creation failed (401)`.
+initially imported as `youtube-description` instead of the `youtube-link` path,
+and the no-recipe sample initially failed with
+`Browserbase session creation failed (401)`.
 Follow-up backend fix now ranks recipe-looking YouTube description links above
 sponsor/referral links and tries later candidate URLs before falling back to
-description text; rerun deployed Q6.19 after the next deploy.
+description text; deployed Q6.19 now passes.
 **Steps to Reproduce:**
 1. Register a fresh user on `https://cookbook-ai-5qdb.vercel.app`.
 2. Land on `/library`.
@@ -113,33 +114,55 @@ paths, and recipe detail embeds the original video where applicable.
 **Actual:** Initially `GET /api/recipes` returned 500 and the library showed
 "We had trouble loading your recipes." After the backend fix/deploy, auth and
 library pass, the description sample imports, the "both" sample imports as a
-description recipe, and the no-recipe sample fails with
-`Browserbase session creation failed (401)`.
+description recipe before the follow-up fix, and the no-recipe sample initially
+failed with `Browserbase session creation failed (401)`. The reruns now pass:
+the "both" sample imports through the YouTube link path and the no-recipe sample
+shows the designed recovery copy.
 **Severity:** High.
 **Repro environment:** Vercel deployment
 `https://cookbook-ai-5qdb.vercel.app`, Playwright Chromium, 2026-05-05.
 
 **Bug:** Browserbase credentials fail on deployed no-recipe YouTube recovery.
+**Fix status:** Verified fixed on 2026-05-06 after Browserbase Vercel env
+correction.
 **Steps to Reproduce:**
 1. Register a fresh user on `https://cookbook-ai-5qdb.vercel.app`.
 2. Import `https://www.youtube.com/watch?v=VDPMXSAxiWk`.
 **Expected:** Designed "No recipe in this video" recovery appears; no recipe is
 saved.
-**Actual:** The import fails with `Browserbase session creation failed (401)`.
+**Actual:** Initially failed with `Browserbase session creation failed (401)`.
+Rerun now shows `We couldn't find a recipe link or recipe text in the
+description. Try the recipe page directly, or paste the recipe text.`
 **Severity:** High for deployed Browserbase/no-recipe smoke.
 **Repro environment:** Vercel deployment
 `https://cookbook-ai-5qdb.vercel.app`, Playwright Chromium, 2026-05-06.
 
 **Bug:** Browserbase cannot import Allrecipes or Serious Eats on deployed app.
+**Fix status:** Verified fixed on 2026-05-06 after Browserbase Vercel env
+correction.
 **Steps to Reproduce:**
 1. Run `LIVE_BROWSERBASE_SMOKE=true LIVE_BASE_URL=https://cookbook-ai-5qdb.vercel.app npx playwright test tests/e2e/browserbase-live.spec.ts --config=playwright.live.config.ts --project=chromium`, or manually register on the deployed app.
 2. Import `https://www.allrecipes.com/recipe/23600/worlds-best-lasagna/`.
 3. Import `https://www.seriouseats.com/the-best-roast-potatoes-ever-recipe`.
 **Expected:** Each public recipe page saves through browser-assisted fallback
 and the detail page shows `From {domain} · read in a browser`.
-**Actual:** Both imports fail before save with
-`Browserbase session creation failed (401)`.
+**Actual:** Initially both imports failed before save with
+`Browserbase session creation failed (401)`. Rerun now passes for both:
+`From allrecipes.com · read in a browser` and
+`From seriouseats.com · read in a browser`.
 **Severity:** High for deployed Browserbase smoke.
+**Repro environment:** Vercel deployment
+`https://cookbook-ai-5qdb.vercel.app`, Playwright Chromium, 2026-05-06.
+
+**Passed:** Joshua Weissman readable page imports through normal fetch first.
+**Steps to Reproduce:**
+1. Run `LIVE_BROWSERBASE_SMOKE=true LIVE_BASE_URL=https://cookbook-ai-5qdb.vercel.app npx playwright test tests/e2e/browserbase-live.spec.ts --config=playwright.live.config.ts --project=chromium --grep "Joshua Weissman"`.
+2. Import `https://www.joshuaweissman.com/recipes/ultimate-crispy-potato-chips-recipe`.
+**Expected:** Recipe saves through normal fetch when the page is readable, and
+Browserbase remains reserved for blocked/bot-checked/JavaScript-heavy pages.
+**Actual:** Recipe saves successfully as `The Ultimate Crispy Potato Chips`,
+but detail shows `From joshuaweissman.com` without `read in a browser`.
+**Severity:** None; intended behavior confirmed by Founder.
 **Repro environment:** Vercel deployment
 `https://cookbook-ai-5qdb.vercel.app`, Playwright Chromium, 2026-05-06.
 
@@ -147,8 +170,8 @@ and the detail page shows `From {domain} · read in a browser`.
 
 ## Recommendation
 
-Local QA passes, deployed auth/library passes, and deployed YouTube description
-import passes. Backend now has a fix for the supplied `youtube-link` sample's
-sponsor-before-recipe description ordering; rerun Q6.19 after the next deploy.
-Browserbase deployed 401 credentials/configuration remains deferred per Founder
-direction.
+Local QA passes, deployed auth/library passes, deployed YouTube link and
+description paths pass, and deployed no-recipe recovery passes. Browserbase
+credential fix is verified on Allrecipes, Serious Eats, and no-recipe recovery.
+Joshua Weissman imports successfully through normal fetch because the page is
+readable, which confirms the intended normal-fetch-first behavior.

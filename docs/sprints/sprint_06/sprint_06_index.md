@@ -4,9 +4,9 @@
 |-------|-------|
 | **Sprint** | 06 |
 | **Goal** | Make external recipe sources more reliable by preserving YouTube origin metadata, embedding source videos, closing deployed YouTube smoke, and adding a bounded Browserbase fallback for public blocked/JavaScript-heavy recipe pages |
-| **Status** | Local QA pass; deployed auth and YouTube description smoke pass |
+| **Status** | CTO accepted; ready for Sprint 07 planning |
 | **Start** | 2026-05-05 |
-| **End** | TBD |
+| **End** | 2026-05-06 |
 
 ---
 
@@ -56,7 +56,7 @@ import resilience without overloading the sprint.
 
 ---
 
-## Founder Decisions To Confirm
+## Founder Decisions Confirmed
 
 | Decision | CTO recommendation |
 |----------|--------------------|
@@ -70,25 +70,25 @@ import resilience without overloading the sprint.
 
 ## Exit Criteria
 
-- [ ] Founder confirms Sprint 06 scope.
-- [ ] Recipe data model stores original YouTube video URL separately from
+- [x] Founder confirms Sprint 06 scope.
+- [x] Recipe data model stores original YouTube video URL separately from
       saved/resolved recipe source URL.
-- [ ] Local SQLite and production Postgres Prisma schemas/migrations stay in
+- [x] Local SQLite and production Postgres Prisma schemas/migrations stay in
       sync.
-- [ ] Import responses expose source metadata with a tested contract.
+- [x] Import responses expose source metadata with a tested contract.
 - [x] Recipe detail embeds the YouTube video when present.
 - [x] Non-YouTube recipes render unchanged.
-- [ ] Browserbase fallback is implemented behind env/config and only runs for
+- [x] Browserbase fallback is implemented behind env/config and only runs for
       public URL import failures or JavaScript-heavy pages.
-- [ ] Browserbase missing-key, timeout, and blocked-page outcomes produce
+- [x] Browserbase missing-key, timeout, and blocked-page outcomes produce
       controlled user-safe errors.
-- [ ] Deployed YouTube link, description, and no-recipe recovery smoke passes
+- [x] Deployed YouTube link, description, and no-recipe recovery smoke passes
       or is blocked by a documented provider/quota issue.
 - [x] Browserbase fallback is smoke-tested locally and on Vercel, or blocked
       by documented Browserbase account/quota limits.
-- [ ] Demo script is updated with stable URLs/videos.
+- [x] Demo script is updated with stable URLs/videos.
 - [x] QA report completed.
-- [ ] CTO Good/Bad/Ugly review completed.
+- [x] CTO Good/Bad/Ugly review completed.
 
 ---
 

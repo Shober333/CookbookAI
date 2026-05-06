@@ -11,6 +11,7 @@ const BROWSERBASE_RECIPE_SAMPLES = [
       process.env.LIVE_BROWSERBASE_ALLRECIPES_URL ??
       "https://www.allrecipes.com/recipe/23600/worlds-best-lasagna/",
     expectedDomain: "allrecipes.com",
+    expectedImportMethod: "browserbase",
   },
   {
     site: "Serious Eats",
@@ -18,6 +19,15 @@ const BROWSERBASE_RECIPE_SAMPLES = [
       process.env.LIVE_BROWSERBASE_SERIOUSEATS_URL ??
       "https://www.seriouseats.com/the-best-roast-potatoes-ever-recipe",
     expectedDomain: "seriouseats.com",
+    expectedImportMethod: "browserbase",
+  },
+  {
+    site: "Joshua Weissman",
+    url:
+      process.env.LIVE_BROWSERBASE_JOSHUA_WEISSMAN_URL ??
+      "https://www.joshuaweissman.com/recipes/ultimate-crispy-potato-chips-recipe",
+    expectedDomain: "joshuaweissman.com",
+    expectedImportMethod: "fetch",
   },
 ] as const;
 
@@ -78,9 +88,13 @@ browserbaseLive("Browserbase live recipe import", () => {
       await page.getByRole("button", { name: "Bring it in" }).click();
 
       await waitForImportOutcome(page);
-      await expect(
-        page.getByText(`From ${sample.expectedDomain} · read in a browser`),
-      ).toBeVisible({ timeout: 30_000 });
+      const expectedSource =
+        sample.expectedImportMethod === "browserbase"
+          ? `From ${sample.expectedDomain} · read in a browser`
+          : `From ${sample.expectedDomain}`;
+      await expect(page.getByText(expectedSource)).toBeVisible({
+        timeout: 30_000,
+      });
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     });
   }

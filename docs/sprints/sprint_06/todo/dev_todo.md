@@ -3,7 +3,7 @@
 > **Owner:** [DEV-LEAD]  
 > **Sprint goal:** YouTube source continuity, Browserbase public-page fallback,
 > and deployed source smoke.
-> **Status:** Backend and frontend implementation complete; QA and demo phases remain.
+> **Status:** CTO accepted; Sprint 06 complete.
 
 ---
 
@@ -21,7 +21,7 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|--------|--------|---------------------|
-| 6.1 | Confirm Sprint 06 scope | `[CTO]` | `[ ]` | Founder confirms Sprint 06 focuses on YouTube source continuity and deployed YouTube smoke |
+| 6.1 | Confirm Sprint 06 scope | `[CTO]` | `[x]` | Founder accepted Sprint 06 focus on YouTube source continuity, Browserbase public-page fallback, and deployed source smoke |
 | 6.2 | Define source metadata contract | `[DEV-LEAD]` + `[DEV:backend]` | `[x]` | Contract distinguishes `sourceUrl`, original YouTube video URL, source kind, source domain, and Browserbase fallback source without breaking existing recipes |
 | 6.3 | UI/UX source presentation check | `[UI/UX]` | `[x]` | Embed placement, source label, loading/error/no-video states are approved in `docs/sprints/sprint_06/uiux_source_presentation.md` |
 | 6.4 | Define Browserbase boundary | `[CTO]` + `[DEV-LEAD]` | `[x]` | Sprint docs state Browserbase is only for public blocked/JS-heavy pages, not paywalls, logins, CAPTCHA bypass, or private content |
@@ -64,12 +64,12 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|--------|--------|---------------------|
-| 6.16 | Stable YouTube demo set | `[DEV-QA]` | `[ ]` | One link-description video, one description-recipe video, and one no-recipe video are documented |
-| 6.17 | Stable Browserbase demo URL | `[DEV-QA]` | `[ ]` | One public blocked/JS-heavy recipe page is documented; not paywalled, login-required, or CAPTCHA-gated |
-| 6.18 | Deployed YouTube smoke | `[DEV-QA]` | `[ ]` | Link, description, and no-recipe paths are verified on Vercel or blocker is documented with exact error |
-| 6.19 | Deployed Browserbase fallback smoke | `[DEV-QA]` | `[ ]` | Browserbase-assisted import succeeds on the stable public sample or account/quota blocker is documented |
-| 6.20 | Demo script update | `[DEV-LEAD]` | `[ ]` | Demo notes cover auth, text import, URL import, Browserbase-assisted URL import, YouTube import, source embed, and controlled blocked-site recovery |
-| 6.21 | Dev report | `[DEV-LEAD]` | `[ ]` | `docs/sprints/sprint_06/reports/sprint_06_report.md` summarizes implementation, tests, deployment evidence, and deferrals |
+| 6.16 | Stable YouTube demo set | `[DEV-QA]` | `[x]` | Link, description, and no-recipe YouTube samples are documented in `reports/qa_report.md` |
+| 6.17 | Stable Browserbase demo URL | `[DEV-QA]` | `[x]` | Allrecipes and Serious Eats exercise browser-assisted fallback; Joshua Weissman confirms normal-fetch-first behavior for readable pages |
+| 6.18 | Deployed YouTube smoke | `[DEV-QA]` | `[x]` | Link, description, and no-recipe paths are verified on Vercel with original video embed/recovery evidence |
+| 6.19 | Deployed Browserbase fallback smoke | `[DEV-QA]` | `[x]` | Browserbase-assisted imports pass on deployed Allrecipes and Serious Eats samples; readable Joshua Weissman sample uses normal fetch |
+| 6.20 | Demo script update | `[DEV-LEAD]` | `[x]` | Demo path and stable samples are captured in `reports/qa_report.md` and summarized in `reports/sprint_06_report.md` |
+| 6.21 | Dev report | `[DEV-LEAD]` | `[x]` | `docs/sprints/sprint_06/reports/sprint_06_report.md` summarizes implementation, tests, deployment evidence, and deferrals |
 
 ---
 
