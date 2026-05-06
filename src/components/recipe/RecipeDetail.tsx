@@ -6,6 +6,7 @@ import type { RecipeResponse } from "@/types/recipe";
 import { ServingScaler } from "./ServingScaler";
 import { UnitToggle } from "./UnitToggle";
 import { AdaptPanel, type AdaptResponse } from "./AdaptPanel";
+import { NutritionPanel } from "./NutritionPanel";
 import {
   scaleAmount,
   roundScaled,
@@ -332,6 +333,14 @@ export function RecipeDetail({
         onDiscardAdapted={handleDiscardAdapted}
       />
 
+      <NutritionPanel
+        recipeId={recipe.id}
+        canonicalServings={recipe.servings}
+        currentServings={servings}
+        initialEstimate={recipe.nutritionEstimate ?? null}
+        ingredientsChangedSince={recipe.ingredientsChangedSince}
+      />
+
       {/* Bottom action row */}
       <div className="mt-[44px] flex flex-wrap items-center gap-3 border-t-[0.5px] border-border pt-5">
         <button
@@ -362,7 +371,7 @@ export function RecipeDetail({
           style={{ right: "-130px", top: "12px", maxWidth: "110px" }}
           aria-hidden="true"
         >
-          <span className="block font-hand text-[18px] text-accent opacity-70">
+          <span className="block font-hand text-hand text-accent opacity-70">
             ↓
           </span>
           <p className="font-hand text-hand text-accent">{marginNote}</p>

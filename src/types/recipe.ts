@@ -67,4 +67,5 @@ export type RecipeResponse = RecipePayload & {
   userId: string;
   createdAt: string;
   updatedAt: string;
+  ingredientsChangedSince?: string | null;
 };

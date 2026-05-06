@@ -3,7 +3,7 @@
 > **Owner:** [DEV-LEAD]  
 > **Sprint goal:** Recipe macro estimates, optional AI-direct video fallback,
 > and Groq GPT-OSS provider support.
-> **Status:** Planned by [CTO]; not started.
+> **Status:** Founder confirmed 2026-05-06; dev body active.
 
 ---
 
@@ -21,9 +21,9 @@
 
 | # | Task | Owner | Status | Acceptance Criteria |
 |---|------|--------|--------|---------------------|
-| 7.1 | Confirm Sprint 07 scope | `[CTO]` + Founder | `[~]` | Founder confirms macros, Groq GPT-OSS provider, and AI-direct video fallback boundaries before implementation |
+| 7.1 | Confirm Sprint 07 scope | `[CTO]` + Founder | `[x]` | Founder confirmed 2026-05-06 — macros via USDA, Groq GPT-OSS text provider, AI-direct video fallback via Gemini |
 | 7.2 | Define nutrition estimate contract | `[DEV-LEAD]` + `[DEV:backend]` | `[ ]` | Contract covers per-recipe/per-serving macros, confidence, unmatched ingredients, source attribution, recalculation timestamp, and no-medical-advice boundary |
-| 7.3 | UI/UX nutrition presentation handoff | `[UI/UX]` | `[ ]` | Nutrition panel anatomy, partial/error states, and copy are approved against `docs/ui/` |
+| 7.3 | UI/UX nutrition presentation handoff | `[UI/UX]` | `[x]` | Nutrition panel anatomy, partial/error states, and copy are approved against `docs/ui/` — see `docs/sprints/sprint_07/uiux_nutrition_handoff.md` |
 | 7.4 | Define provider routing contract | `[DEV-LEAD]` + `[DEV:backend]` | `[ ]` | Text provider and video provider are separate; env names, defaults, fallback behavior, and user-safe errors are documented |
 
 ---

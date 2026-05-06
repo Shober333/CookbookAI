@@ -4,8 +4,8 @@
 |-------|-------|
 | **Sprint** | 07 |
 | **Goal** | Add recipe macro estimates, add an optional AI-direct YouTube video fallback for caption-less videos, and introduce Groq GPT-OSS as a selectable text AI provider |
-| **Status** | Planned by [CTO]; awaiting Founder start approval for dev body |
-| **Start** | TBD |
+| **Status** | Founder confirmed 2026-05-06 — dev body active |
+| **Start** | 2026-05-06 |
 | **End** | TBD |
 
 ---
